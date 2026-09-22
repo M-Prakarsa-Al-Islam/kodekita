@@ -36,8 +36,8 @@ export default function Challenge({
       <div className="mt-4">
         <CodeRunner
           starterCode={practice.starterCode}
-          onResult={handleResult}
-          runLabel="Cek Jawaban"
+          onCheck={handleResult}
+          checkLabel="Cek Jawaban"
         />
       </div>
 

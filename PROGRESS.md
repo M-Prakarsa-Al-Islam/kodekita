@@ -85,8 +85,8 @@ Check this first before writing new content.
 
 | # | Slug | Title | Free? | Lessons | Status |
 |---|------|-------|-------|---------|--------|
-| 1 | `1-pengenalan` | Pengenalan | Yes | L1 Selamat Datang (quiz), L2 Program Pertama (code) | **Published** |
-| 2 | `2-variabel` | Variabel | Yes | L1 Menyimpan Nilai (quiz), L2 f-string (code) | **Published** |
+| 1 | `1-pengenalan` | Pengenalan Python | Yes | L1-L5 (code x5: run-first, print, angka, multi-print, tantangan) | **Published** (revised) |
+| 2 | `2-variabel` | Variabel dan Tipe Data | Yes | L1-L8 (quiz x2, code x6: buat/print, komentar, tipe data, concat, f-string, tantangan) | **Published** (revised) |
 | 3 | `3-fungsi` | Fungsi | Yes | - | Todo |
 | 4 | `4-scope` | Scope | Yes | - | Todo |
 | 5 | `5-testing-debugging` | Testing & Debugging | Yes | - | Todo |
@@ -98,6 +98,36 @@ Check this first before writing new content.
 | 11 | `11-set` | Set | No | - | Todo |
 | 12 | `12-error` | Error | No | - | Todo |
 | 13 | `13-type-hints` | Type Hints | No | - | Todo |
+
+**2026-09-22 revision:** Chapters 1-2 were rewritten from scratch using
+`content/AUTHORING_TEMPLATE.md` (author-provided `.md` files), replacing
+the earlier 2-lesson versions. Chapter 1 grew 2 -> 5 lessons (all `code`
+practice - it's the very first chapter, so quizzes were dropped in favor
+of more hands-on `print()` reps) and chapter titles changed slightly
+("Pengenalan" -> "Pengenalan Python", "Variabel" -> "Variabel dan Tipe
+Data"). Chapter 2 grew 2 -> 8 lessons, now covering naming rules,
+comments, int/float/bool, string concatenation, and f-strings, ending
+in a multi-step "Tantangan" lesson. Every `code` practice's expected
+output was re-verified against real Python (`python3 verify.py`, all
+11 passed) and both quizzes (ch2 L1, ch2 L3) confirmed to have exactly
+one correct option. `npx tsc --noEmit` and `npm run build` both pass.
+No hardcoded chapter titles/slugs exist elsewhere in the codebase, so
+the title changes are safe.
+
+**2026-09-22 bugfix:** `Latihan` (code practice) only ever had one button
+("Cek Jawaban") that ran the code AND graded it in the same click -
+there was no way to just test/run code without it being treated as a
+submission. Fixed in `components/learn/CodeRunner.tsx` /
+`Challenge.tsx`: `CodeRunner` now takes `onCheck`/`checkLabel` (renamed
+from `onResult`/`runLabel`) and, when `checkLabel` is passed, renders
+two buttons - "Jalankan" (secondary, run only, shows output, does not
+grade) and "Cek Jawaban" (primary, run + grade, same as before). This
+was a pre-existing app-code gap, not something introduced by the
+chapter-1/2 content rewrite - it just became visible once Ch1 L1's
+instructions explicitly said "jalankan (Run) kode di bawah ini." `Teori`
+example code blocks remain static/read-only by design (per the
+Theory -> Practice lesson loop) - only `Latihan` needed the split.
+`npx tsc --noEmit` and `npm run build` both pass.
 
 ### How to write the next batch (2-3 chapters)
 

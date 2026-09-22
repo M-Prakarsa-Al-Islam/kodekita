@@ -6,30 +6,45 @@ import { Button } from "@/components/ui/Button";
 
 export default function CodeRunner({
   starterCode,
-  onResult,
-  runLabel = "Jalankan",
+  onCheck,
+  checkLabel,
 }: {
   starterCode: string;
-  onResult?: (result: RunResult) => void;
-  runLabel?: string;
+  // Called only when the "check" button is used (not on a plain run) -
+  // this is what triggers grading/marking a lesson complete.
+  onCheck?: (result: RunResult) => void;
+  // If provided, a second button is shown next to "Jalankan" that runs
+  // the code AND calls onCheck. If omitted, only the plain "Jalankan"
+  // (run, no grading) button is shown.
+  checkLabel?: string;
 }) {
   const [code, setCode] = useState(starterCode);
   const [result, setResult] = useState<RunResult | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "running">("idle");
+  const [pendingAction, setPendingAction] = useState<"run" | "check" | null>(null);
 
-  async function handleRun() {
+  async function execute(action: "run" | "check") {
+    setPendingAction(action);
     setStatus((s) => (s === "idle" ? "loading" : "running"));
     try {
       const r = await runPython(code);
       setResult(r);
-      onResult?.(r);
+      if (action === "check") onCheck?.(r);
     } catch (e) {
       const r = { stdout: "", error: "Python runtime gagal dimuat. Coba lagi." };
       setResult(r);
-      onResult?.(r);
+      if (action === "check") onCheck?.(r);
     } finally {
       setStatus("idle");
+      setPendingAction(null);
     }
+  }
+
+  function label(action: "run" | "check", idleLabel: string) {
+    if (status !== "idle" && pendingAction === action) {
+      return status === "loading" ? "Memuat Python..." : "Menjalankan...";
+    }
+    return idleLabel;
   }
 
   return (
@@ -41,19 +56,27 @@ export default function CodeRunner({
         spellCheck={false}
         className="w-full resize-none bg-ink px-4 py-3 font-mono text-sm text-white outline-none"
       />
-      <div className="flex items-center justify-between border-t border-line bg-white/60 px-4 py-2">
+      <div className="flex items-center gap-2 border-t border-line bg-white/60 px-4 py-2">
         <Button
           type="button"
-          onClick={handleRun}
+          variant={checkLabel ? "secondary" : "primary"}
+          onClick={() => execute("run")}
           disabled={status !== "idle"}
           className="px-4 py-1.5"
         >
-          {status === "loading"
-            ? "Memuat Python..."
-            : status === "running"
-            ? "Menjalankan..."
-            : runLabel}
+          {label("run", "Jalankan")}
         </Button>
+        {checkLabel && (
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => execute("check")}
+            disabled={status !== "idle"}
+            className="px-4 py-1.5"
+          >
+            {label("check", checkLabel)}
+          </Button>
+        )}
       </div>
       {result && (
         <div className="border-t border-line bg-ink/95 px-4 py-3 font-mono text-sm text-white">
