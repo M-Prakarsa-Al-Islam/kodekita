@@ -24,9 +24,18 @@ export async function middleware(request: NextRequest) {
 
   const { data } = await supabase.auth.getUser();
 
-  const isProtected = request.nextUrl.pathname.startsWith("/dashboard");
+  const { pathname } = request.nextUrl;
+
+  // The chapter LIST (/kursus/python-dasar) is public — logged-out
+  // visitors can see what's there, with a reminder to log in. Anything
+  // nested under it (an actual chapter or lesson) requires an account.
+  const isProtected =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/kursus/python-dasar/");
+
   if (isProtected && !data.user) {
     const redirectUrl = new URL("/login", request.url);
+    redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -34,5 +43,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/kursus/python-dasar/:path*"],
 };

@@ -1,51 +1,135 @@
 # KodeKita — Progress Log
 
 Upload this file (plus the repo, plus `master_builder_prompt.md`) at the
-start of a new chat and say "continue KodeKita from Phase X" to resume.
+start of a new chat and say "continue KodeKita from Phase X" — or, for a
+content-only session, "write chapters N-M" — to resume.
+
+To hand me new chapter content, use the format in
+`content/AUTHORING_TEMPLATE.md` — paste it in chat or upload as a file.
 
 ## Key decisions so far
 
 - **Stack:** Next.js 14 (App Router) + TypeScript + Tailwind CSS + Supabase
-  (auth + Postgres). Deploy target: Vercel.
-- **Code execution:** Pyodide, client-side, in-browser. NOT a server-side
-  sandbox. (Piston's public API stopped being free as of Feb 15, 2026;
-  self-hosting a sandbox was judged unnecessary complexity for a Python-only
-  course. This removes the backend execution layer from the architecture
-  entirely — no execution API, no isolate/Docker sandbox to run or secure.)
-- **Pricing:** Python Dasar Rp25.000 (cap: ≤Rp30.000). Free: ch1–5. Paid:
-  ch6–13. Project courses cheaper, e.g. Rp10.000, price configurable not
-  hardcoded.
+  (auth + Postgres). Deploy target: Vercel. Pinned to `next@14.2.35` (patched
+  against the Dec 2025 Next.js DoS advisory - don't downgrade below 14.2.34).
+- **Code execution:** Pyodide, client-side, in-browser (`lib/pyodide.ts`).
+  NOT a server-side sandbox. (Piston's public API stopped being free as of
+  Feb 2026; self-hosting a sandbox was judged unnecessary complexity for a
+  Python-only course.)
+- **Content structure: chapters contain lessons.** Each chapter (e.g.
+  "Pengenalan") has 2+ lessons (L1, L2, ...), each with its own title. A
+  lesson = Theory (short explanation + optional example) -> Practice, where
+  Practice is either a `quiz` (multiple choice) or `code` (Pyodide + a
+  deterministic checker). No separate standalone "Try" step anymore - it
+  was folded into the theory example / practice.
+- **Content model:** chapter/lesson text lives as code in
+  `content/chapters/*.ts`, NOT in the database. The database only tracks
+  which *lessons* a user has completed (`lesson_progress` table, replaced
+  the earlier chapter-level `chapter_progress` in schema_phase2b.sql) and,
+  from Phase 4, purchases.
+- **Auto-grading rule (important for every future lesson):** every `code`
+  practice must be **deterministic** (fixed starter values, one correct
+  output, checked via `lib/checker.ts` `stdout_exact`). Every `quiz` needs
+  exactly one correct option. Open-ended prompts can't be auto-graded.
+- **Access model:**
+  - `/` (homepage) is now auth-aware: logged-out visitors see the
+    marketing homepage with a *gated* preview of the 5 free chapter
+    titles (locked, "masuk untuk mencoba"); logged-in visitors see a
+    dashboard (progress summary + "continue where you left off").
+    `/dashboard` still exists as a redirect to `/` for old links.
+  - `/kursus/python-dasar` (the chapter LIST) is public - anyone can see
+    what's there. Clicking into an actual chapter/lesson
+    (`/kursus/python-dasar/<slug>/...`) requires login - enforced in
+    `middleware.ts`, with `?next=` redirect-back after login.
+  - Free vs. paid (chapters 1-5 vs 6-13) is a separate axis from
+    logged-in-or-not: right now, once logged in, paid chapters are still
+    viewable with a "will lock after payment" badge - Phase 4 will add
+    the real purchase gate.
+- **Pricing:** Python Dasar Rp25.000 (cap: <=Rp30.000). Free: ch1-5. Paid:
+  ch6-13. Project courses cheaper, e.g. Rp10.000.
 - **Payment:** manual QRIS, admin-verified. No payment gateway integration.
 - **Design tokens:** paper `#F3F5F5`, ink `#171B24`, sun (CTA) `#F2A93B`,
   code/success `#0F8A6B`. Fonts: Fraunces (display), Inter (body), JetBrains
   Mono (code).
 
-## Phase status
+## Phase status (code / infrastructure)
 
-- [x] **Phase 1 — Foundation.** Project scaffold, design system, landing
-      page, header/footer, auth (register/login/logout via Supabase),
-      protected `/dashboard` placeholder, `profiles` table + signup trigger.
-- [ ] Phase 2 — Course system (courses/chapters/lessons schema, catalog,
-      course detail page, free/locked indicators, progress tracking)
-- [ ] Phase 3 — Interactive learning (Pyodide-based in-browser editor,
-      deterministic challenge checking, hints)
-- [ ] Phase 4 — Commerce (QRIS payment page, proof upload, admin
-      verification, course unlocking)
-- [ ] Phase 5 — Project courses (starting with "Build a Word Counter")
-- [ ] Phase 6 — Polish & launch
+- [x] **Phase 1 - Foundation.** Scaffold, design system, landing page,
+      header/footer, auth (register/login/logout via Supabase),
+      `profiles` table + signup trigger.
+- [x] **Phase 2 - Course system + lesson infra.** Lesson-based content
+      model (`content/types.ts`), course catalog (`/kursus`), Python
+      Dasar chapter list with free/paid + published/todo + per-chapter
+      progress badges, chapter route that redirects into the first
+      incomplete lesson, lesson reader page
+      (`/kursus/python-dasar/[slug]/[lessonId]`) rendering
+      Theory -> Practice, Pyodide-based `CodeRunner`/`Challenge` (code
+      practice) and `QuizRunner` (quiz practice), `checker.ts` (tested -
+      `scripts/test-checker.mjs`, 18/18 passing, output + quiz logic),
+      `lesson_progress` table, auth-aware `Header` and homepage
+      (`MarketingHome` vs `DashboardHome`), login/chapter-list gating via
+      `middleware.ts`.
+      **Chapter content itself is tracked separately below.**
+- [ ] Phase 3 - effectively absorbed into Phase 2 (Pyodide runner + both
+      checker types already exist and are proven on chapters 1-2). Only
+      polish left here (e.g. a "reset code" button), otherwise treat
+      remaining chapters as content sessions.
+- [ ] Phase 4 - Commerce (QRIS payment page, proof upload, admin
+      verification, real chapter-locking using `isFree` + purchase status)
+- [ ] Phase 5 - Project courses (starting with "Build a Word Counter")
+- [ ] Phase 6 - Polish & launch
 
-## Next steps (start of next session)
+## Chapter content status (Python Dasar, 13 chapters)
 
-1. Run `supabase/schema.sql` in a real Supabase project; set env vars locally
-   and in Vercel; confirm register/login/dashboard work end-to-end on a real
-   deploy.
-2. Start Phase 2: design the `courses` / `chapters` / `lessons` / `progress`
-   tables, build the course catalog page and the Python Dasar course detail
-   page with free (ch1–5) vs. locked (ch6–13) indicators.
+Check this first before writing new content.
+
+| # | Slug | Title | Free? | Lessons | Status |
+|---|------|-------|-------|---------|--------|
+| 1 | `1-pengenalan` | Pengenalan | Yes | L1 Selamat Datang (quiz), L2 Program Pertama (code) | **Published** |
+| 2 | `2-variabel` | Variabel | Yes | L1 Menyimpan Nilai (quiz), L2 f-string (code) | **Published** |
+| 3 | `3-fungsi` | Fungsi | Yes | - | Todo |
+| 4 | `4-scope` | Scope | Yes | - | Todo |
+| 5 | `5-testing-debugging` | Testing & Debugging | Yes | - | Todo |
+| 6 | `6-computing` | Computing | No | - | Todo |
+| 7 | `7-perbandingan` | Perbandingan | No | - | Todo |
+| 8 | `8-loop` | Loop | No | - | Todo |
+| 9 | `9-list` | List | No | - | Todo |
+| 10 | `10-dictionary` | Dictionary | No | - | Todo |
+| 11 | `11-set` | Set | No | - | Todo |
+| 12 | `12-error` | Error | No | - | Todo |
+| 13 | `13-type-hints` | Type Hints | No | - | Todo |
+
+### How to write the next batch (2-3 chapters)
+
+1. Fill in `content/AUTHORING_TEMPLATE.md`'s template for each chapter and
+   send it back (chat or file upload).
+2. I'll convert it into `content/chapters/chapter-N.ts` following the
+   `chapter-1.ts`/`chapter-2.ts` pattern, verify every code practice's
+   expected output against real Python and every quiz has one correct
+   answer, add it to `index.ts`, remove it from `todo.ts`, and update the
+   table above.
+
+## Next steps
+
+1. Run, in order: `supabase/schema.sql`, `supabase/schema_phase2.sql`,
+   `supabase/schema_phase2b.sql` in a real Supabase project (the last one
+   drops the old `chapter_progress` table - fine, no real users yet). Set
+   env vars locally and in Vercel.
+2. Confirm end-to-end on a real deploy: register -> homepage shows
+   dashboard -> `/kursus/python-dasar` shows progress badges -> Chapter 1
+   L1 (quiz) -> L2 (code) -> completes -> Chapter 2 -> progress reflected
+   on homepage "continue" link. Also confirm logged-out visitors see the
+   gated marketing homepage and get redirected to login when clicking a
+   chapter.
+3. Next content session: write chapters 3-5 (finishes the free tier) using
+   `content/AUTHORING_TEMPLATE.md`.
+4. Once ch1-5 are solid, start Phase 4 (commerce) in parallel with writing
+   ch6-13 - a real QRIS/payment flow matters more for the homework goal
+   than having all 13 chapters done.
 
 ## Open questions for the team
 
-- Exact final price (Rp25.000 assumed) and QRIS account to use — needs a
+- Exact final price (Rp25.000 assumed) and QRIS account to use - needs a
   real bank/e-wallet static QRIS before Phase 4.
-- Who is writing the Indonesian lesson content for chapters 6–13 and the
-  Word Counter project — this can start in parallel with Phase 2/3 dev.
+- Who is writing chapters 3-13 and the Word Counter project - use the
+  authoring template, can run in parallel with Phase 4 dev.

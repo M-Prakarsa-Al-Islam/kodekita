@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/Button";
+import { createClient } from "@/lib/supabase/server";
+import SignOutButton from "./SignOutButton";
 
-export default function Header() {
+export default async function Header() {
+  const supabase = createClient();
+  const { data } = await supabase.auth.getUser();
+  const loggedIn = Boolean(data.user);
+
   return (
     <header className="border-b border-line bg-paper">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
@@ -22,12 +28,23 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link href="/login" className="text-sm font-medium text-ink-soft hover:text-ink">
-            Masuk
-          </Link>
-          <LinkButton href="/register" className="text-sm">
-            Daftar Gratis
-          </LinkButton>
+          {loggedIn ? (
+            <>
+              <Link href="/" className="text-sm font-medium text-ink-soft hover:text-ink">
+                Dashboard
+              </Link>
+              <SignOutButton />
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-sm font-medium text-ink-soft hover:text-ink">
+                Masuk
+              </Link>
+              <LinkButton href="/register" className="text-sm">
+                Daftar Gratis
+              </LinkButton>
+            </>
+          )}
         </div>
       </div>
     </header>
