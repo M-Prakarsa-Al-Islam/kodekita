@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getChapterBySlug, getLesson, getAdjacentLessons } from "@/content/chapters";
 import Practice from "@/components/learn/Practice";
+import LessonNav from "@/components/learn/LessonNav";
 
 export default function LessonPage({
   params,
@@ -19,9 +20,9 @@ export default function LessonPage({
 
   return (
     <section className="mx-auto max-w-2xl px-6 py-16">
-      <p className="text-sm text-ink-soft">
-        Chapter {chapter.order} · {chapter.title} · Lesson {lessonNumber}/
-        {chapter.lessons.length}
+      <LessonNav chapterSlug={chapter.slug} lessonId={lesson.id} />
+      <p className="mt-3 text-sm text-ink-soft">
+        Lesson {lessonNumber}/{chapter.lessons.length}
       </p>
       <h1 className="font-display text-2xl font-semibold text-ink">{lesson.title}</h1>
       {!chapter.isFree && (

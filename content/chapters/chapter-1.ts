@@ -65,7 +65,7 @@ disebut sebagai string.`,
           "Jangan lupa gunakan tanda petik di awal dan akhir kalimat.",
           "Perhatikan huruf kapital di awal kalimat dan tanda seru di akhir.",
         ],
-        answerHint: `print("Semangat belajar koding")`,
+        answerHint: `print("Semangat belajar koding!")`,
         checker: {
           type: "stdout_exact",
           expected: "Semangat belajar koding!",
