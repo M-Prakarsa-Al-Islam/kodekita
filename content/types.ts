@@ -14,6 +14,10 @@ export type CodePractice = {
   instructions: string;
   starterCode: string;
   hints: string[];
+  // Full worked solution. 
+  // deliberately kept OUT of `hints` - it's revealed through its own
+  // spoiler-warned UI, never by clicking through the numbered hints.
+  answerHint?: string;
   checker: Checker;
   successFeedback: string;
 };

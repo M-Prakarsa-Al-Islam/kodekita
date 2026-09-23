@@ -5,7 +5,6 @@ import type { ChapterTodo } from "@/content/types";
 // content-writing session, then gets removed from this list and added
 // to content/chapters/index.ts. Track real status in PROGRESS.md.
 export const todoChapters: ChapterTodo[] = [
-  { slug: "3-fungsi", order: 3, title: "Fungsi", isFree: true, status: "todo" },
   { slug: "4-scope", order: 4, title: "Scope", isFree: true, status: "todo" },
   {
     slug: "5-testing-debugging",

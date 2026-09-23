@@ -13,6 +13,11 @@ the checker/quiz logic to make sure it actually works, and update
   values so there's exactly one correct output. "Print your own name" can't
   be auto-graded — "given panjang=8 and lebar=5, print the area" can.
 - **Every QUIZ practice needs exactly one correct option.**
+- **For CODE practices (from Chapter 3 onward), give a full worked
+  answer separately from the hints** — see `answer (spoiler)` below.
+  It's rendered behind its own "⚠️ Lihat Jawaban Lengkap (Spoiler!)"
+  button, never mixed into the numbered hints, so learners can't
+  stumble into the full solution while clicking through normal hints.
 - Keep `theory` short — a few sentences, not a full textbook page. One
   example is usually enough.
 - A chapter can have as many lessons as makes sense (2–4 is typical so
@@ -72,6 +77,11 @@ starter code:
 hints:
 1. <hint 1>
 2. <hint 2>
+answer (spoiler, recommended from Chapter 3 onward):
+```
+<the full, correct program — shown only behind an explicit spoiler
+  warning in the UI, separate from the numbered hints above>
+```
 expected output (exact):
 ```
 <exactly what print() should produce, nothing else>

@@ -74,6 +74,8 @@ print("bahasa") # Mencetak teks biasa: bahasa`,
           "Gunakan tanda = untuk mengisi variabel.",
           "Ingat, jangan gunakan tanda petik saat memanggil variabel di dalam print().",
         ],
+        answerHint: `makanan = "Nasi Goreng"
+print(makanan)`,
         checker: {
           type: "stdout_exact",
           expected: "Nasi Goreng",
@@ -132,16 +134,13 @@ print(umur) # Ini juga komentar di sebelah kanan kode`,
           'Di baris pertama, tuliskan sebuah komentar berisi ' +
           '"# baris ini tidak akan dijalankan". Di baris kedua, cetak ' +
           "angka 100.",
-        starterCode: `
-
-
-
-
-`,
+        starterCode: ``,
         hints: [
           "Pastikan komentar menggunakan tanda #.",
           "Python hanya akan mengeksekusi angka 100 karena baris pertama adalah komentar.",
         ],
+        answerHint: `# baris ini tidak akan dijalankan
+print(100)`,
         checker: {
           type: "stdout_exact",
           expected: "100",
@@ -190,6 +189,9 @@ print(suhu_awal - penurunan)
           "Gunakan titik untuk desimal pada 65.5.",
           "Lakukan operasi pengurangan - langsung di dalam print().",
         ],
+        answerHint: `berat_badan = 65.5
+turun = 2
+print(berat_badan - turun)`,
         checker: {
           type: "stdout_exact",
           expected: "63.5",
@@ -229,6 +231,9 @@ belakang = "Nusantara"
 print( )
 `,
         hints: ['Formatnya adalah: variabel1 + " " + variabel2.'],
+        answerHint: `depan = "Bina"
+belakang = "Nusantara"
+print(depan + " " + belakang)`,
         checker: {
           type: "stdout_exact",
           expected: "Bina Nusantara",
@@ -271,6 +276,9 @@ print( )
           'Jangan lupa tulis huruf f sebelum tanda petik awal: print(f"...")',
           "Masukkan nama variabel di dalam {} pada posisi kalimat yang tepat.",
         ],
+        answerHint: `kota = "Jakarta"
+suhu = 32
+print(f"Cuaca di {kota} hari ini {suhu} derajat.")`,
         checker: {
           type: "stdout_exact",
           expected: "Cuaca di Jakarta hari ini 32 derajat.",
@@ -311,6 +319,14 @@ cantik menggunakan f-string.`,
           "Variabel level_akhir harus dihitung menggunakan +, bukan ditulis manual angkanya.",
           "Gunakan f-string di baris paling bawah dan panggil variabel nama_karakter, level_akhir, dan vip_status di dalam kurung kurawal {}.",
         ],
+        answerHint: `# Profil Karakter
+nama_karakter = "Arthur"
+level_awal = 10
+bonus_level = 5
+vip_status = True
+
+level_akhir = level_awal + bonus_level
+print(f"Karakter {nama_karakter} telah mencapai level {level_akhir}. Status VIP: {vip_status}")`,
         checker: {
           type: "stdout_exact",
           expected: "Karakter Arthur telah mencapai level 15. Status VIP: True",

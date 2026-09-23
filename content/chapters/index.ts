@@ -1,11 +1,12 @@
 import type { Chapter, ChapterContent, Lesson } from "@/content/types";
 import { chapter1 } from "./chapter-1";
 import { chapter2 } from "./chapter-2";
+import { chapter3 } from "./chapter-3";
 import { todoChapters } from "./todo";
 
 // Add a chapter here (and to the imports above) once it's written,
 // and remove its metadata-only entry from todo.ts.
-export const chapters: Chapter[] = [chapter1, chapter2, ...todoChapters].sort(
+export const chapters: Chapter[] = [chapter1, chapter2, chapter3, ...todoChapters].sort(
   (a, b) => a.order - b.order
 );
 

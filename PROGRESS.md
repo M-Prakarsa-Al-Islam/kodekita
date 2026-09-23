@@ -87,7 +87,7 @@ Check this first before writing new content.
 |---|------|-------|-------|---------|--------|
 | 1 | `1-pengenalan` | Pengenalan Python | Yes | L1-L5 (code x5: run-first, print, angka, multi-print, tantangan) | **Published** (revised) |
 | 2 | `2-variabel` | Variabel dan Tipe Data | Yes | L1-L8 (quiz x2, code x6: buat/print, komentar, tipe data, concat, f-string, tantangan) | **Published** (revised) |
-| 3 | `3-fungsi` | Fungsi | Yes | - | Todo |
+| 3 | `3-fungsi` | Fungsi | Yes | L1-L7 (quiz x3, code x4: call-a-function, return+params, main(), tantangan) | **Published** |
 | 4 | `4-scope` | Scope | Yes | - | Todo |
 | 5 | `5-testing-debugging` | Testing & Debugging | Yes | - | Todo |
 | 6 | `6-computing` | Computing | No | - | Todo |
@@ -128,6 +128,24 @@ instructions explicitly said "jalankan (Run) kode di bawah ini." `Teori`
 example code blocks remain static/read-only by design (per the
 Theory -> Practice lesson loop) - only `Latihan` needed the split.
 `npx tsc --noEmit` and `npm run build` both pass.
+
+**2026-09-22 chapter 3 + spoiler-answer feature:** Wrote
+`content/chapters/chapter-3.ts` ("Fungsi") from the author's `.md` -
+7 lessons (3 quiz: def keyword, parameter-vs-argumen definition,
+identify-the-argument; 4 code: call an existing function, return with
+multiple parameters, `main()` entry point, a multi-function
+"Tantangan"). All 4 code answers re-verified against real Python
+(`verify_ch3.py`, all passed); all 3 quizzes confirmed single-correct.
+Also added the `answerHint` feature requested for chapter 3 onward:
+`content/types.ts` `CodePractice` now has an optional `answerHint`
+field, kept separate from `hints` so the full solution can never be
+stumbled into by clicking through the numbered hints. Rendered in
+`Challenge.tsx` behind its own amber-flagged "⚠️ Lihat Jawaban Lengkap
+(Spoiler!)" button, collapsed by default. Chapters 1-2 have no
+`answerHint` (their `.md` never had a spoiler-answer field) so nothing
+renders there - unaffected. `content/AUTHORING_TEMPLATE.md` updated
+with an `answer (spoiler)` field for future chapters. `npx tsc --noEmit`
+and `npm run build` both pass.
 
 ### How to write the next batch (2-3 chapters)
 

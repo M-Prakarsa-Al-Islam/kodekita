@@ -17,6 +17,7 @@ export default function Challenge({
   lessonId: string;
 }) {
   const [hintsShown, setHintsShown] = useState(0);
+  const [answerShown, setAnswerShown] = useState(false);
   const [feedback, setFeedback] = useState<{ passed: boolean; message: string } | null>(
     null
   );
@@ -67,6 +68,30 @@ export default function Challenge({
             >
               Tampilkan hint {hintsShown + 1}
             </Button>
+          )}
+        </div>
+      )}
+
+      {!feedback?.passed && practice.answerHint && (
+        <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3">
+          {!answerShown ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="px-0 text-sm font-medium text-amber-800 underline"
+              onClick={() => setAnswerShown(true)}
+            >
+              ⚠️ Lihat Jawaban Lengkap (Spoiler! Coba dulu sendiri sebelum klik ini)
+            </Button>
+          ) : (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                ⚠️ Spoiler — Jawaban Lengkap
+              </p>
+              <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded bg-ink px-3 py-2 font-mono text-xs text-white">
+                {practice.answerHint}
+              </pre>
+            </>
           )}
         </div>
       )}

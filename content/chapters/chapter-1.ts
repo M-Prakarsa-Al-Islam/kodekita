@@ -34,7 +34,7 @@ menjalankan kode Python langsung di dalam browser.`,
           type: "stdout_exact",
           expected: "Halo, Indonesia!",
         },
-        successFeedback: "Keren! Kamu baru saja menjalankan program Python pertamamu.",
+        successFeedback: "Kamu baru saja menjalankan program Python pertamamu!",
       },
     },
     {
@@ -65,6 +65,7 @@ disebut sebagai string.`,
           "Jangan lupa gunakan tanda petik di awal dan akhir kalimat.",
           "Perhatikan huruf kapital di awal kalimat dan tanda seru di akhir.",
         ],
+        answerHint: `print("Semangat belajar koding")`,
         checker: {
           type: "stdout_exact",
           expected: "Semangat belajar koding!",
@@ -102,6 +103,7 @@ print( )
           "Tulis angka dan lambang tambah + di dalam kurung.",
           "Jangan gunakan tanda petik karena kita sedang melakukan operasi matematika.",
         ],
+        answerHint: `print(15 + 25)`,
         checker: {
           type: "stdout_exact",
           expected: "40",
@@ -140,6 +142,8 @@ print("Dua")
           "Kamu membutuhkan dua buah pemanggilan fungsi print() di baris yang berbeda.",
           "Pastikan kedua teks tersebut diapit oleh tanda petik.",
         ],
+        answerHint: `print("Nama: Budi")
+print("Hobi: Koding")`,
         checker: {
           type: "stdout_exact",
           expected: "Nama: Budi\nHobi: Koding",
@@ -173,6 +177,9 @@ menguji pemahamanmu secara menyeluruh!`,
           "Baris pertama dan kedua adalah teks (membutuhkan tanda petik).",
           "Baris ketiga adalah operasi matematika (jangan berikan tanda petik pada angkanya).",
         ],
+        answerHint: `print("Modul: Python Dasar")
+print("Chapter: 1")
+print(2000 + 24)`,
         checker: {
           type: "stdout_exact",
           expected: "Modul: Python Dasar\nChapter: 1\n2024",
