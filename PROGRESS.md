@@ -88,8 +88,8 @@ Check this first before writing new content.
 | 1 | `1-pengenalan` | Pengenalan Python | Yes | L1-L5 (code x5: run-first, print, angka, multi-print, tantangan) | **Published** (revised) |
 | 2 | `2-variabel` | Variabel dan Tipe Data | Yes | L1-L8 (quiz x2, code x6: buat/print, komentar, tipe data, concat, f-string, tantangan) | **Published** (revised) |
 | 3 | `3-fungsi` | Fungsi | Yes | L1-L7 (quiz x3, code x4: call-a-function, return+params, main(), tantangan) | **Published** |
-| 4 | `4-scope` | Scope | Yes | - | Todo |
-| 5 | `5-testing-debugging` | Testing & Debugging | Yes | - | Todo |
+| 4 | `4-scope` | Ruang Lingkup Variabel (Scope) | Yes | L1-L5 (quiz x2, code x3: local scope fix, global scope, tantangan) | **Published** |
+| 5 | `5-testing-debugging` | Testing dan Debugging | Yes | L1-L7 (quiz x3, code x4: fix syntax error, fix logic error, print debugging, multi-bug tantangan) | **Published** |
 | 6 | `6-computing` | Computing | No | - | Todo |
 | 7 | `7-perbandingan` | Perbandingan | No | - | Todo |
 | 8 | `8-loop` | Loop | No | - | Todo |
@@ -146,6 +146,83 @@ stumbled into by clicking through the numbered hints. Rendered in
 renders there - unaffected. `content/AUTHORING_TEMPLATE.md` updated
 with an `answer (spoiler)` field for future chapters. `npx tsc --noEmit`
 and `npm run build` both pass.
+
+**2026-09-23 chapter 4 + course nav menu:** Wrote
+`content/chapters/chapter-4.ts` ("Ruang Lingkup Variabel (Scope)") -
+5 lessons (2 quiz: what-is-scope, shadowing; 3 code: fix a local-scope
+bug, write a global variable, a global+local "Tantangan"). All 3 code
+answers re-verified against real Python (`verify_ch4.py`, all passed);
+both quizzes confirmed single-correct. Uses the `answerHint` spoiler
+pattern from chapter 3.
+
+Also added the requested chapter/lesson nav menu to the site header:
+- `content/chapters/index.ts` gains `getNavChapters()` / `NavChapter` -
+  a trimmed {slug, order, title, isFree, status, lessons:{id,title}}
+  view of `chapters`, deliberately stripped of theory/practice/
+  starterCode/hints/answerHint.
+- `components/site/CourseNavMenu.tsx` (new, client component) - a
+  dropdown in the header. Only renders on an actual lesson page
+  (`/kursus/python-dasar/[slug]/[lessonId]`, detected via
+  `usePathname()`, since the header lives in the root layout and gets
+  no page params). Lists every chapter with its lessons always
+  visible (no accordion - simplest thing that satisfies "pick any
+  lesson within a chapter" without an ambiguous expand/collapse
+  interaction). Clicking a chapter's own row navigates to that
+  chapter's first lesson; clicking a lesson navigates straight to it.
+  Current chapter and current lesson are highlighted
+  (`bg-sun/10` / `bg-sun/20`), auto-scrolls the current lesson into
+  view on open, closes on outside-click/Escape/selection. Todo
+  chapters show as disabled "Segera hadir" rows, matching the existing
+  `/kursus/python-dasar` list page convention.
+- `components/site/Header.tsx` calls `getNavChapters()` (server-side)
+  and passes the trimmed array as a prop into `<CourseNavMenu>`.
+
+**Why the indirection through `getNavChapters()` matters:** the first
+version of this feature had `CourseNavMenu` import the full `chapters`
+array directly. Since it's a client component mounted in the global
+header, that would have shipped every lesson's full content - theory,
+starter code, hints, and **every `answerHint` spoiler solution and
+`checker.expected` exact-match string** - into client-side JS on every
+page, trivially visible via devtools/view-source. That would have
+defeated both the spoiler-answer feature and the auto-grader in one
+shot. Fixed by computing the trimmed nav list server-side in
+`Header.tsx` (a Server Component) and passing only that down as
+props - confirmed by grepping the production build's `.next/static`
+output for known answer strings (e.g. `def hitung_luas(panjang,
+lebar)`, `bonus_poin = 500`) and finding zero matches, while chapter
+titles do appear (expected/safe - those are meant to be public). Any
+future chapter's `answerHint` should stay safe by construction as long
+as new client components keep importing `getNavChapters()` (or other
+trimmed views) instead of the raw `chapters`/`chapter-N.ts` data.
+
+`npx tsc --noEmit`, `npm run build`, and `node scripts/test-checker.mjs`
+(18/18) all pass.
+
+**2026-09-23 chapter 5:** Wrote `content/chapters/chapter-5.ts`
+("Testing dan Debugging") - 7 lessons (3 quiz: what-is-debugging,
+run-vs-check-button, avoid-write-everything-then-test-once; 4 code:
+fix a SyntaxError, fix a logical/operator error, print-debugging, a
+multi-bug "Tantangan"). This is the last of the 5 free chapters per
+the spec - `todo.ts` already had chapters 6+ marked `isFree: false`,
+confirmed still correct.
+
+**Bug caught in the source `.md` (L6, "Print Debugging"):** the
+instructions only ask the learner to *add* a `print()` - nothing about
+fixing logic - but the starter code used `awal + terjual` while the
+expected output (`80` for `kalkulasi_stok(100, 20)`) is only reachable
+with `awal - terjual`. Verified by actually running both versions
+through Python (`verify_ch5.py`): `+` gives `120`, `-` gives `80`.
+Fixed by changing the starter code's operator to `-` (matches the
+lesson's own semantics - remaining stock = starting stock minus sold -
+and keeps the instructions accurate: add a print, nothing else to
+fix). Flagged to the user in-chat; not silently buried.
+
+All 4 code answers re-verified against real Python; all 3 quizzes
+confirmed single-correct. `npx tsc --noEmit`, `npm run build`, and
+`node scripts/test-checker.mjs` (18/18) all pass. Also re-confirmed
+via `grep`-ing `.next/static` that none of chapter 5's `answerHint`
+text or `checker.expected` strings leak into client JS (see the
+2026-09-23 nav-menu entry above for why that check matters).
 
 ### How to write the next batch (2-3 chapters)
 

@@ -1,15 +1,21 @@
-import type { Chapter, ChapterContent, Lesson } from "@/content/types";
+import type { Chapter, ChapterContent, ChapterStatus, Lesson } from "@/content/types";
 import { chapter1 } from "./chapter-1";
 import { chapter2 } from "./chapter-2";
 import { chapter3 } from "./chapter-3";
 import { chapter4 } from "./chapter-4";
+import { chapter5 } from "./chapter-5";
 import { todoChapters } from "./todo";
 
 // Add a chapter here (and to the imports above) once it's written,
 // and remove its metadata-only entry from todo.ts.
-export const chapters: Chapter[] = [chapter1, chapter2, chapter3, chapter4, ...todoChapters].sort(
-  (a, b) => a.order - b.order
-);
+export const chapters: Chapter[] = [
+  chapter1,
+  chapter2,
+  chapter3,
+  chapter4,
+  chapter5,
+  ...todoChapters,
+].sort((a, b) => a.order - b.order);
 
 export function getChapterBySlug(slug: string): Chapter | undefined {
   return chapters.find((c) => c.slug === slug);
@@ -72,4 +78,30 @@ export function getAdjacentLessons(chapterSlug: string, lessonId: string) {
     prev: i > 0 ? flat[i - 1] : null,
     next: i >= 0 && i < flat.length - 1 ? flat[i + 1] : null,
   };
+}
+
+export type NavLesson = { id: string; title: string };
+export type NavChapter = {
+  slug: string;
+  order: number;
+  title: string;
+  isFree: boolean;
+  status: ChapterStatus;
+  lessons: NavLesson[]; // empty for todo chapters
+};
+
+// Trimmed chapter/lesson list, safe to pass into a CLIENT component
+// (e.g. the header's course nav menu). Deliberately strips theory,
+// practice, starter code, hints and answerHint - none of that should
+// ever end up in client-side JS, or the spoiler-answer protection and
+// the auto-grader's expected output are trivially visible via devtools.
+export function getNavChapters(): NavChapter[] {
+  return chapters.map((c) => ({
+    slug: c.slug,
+    order: c.order,
+    title: c.title,
+    isFree: c.isFree,
+    status: c.status,
+    lessons: isPublished(c) ? c.lessons.map((l) => ({ id: l.id, title: l.title })) : [],
+  }));
 }
