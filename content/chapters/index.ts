@@ -4,6 +4,7 @@ import { chapter2 } from "./chapter-2";
 import { chapter3 } from "./chapter-3";
 import { chapter4 } from "./chapter-4";
 import { chapter5 } from "./chapter-5";
+import { chapter6 } from "./chapter-6";
 import { todoChapters } from "./todo";
 
 // Add a chapter here (and to the imports above) once it's written,
@@ -14,6 +15,7 @@ export const chapters: Chapter[] = [
   chapter3,
   chapter4,
   chapter5,
+  chapter6,
   ...todoChapters,
 ].sort((a, b) => a.order - b.order);
 

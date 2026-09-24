@@ -102,7 +102,7 @@ Check this first before writing new content.
 | 3 | `3-fungsi` | Fungsi | Yes | L1-L7 (quiz x3, code x4: call-a-function, return+params, main(), tantangan) | **Published** |
 | 4 | `4-scope` | Ruang Lingkup Variabel (Scope) | Yes | L1-L5 (quiz x2, code x3: local scope fix, global scope, tantangan) | **Published** |
 | 5 | `5-testing-debugging` | Testing dan Debugging | Yes | L1-L7 (quiz x3, code x4: fix syntax error, fix logic error, print debugging, multi-bug tantangan) | **Published** |
-| 6 | `6-computing` | Computing | No | - | Todo |
+| 6 | `6-computing` | Komputasi dan Logika Mesin | No | L1-L8 (quiz x2, code x6: pangkat/floor-div, modulo, PEMDAS fix, assignment operators, boolean/not, tantangan kasir) | **Published** |
 | 7 | `7-perbandingan` | Perbandingan | No | - | Todo |
 | 8 | `8-loop` | Loop | No | - | Todo |
 | 9 | `9-list` | List | No | - | Todo |
@@ -235,6 +235,24 @@ confirmed single-correct. `npx tsc --noEmit`, `npm run build`, and
 via `grep`-ing `.next/static` that none of chapter 5's `answerHint`
 text or `checker.expected` strings leak into client JS (see the
 2026-09-23 nav-menu entry above for why that check matters).
+
+**2026-09-23 chapter 6 (first paid chapter):** Wrote
+`content/chapters/chapter-6.ts` ("Komputasi dan Logika Mesin") - 8
+lessons (2 quiz: CPU/RAM, Python-as-translator; 6 code: pangkat `**` +
+floor division `//` word problem, modulo `%` clock-wrap problem, fix a
+missing-parens PEMDAS bug, `+=`/`*=`/`/=` assignment-operator shortcuts,
+boolean + `not` with nesting, a cashier-change "Tantangan" combining
+`//` and `%`). `isFree: false` - this is the first paid chapter, matches
+the master spec (chapters 1-5 free, 6-13 paid). Not listed in
+`todo.ts` to begin with (only chapters 7+ were), so no removal needed
+there.
+ 
+All 6 code answers re-verified against real Python (`verify_ch6.py`,
+all passed - including the `40.0` float-formatting and `250.0` from
+`/=` cases); both quizzes confirmed single-correct. `npx tsc --noEmit`,
+`npm run build`, and `node scripts/test-checker.mjs` (18/18) all pass.
+Re-confirmed via `grep`-ing `.next/static` that none of chapter 6's
+`answerHint` text or `checker.expected` strings leak into client JS.
 
 ### How to write the next batch (2-3 chapters)
 
