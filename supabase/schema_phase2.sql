@@ -22,5 +22,10 @@ create policy "Users can update their own progress"
   on public.chapter_progress for update
   using (auth.uid() = user_id);
 
+-- Explicit Data API grants (see the matching note in schema.sql).
+-- Not granting `anon`: guests never have progress to read or write.
+grant select, insert, update on public.chapter_progress to authenticated;
+grant select, insert, update, delete on public.chapter_progress to service_role;
+
 -- Phase 4 will add: purchases, payment_proofs, and will use chapter
 -- metadata (isFree) to gate access to chapters 6-13 server-side.

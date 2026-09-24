@@ -20,6 +20,14 @@ create policy "Users can update their own profile"
   on public.profiles for update
   using (auth.uid() = id);
 
+-- Explicit Data API grants. Supabase now requires these on every new
+-- table (their Oct 2026 policy change) — RLS alone no longer implies
+-- API reachability. Not granting `anon`: profiles should never be
+-- readable by a logged-out visitor, and RLS would return zero rows to
+-- anon anyway, so there's nothing for that grant to expose.
+grant select, update on public.profiles to authenticated;
+grant select, insert, update, delete on public.profiles to service_role;
+
 -- Auto-create a profile row whenever someone signs up.
 create or replace function public.handle_new_user()
 returns trigger as $$

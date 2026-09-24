@@ -48,6 +48,18 @@ To hand me new chapter content, use the format in
 - **Pricing:** Python Dasar Rp25.000 (cap: <=Rp30.000). Free: ch1-5. Paid:
   ch6-13. Project courses cheaper, e.g. Rp10.000.
 - **Payment:** manual QRIS, admin-verified. No payment gateway integration.
+- **Supabase Data API grants (standing rule from here on):** Supabase
+  stopped auto-exposing new `public` schema tables to the Data API
+  (REST/GraphQL, what `supabase-js` uses) as of their Oct 2026 policy
+  change — RLS alone no longer makes a table reachable, it also needs an
+  explicit `grant ... to authenticated/service_role/anon`. Existing
+  tables (`profiles`, `lesson_progress`) are grandfathered and already
+  have grants added retroactively. **Every future migration that creates
+  a table (Phase 4's `purchases`/`payment_proofs` onward) MUST include
+  explicit grants in the same migration**, or it'll silently 403 once
+  the project crosses Oct 30, 2026 or on any fresh project/branch/reset.
+  See the grant blocks in `schema.sql`/`schema_phase2b.sql` for the
+  pattern (skip `anon` unless guests genuinely need that data).
 - **Design tokens:** paper `#F3F5F5`, ink `#171B24`, sun (CTA) `#F2A93B`,
   code/success `#0F8A6B`. Fonts: Fraunces (display), Inter (body), JetBrains
   Mono (code).
