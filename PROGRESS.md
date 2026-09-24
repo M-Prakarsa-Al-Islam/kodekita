@@ -48,18 +48,6 @@ To hand me new chapter content, use the format in
 - **Pricing:** Python Dasar Rp25.000 (cap: <=Rp30.000). Free: ch1-5. Paid:
   ch6-13. Project courses cheaper, e.g. Rp10.000.
 - **Payment:** manual QRIS, admin-verified. No payment gateway integration.
-- **Supabase Data API grants (standing rule from here on):** Supabase
-  stopped auto-exposing new `public` schema tables to the Data API
-  (REST/GraphQL, what `supabase-js` uses) as of their Oct 2026 policy
-  change — RLS alone no longer makes a table reachable, it also needs an
-  explicit `grant ... to authenticated/service_role/anon`. Existing
-  tables (`profiles`, `lesson_progress`) are grandfathered and already
-  have grants added retroactively. **Every future migration that creates
-  a table (Phase 4's `purchases`/`payment_proofs` onward) MUST include
-  explicit grants in the same migration**, or it'll silently 403 once
-  the project crosses Oct 30, 2026 or on any fresh project/branch/reset.
-  See the grant blocks in `schema.sql`/`schema_phase2b.sql` for the
-  pattern (skip `anon` unless guests genuinely need that data).
 - **Design tokens:** paper `#F3F5F5`, ink `#171B24`, sun (CTA) `#F2A93B`,
   code/success `#0F8A6B`. Fonts: Fraunces (display), Inter (body), JetBrains
   Mono (code).
@@ -103,7 +91,7 @@ Check this first before writing new content.
 | 4 | `4-scope` | Ruang Lingkup Variabel (Scope) | Yes | L1-L5 (quiz x2, code x3: local scope fix, global scope, tantangan) | **Published** |
 | 5 | `5-testing-debugging` | Testing dan Debugging | Yes | L1-L7 (quiz x3, code x4: fix syntax error, fix logic error, print debugging, multi-bug tantangan) | **Published** |
 | 6 | `6-computing` | Komputasi dan Logika Mesin | No | L1-L8 (quiz x2, code x6: pangkat/floor-div, modulo, PEMDAS fix, assignment operators, boolean/not, tantangan kasir) | **Published** |
-| 7 | `7-perbandingan` | Perbandingan | No | - | Todo |
+| 7 | `7-perbandingan` | Perbandingan | No | L1-L8 (quiz x2, code x6: ==/!= type-sensitivity, relational ops, chained comparison, if, if-else, if-elif-else tantangan) | **Published** |
 | 8 | `8-loop` | Loop | No | - | Todo |
 | 9 | `9-list` | List | No | - | Todo |
 | 10 | `10-dictionary` | Dictionary | No | - | Todo |
@@ -246,13 +234,27 @@ boolean + `not` with nesting, a cashier-change "Tantangan" combining
 the master spec (chapters 1-5 free, 6-13 paid). Not listed in
 `todo.ts` to begin with (only chapters 7+ were), so no removal needed
 there.
- 
+
 All 6 code answers re-verified against real Python (`verify_ch6.py`,
 all passed - including the `40.0` float-formatting and `250.0` from
 `/=` cases); both quizzes confirmed single-correct. `npx tsc --noEmit`,
 `npm run build`, and `node scripts/test-checker.mjs` (18/18) all pass.
 Re-confirmed via `grep`-ing `.next/static` that none of chapter 6's
 `answerHint` text or `checker.expected` strings leak into client JS.
+
+**2026-09-23 chapter 7:** Wrote `content/chapters/chapter-7.ts`
+("Perbandingan") - 8 lessons (2 quiz: string lexicographic ordering,
+elif-vs-else; 6 code: ==/!= and int-vs-string type sensitivity,
+relational operators with a strict-greater-than edge case, chained
+comparison `a <= b <= c`, a basic `if`, `if-else`, and an `if-elif-else`
+grading "Tantangan" that combines a percentage calculation with
+branching). All 6 code answers re-verified against real Python
+(`verify_ch7.py`, all passed - including the `80.0 > 80` and
+`82.0 >= 85.0` boundary cases); both quizzes confirmed single-correct.
+`npx tsc --noEmit`, `npm run build`, and `node scripts/test-checker.mjs`
+(18/18) all pass. Re-confirmed via `grep`-ing `.next/static` that none
+of chapter 7's `answerHint` text or `checker.expected` strings leak
+into client JS.
 
 ### How to write the next batch (2-3 chapters)
 
