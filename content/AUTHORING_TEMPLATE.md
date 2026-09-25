@@ -13,7 +13,7 @@ the checker/quiz logic to make sure it actually works, and update
   values so there's exactly one correct output. "Print your own name" can't
   be auto-graded — "given panjang=8 and lebar=5, print the area" can.
 - **Every QUIZ practice needs exactly one correct option.**
-- **For CODE practices (from Chapter 3 onward), give a full worked
+- **For CODE practices, give a full worked
   answer separately from the hints** — see `answer (spoiler)` below.
   It's rendered behind its own "⚠️ Lihat Jawaban Lengkap (Spoiler!)"
   button, never mixed into the numbered hints, so learners can't
@@ -29,7 +29,7 @@ the checker/quiz logic to make sure it actually works, and update
 CHAPTER: <number>
 TITLE: <chapter title, e.g. Fungsi>
 FREE: yes/no
-
+(chapter 6 onward is paid, not free)
 --- LESSON L1 ---
 LESSON TITLE: <e.g. Apa Itu Fungsi?>
 
@@ -45,6 +45,12 @@ code:
 
 PRACTICE: quiz
 question: <question text>
+code snippet (optional, if the question asks the learner to trace a
+piece of code - keep this OUT of the question text itself, it gets
+rendered as its own monospace block):
+```
+<the code the question refers to>
+```
 options:
 1. <option A>
 2. <option B>
@@ -77,7 +83,7 @@ starter code:
 hints:
 1. <hint 1>
 2. <hint 2>
-answer (spoiler, recommended from Chapter 3 onward):
+answer (spoiler):
 ```
 <the full, correct program — shown only behind an explicit spoiler
   warning in the UI, separate from the numbered hints above>
@@ -91,7 +97,7 @@ success message: <shown when they pass>
 --- (add more lessons the same way) ---
 ```
 
-## Worked example (Chapter 3, Lesson 1 only, for reference)
+## Worked example (Chapter 3, Lesson 1 and lesson 2 only, for reference)
 
 ```
 CHAPTER: 3
@@ -127,6 +133,44 @@ options:
 correct: 2
 explanation: Python memakai kata kunci def untuk mendefinisikan fungsi, contohnya def nama_fungsi():.
 ```
+
+--- LESSON L2 ---
+LESSON TITLE: Memanggil Fungsi (Calling a Function)
+
+THEORY:
+Fungsi yang baru saja dibuat tidak akan berjalan dengan sendirinya; program hanya menyimpannya di memori. Agar kodenya dijalankan, kita harus "memanggilnya" (*calling*) dengan cara menuliskan nama fungsi tersebut diikuti tanda kurung `()`.
+
+EXAMPLE:
+description: Memanggil fungsi yang sudah didefinisikan.
+code:
+` ` `
+def mulai():
+    print("Sistem diaktifkan")
+
+mulai() 
+# Output: Sistem diaktifkan
+` ` `
+
+PRACTICE: code
+instructions: Di bawah ini sudah tersedia fungsi bernama `tampilkan_pesan()`. Tugasmu hanya satu: panggil fungsi tersebut di baris paling bawah agar teksnya tercetak ke layar.
+starter code:
+` ` `
+def tampilkan_pesan():
+    print("Selamat datang di aplikasi!")
+
+# Panggil fungsinya di bawah baris ini
+
+` ` `
+hints:
+1. Tulis nama fungsinya.
+2. Jangan lupa tambahkan tanda kurung `()` di akhir nama fungsi.
+3. SPOILER JAWABAN: 
+tampilkan_pesan()
+expected output (exact):
+` ` `
+Selamat datang di aplikasi!
+` ` `
+success message: Bagus! Sekarang kamu tahu cara menjalankan fungsi yang sudah dibuat.
 
 Once I have your text in this format, I'll turn it straight into a working
 lesson with a real, tested checker — you don't need to touch any code.

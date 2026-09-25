@@ -92,7 +92,7 @@ Check this first before writing new content.
 | 5 | `5-testing-debugging` | Testing dan Debugging | Yes | L1-L7 (quiz x3, code x4: fix syntax error, fix logic error, print debugging, multi-bug tantangan) | **Published** |
 | 6 | `6-computing` | Komputasi dan Logika Mesin | No | L1-L8 (quiz x2, code x6: pangkat/floor-div, modulo, PEMDAS fix, assignment operators, boolean/not, tantangan kasir) | **Published** |
 | 7 | `7-perbandingan` | Perbandingan | No | L1-L8 (quiz x2, code x6: ==/!= type-sensitivity, relational ops, chained comparison, if, if-else, if-elif-else tantangan) | **Published** |
-| 8 | `8-loop` | Loop | No | - | Todo |
+| 8 | `8-loop` | Loop | No | L1-L7 (quiz x2, code x5: for+range accumulator, while, break, continue, savings tantangan) | **Published** |
 | 9 | `9-list` | List | No | - | Todo |
 | 10 | `10-dictionary` | Dictionary | No | - | Todo |
 | 11 | `11-set` | Set | No | - | Todo |
@@ -255,6 +255,37 @@ branching). All 6 code answers re-verified against real Python
 (18/18) all pass. Re-confirmed via `grep`-ing `.next/static` that none
 of chapter 7's `answerHint` text or `checker.expected` strings leak
 into client JS.
+
+**2026-09-23 chapter 8:** Wrote `content/chapters/chapter-8.ts`
+("Loop") - 7 lessons (2 quiz: `range()` step/negative-step reasoning,
+iterating over a string's characters; 5 code: `for` + `range` with an
+accumulator, `while` with a decrementing battery, `break` on an
+overheat condition, `continue` to skip a value, a savings-accumulator
+"Tantangan" combining `for`/`range`/`def`/`return`). All 5 code answers
+plus both quiz scenarios re-verified against real Python
+(`verify_ch8.py`, all passed - including the `range(5, 1, -1)` step
+case and the 4-character string-iteration count). `npx tsc --noEmit`,
+`npm run build`, and `node scripts/test-checker.mjs` (18/18) all pass.
+Re-confirmed via `grep`-ing `.next/static` that none of chapter 8's
+`answerHint` text or `checker.expected` strings leak into client JS.
+
+**2026-09-23 bugfix: quiz code snippets weren't rendering.** Chapter 8
+L3's quiz question embedded a multi-line code block directly inside
+the `question` string (with `\n` and leading spaces for indentation).
+`QuizRunner.tsx` rendered `question` in a plain `<p>` with no
+`whitespace-pre-line`, so both the newlines and the indentation
+collapsed - the whole thing showed as one mashed line. Fixed properly
+rather than just adding `whitespace-pre-line` (which would still have
+eaten the 4-space indentation): added an optional `codeSnippet` field
+to `QuizPractice` in `content/types.ts`, rendered in `QuizRunner.tsx`
+as a real monospace `<pre><code>` block - the same treatment
+`theory.example.code` already gets on the lesson page - kept separate
+from the prose `question`. Updated chapter 8 L3 to use it. Checked
+every other quiz across chapters 1-8 for the same pattern; L3 was the
+only one embedding code in its question text, so no other chapter
+needed migrating. `npx tsc --noEmit`, `npm run build`, and
+`node scripts/test-checker.mjs` (18/18) all pass; re-confirmed no
+answer/snippet leakage into `.next/static`.
 
 ### How to write the next batch (2-3 chapters)
 

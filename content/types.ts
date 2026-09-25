@@ -14,7 +14,7 @@ export type CodePractice = {
   instructions: string;
   starterCode: string;
   hints: string[];
-  // Full worked solution. 
+  // Full worked solution. Optional (older lessons don't have one) and
   // deliberately kept OUT of `hints` - it's revealed through its own
   // spoiler-warned UI, never by clicking through the numbered hints.
   answerHint?: string;
@@ -25,6 +25,11 @@ export type CodePractice = {
 export type QuizPractice = {
   kind: "quiz";
   question: string;
+  // Optional code snippet the question asks about (e.g. "what does
+  // this print?"). Rendered as a real monospace block, separate from
+  // `question`, so indentation and line breaks survive - embedding
+  // code directly in `question` collapses under normal text rendering.
+  codeSnippet?: string;
   options: string[];
   correctIndex: number; // 0-based
   explanation: string; // shown after answering, right or wrong

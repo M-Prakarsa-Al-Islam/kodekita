@@ -36,7 +36,12 @@ export default function QuizRunner({
 
   return (
     <div>
-      <p className="text-sm text-ink">{practice.question}</p>
+      <p className="whitespace-pre-line text-sm text-ink">{practice.question}</p>
+      {practice.codeSnippet && (
+        <pre className="mt-3 overflow-x-auto rounded-lg bg-ink px-4 py-3 font-mono text-sm text-white">
+          <code>{practice.codeSnippet}</code>
+        </pre>
+      )}
 
       <div className="mt-4 space-y-2">
         {practice.options.map((option, i) => {
