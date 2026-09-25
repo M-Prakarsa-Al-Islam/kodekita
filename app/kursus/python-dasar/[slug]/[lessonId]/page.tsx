@@ -1,16 +1,25 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getChapterBySlug, getLesson, getAdjacentLessons } from "@/content/chapters";
+import { hasApprovedPurchase } from "@/lib/purchase-server";
+import { PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
 import Practice from "@/components/learn/Practice";
 import LessonNav from "@/components/learn/LessonNav";
 
-export default function LessonPage({
+export default async function LessonPage({
   params,
 }: {
   params: { slug: string; lessonId: string };
 }) {
   const chapter = getChapterBySlug(params.slug);
   if (!chapter || chapter.status !== "published") notFound();
+
+  // Server-side enforcement, not just hiding the UI: a logged-in user
+  // who has not purchased cannot reach paid lesson content directly by
+  // URL either, matching the master spec's access-control requirement.
+  if (!chapter.isFree && !(await hasApprovedPurchase(PYTHON_DASAR_COURSE_SLUG))) {
+    redirect("/kursus/python-dasar/beli");
+  }
 
   const lesson = getLesson(params.slug, params.lessonId);
   if (!lesson) notFound();
@@ -25,11 +34,6 @@ export default function LessonPage({
         Lesson {lessonNumber}/{chapter.lessons.length}
       </p>
       <h1 className="font-display text-2xl font-semibold text-ink">{lesson.title}</h1>
-      {!chapter.isFree && (
-        <p className="mt-2 inline-block rounded bg-sun/30 px-2 py-1 text-xs text-ink">
-          Chapter berbayar — akan terkunci setelah sistem pembayaran aktif
-        </p>
-      )}
 
       <div className="mt-8 space-y-10">
         <div>

@@ -31,7 +31,8 @@ export async function middleware(request: NextRequest) {
   // nested under it (an actual chapter or lesson) requires an account.
   const isProtected =
     pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/kursus/python-dasar/");
+    pathname.startsWith("/kursus/python-dasar/") ||
+    pathname.startsWith("/admin");
 
   if (isProtected && !data.user) {
     const redirectUrl = new URL("/login", request.url);
@@ -43,5 +44,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/kursus/python-dasar/:path*"],
+  matcher: ["/dashboard/:path*", "/kursus/python-dasar/:path*", "/admin/:path*"],
 };

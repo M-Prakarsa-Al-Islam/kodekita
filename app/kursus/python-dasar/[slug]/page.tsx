@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { getChapterBySlug } from "@/content/chapters";
 import { getCompletedLessonKeys, lessonKey } from "@/lib/progress-server";
+import { hasApprovedPurchase } from "@/lib/purchase-server";
+import { PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
 import Link from "next/link";
 
 export default async function ChapterEntryPage({
@@ -26,6 +28,10 @@ export default async function ChapterEntryPage({
         </Link>
       </section>
     );
+  }
+
+  if (!chapter.isFree && !(await hasApprovedPurchase(PYTHON_DASAR_COURSE_SLUG))) {
+    redirect("/kursus/python-dasar/beli");
   }
 
   const completed = await getCompletedLessonKeys();

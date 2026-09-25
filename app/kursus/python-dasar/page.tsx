@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { chapters } from "@/content/chapters";
 import { getCompletedLessonKeys, lessonKey } from "@/lib/progress-server";
+import { hasApprovedPurchase } from "@/lib/purchase-server";
+import { getCoursePrice, PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
 
 export default async function PythonDasarPage() {
   const completed = await getCompletedLessonKeys();
   const loggedIn = completed !== null;
+  const purchased = loggedIn && (await hasApprovedPurchase(PYTHON_DASAR_COURSE_SLUG));
+  const price = getCoursePrice(PYTHON_DASAR_COURSE_SLUG);
 
   return (
     <section className="mx-auto max-w-3xl px-6 py-16">
@@ -12,7 +16,7 @@ export default async function PythonDasarPage() {
         Python Dasar
       </h1>
       <p className="mt-2 text-ink-soft">
-        Chapter 1–5 gratis. Chapter 6–13 dengan sekali bayar, Rp25.000.
+        Chapter 1–5 gratis. Chapter 6–13 dengan sekali bayar, Rp{price.toLocaleString("id-ID")}.
       </p>
 
       {!loggedIn && (
@@ -24,6 +28,16 @@ export default async function PythonDasarPage() {
           atau{" "}
           <Link href="/login" className="font-medium underline">
             masuk
+          </Link>
+          .
+        </div>
+      )}
+
+      {loggedIn && !purchased && (
+        <div className="mt-6 rounded-lg border border-sun bg-sun/10 px-5 py-4 text-sm text-ink">
+          Selesaikan chapter gratis, lalu buka Chapter 6–13 dengan sekali bayar.{" "}
+          <Link href="/kursus/python-dasar/beli" className="font-medium underline">
+            Beli sekarang
           </Link>
           .
         </div>
@@ -52,7 +66,10 @@ export default async function PythonDasarPage() {
                 )}
               </div>
               <div className="flex items-center gap-2 text-xs">
-                {!chapter.isFree && (
+                {!chapter.isFree && purchased && (
+                  <span className="rounded bg-code-bg px-2 py-1 text-code">Sudah dibeli</span>
+                )}
+                {!chapter.isFree && !purchased && (
                   <span className="rounded bg-sun/30 px-2 py-1 text-ink">Berbayar</span>
                 )}
                 {isTodo && (

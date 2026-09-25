@@ -48,6 +48,9 @@ To hand me new chapter content, use the format in
 - **Pricing:** Python Dasar Rp25.000 (cap: <=Rp30.000). Free: ch1-5. Paid:
   ch6-13. Project courses cheaper, e.g. Rp10.000.
 - **Payment:** manual QRIS, admin-verified. No payment gateway integration.
+  Proof is an uploaded screenshot (not WhatsApp-only) so there's a real
+  `purchases` row to gate on - a WhatsApp link is shown as a fallback
+  next to the pending-status screen, not the primary channel.
 - **Design tokens:** paper `#F3F5F5`, ink `#171B24`, sun (CTA) `#F2A93B`,
   code/success `#0F8A6B`. Fonts: Fraunces (display), Inter (body), JetBrains
   Mono (code).
@@ -74,8 +77,29 @@ To hand me new chapter content, use the format in
       checker types already exist and are proven on chapters 1-2). Only
       polish left here (e.g. a "reset code" button), otherwise treat
       remaining chapters as content sessions.
-- [ ] Phase 4 - Commerce (QRIS payment page, proof upload, admin
-      verification, real chapter-locking using `isFree` + purchase status)
+- [x] **Phase 4 - Commerce.** `purchases` table + `profiles.is_admin`
+      flag + private `payment-proofs` storage bucket
+      (`supabase/schema_phase4.sql`, includes Data API grants per the
+      Oct 2026 Supabase policy - see the note under "Key decisions"
+      below). Purchase flow: `/kursus/python-dasar/beli` shows a
+      placeholder QRIS + upload form
+      (`components/purchase/PurchaseForm.tsx`), client-side compresses
+      the screenshot (`lib/image-compress.ts` - downscale to 1600px,
+      re-encode JPEG q0.7) before uploading to the user's own storage
+      folder and inserting a `pending` row (`lib/purchase.ts`). Page
+      shows pending/approved/rejected state
+      (`lib/purchase-server.ts`). Admin review at `/admin/purchases`
+      (404s for non-admins, gated by `profiles.is_admin`) lists pending
+      purchases with a signed proof-image URL; Approve/Reject are
+      server actions (`app/admin/purchases/actions.ts`) that update via
+      the admin's own authenticated session - RLS's `is_admin()` check
+      is the real enforcement, not the page-level check. **Real
+      server-side gating added** to the chapter entry page and lesson
+      page (previously just a decorative "will lock" badge) - a
+      logged-in non-purchaser hitting a paid chapter/lesson URL
+      directly now redirects to `/beli`, not just UI-hidden.
+      `npx tsc --noEmit`, `npm run build`, and
+      `node scripts/test-checker.mjs` (18/18) all pass.
 - [ ] Phase 5 - Project courses (starting with "Build a Word Counter")
 - [ ] Phase 6 - Polish & launch
 
@@ -299,25 +323,29 @@ answer/snippet leakage into `.next/static`.
 
 ## Next steps
 
-1. Run, in order: `supabase/schema.sql`, `supabase/schema_phase2.sql`,
-   `supabase/schema_phase2b.sql` in a real Supabase project (the last one
-   drops the old `chapter_progress` table - fine, no real users yet). Set
-   env vars locally and in Vercel.
-2. Confirm end-to-end on a real deploy: register -> homepage shows
-   dashboard -> `/kursus/python-dasar` shows progress badges -> Chapter 1
-   L1 (quiz) -> L2 (code) -> completes -> Chapter 2 -> progress reflected
-   on homepage "continue" link. Also confirm logged-out visitors see the
-   gated marketing homepage and get redirected to login when clicking a
-   chapter.
-3. Next content session: write chapters 3-5 (finishes the free tier) using
-   `content/AUTHORING_TEMPLATE.md`.
-4. Once ch1-5 are solid, start Phase 4 (commerce) in parallel with writing
-   ch6-13 - a real QRIS/payment flow matters more for the homework goal
-   than having all 13 chapters done.
+1. Run `supabase/schema_phase4.sql` (after the existing
+   `schema.sql`/`schema_phase2.sql`/`schema_phase2b.sql`, which should
+   already be live) in the real Supabase project.
+2. Flip on your own admin access:
+   `update public.profiles set is_admin = true where id = '<your-user-id>';`
+   (find your user id in Supabase Auth > Users).
+3. Swap the placeholder QRIS: replace `public/qris-placeholder.svg` with
+   your real static QRIS image (keep the filename, or update the one
+   `<img src="...">` in `app/kursus/python-dasar/beli/page.tsx` if you
+   rename it).
+4. Swap the placeholder WhatsApp number: `WHATSAPP_URL` near the top of
+   `app/kursus/python-dasar/beli/page.tsx`.
+5. Test the full purchase loop end-to-end on a real deploy: hit a paid
+   chapter while logged in and unpurchased -> redirected to `/beli` ->
+   upload a screenshot -> see "Menunggu verifikasi" -> approve it from
+   `/admin/purchases` on your admin account -> paid chapters unlock.
+   Also confirm a *rejected* purchase lets the user resubmit.
+6. Next content session: write chapters 9-13 (finishes Python Dasar)
+   using `content/AUTHORING_TEMPLATE.md`.
 
 ## Open questions for the team
 
-- Exact final price (Rp25.000 assumed) and QRIS account to use - needs a
-  real bank/e-wallet static QRIS before Phase 4.
-- Who is writing chapters 3-13 and the Word Counter project - use the
-  authoring template, can run in parallel with Phase 4 dev.
+- Real QRIS image and business WhatsApp number - both currently
+  placeholders (see "Next steps" above).
+- Who is writing chapters 9-13 and the Word Counter project - use the
+  authoring template.
