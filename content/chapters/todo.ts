@@ -1,25 +1,12 @@
 import type { ChapterTodo } from "@/content/types";
 
-// Metadata only. Each of these becomes a `content/chapters/chapter-N.ts`
-// file (following the chapter-1.ts / chapter-2.ts pattern) in a future
-// content-writing session, then gets removed from this list and added
-// to content/chapters/index.ts. Track real status in PROGRESS.md.
-export const todoChapters: ChapterTodo[] = [
-  { slug: "9-list", order: 9, title: "List", isFree: false, status: "todo" },
-  {
-    slug: "10-dictionary",
-    order: 10,
-    title: "Dictionary",
-    isFree: false,
-    status: "todo",
-  },
-  { slug: "11-set", order: 11, title: "Set", isFree: false, status: "todo" },
-  { slug: "12-error", order: 12, title: "Error", isFree: false, status: "todo" },
-  {
-    slug: "13-type-hints",
-    order: 13,
-    title: "Type Hints",
-    isFree: false,
-    status: "todo",
-  },
-];
+// Metadata only, for chapters whose content isn't written yet. Each entry
+// becomes a `content/chapters/chapter-N.ts` file (following the
+// chapter-1.ts / chapter-2.ts pattern) in a content-writing session, then
+// gets removed from this list and added to content/chapters/index.ts.
+// Track real status in PROGRESS.md.
+//
+// Currently empty: all 13 Python Dasar chapters are written. Keep this
+// export (index.ts spreads it) and add entries here when planning new
+// courses/chapters.
+export const todoChapters: ChapterTodo[] = [];

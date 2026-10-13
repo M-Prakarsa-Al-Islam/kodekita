@@ -7,14 +7,32 @@ function normalize(output) {
     .trim();
 }
 
-function checkOutput(actualStdout, actualError, checker) {
+function firstUnmetRequirement(sourceCode, requirements) {
+  if (!requirements || requirements.length === 0) return null;
+  if (sourceCode === undefined) return "Kodemu belum bisa diperiksa. Coba jalankan ulang.";
+  const code = sourceCode.replace(/#.*$/gm, "");
+  for (const req of requirements) {
+    try {
+      if (!new RegExp(req.pattern).test(code)) return req.message;
+    } catch {
+      return "Aturan pemeriksaan jawaban tidak valid. Laporkan ke admin.";
+    }
+  }
+  return null;
+}
+
+function checkOutput(actualStdout, actualError, checker, sourceCode) {
   if (actualError) {
     return { passed: false, message: `Program-nya error: ${actualError}` };
   }
   if (checker.type === "stdout_exact") {
     const actual = normalize(actualStdout);
     const expected = normalize(checker.expected);
-    if (actual === expected) return { passed: true, message: "Benar!" };
+    if (actual === expected) {
+      const unmet = firstUnmetRequirement(sourceCode, checker.sourceRequirements);
+      if (unmet) return { passed: false, message: unmet };
+      return { passed: true, message: "Benar!" };
+    }
     return {
       passed: false,
       message:
@@ -34,8 +52,8 @@ function checkQuizAnswer(selectedIndex, correctIndex) {
 }
 
 const tests = [];
-function t(name, actualStdout, actualError, checker, expectPassed) {
-  tests.push({ kind: "output", name, actualStdout, actualError, checker, expectPassed });
+function t(name, actualStdout, actualError, checker, expectPassed, sourceCode) {
+  tests.push({ kind: "output", name, actualStdout, actualError, checker, expectPassed, sourceCode });
 }
 function tq(name, selected, correct, expectPassed) {
   tests.push({ kind: "quiz", name, selected, correct, expectPassed });
@@ -74,11 +92,34 @@ tq("ch2 L1 wrong answer (leading digit)", 1, 0, false);
 tq("ch2 L1 wrong answer (space)", 2, 0, false);
 tq("ch2 L1 wrong answer (dash)", 3, 0, false);
 
+// --- sourceRequirements (used by chapter 13 type-hint lessons) ---
+const srcChecker = {
+  type: "stdout_exact",
+  expected: "80000.0",
+  sourceRequirements: [
+    { pattern: "def\\s+hitung_diskon\\s*\\([^)]*\\bharga\\s*:\\s*int\\b", message: "harga belum int" },
+    { pattern: "def\\s+hitung_diskon\\s*\\([^)]*\\)\\s*->\\s*float\\s*:", message: "return belum float" },
+  ],
+};
+const hinted = "def hitung_diskon(harga: int, persen: int) -> float:\n    return 1.0";
+const unhinted = "def hitung_diskon(harga, persen):\n    return 1.0";
+t("src: output right + requirements met", "80000.0", null, srcChecker, true, hinted);
+t("src: output right + whitespace variations still pass", "80000.0", null, srcChecker, true, "def hitung_diskon( harga:int , persen : int )  ->float :\n    pass");
+t("src: output right but hints missing (unchanged starter) fails", "80000.0", null, srcChecker, false, unhinted);
+t("src: first requirement met, second missing fails", "80000.0", null, srcChecker, false, "def hitung_diskon(harga: int, persen: int):\n    pass");
+t("src: wrong output fails even if hints present", "1.0", null, srcChecker, false, hinted);
+t("src: hints only inside the wrong function name fails", "80000.0", null, srcChecker, false, "def lain(harga: int) -> float:\n    pass");
+t("src: requirements exist but no source passed fails closed", "80000.0", null, srcChecker, false, undefined);
+t("src: correct signature only inside a # comment does not count", "80000.0", null, srcChecker, false, "# " + hinted.split("\n")[0] + "\n" + unhinted);
+t("src: hint after code on same line still counts (comment only strips after #)", "80000.0", null, srcChecker, true, hinted + "  # ok");
+t("src: invalid regex fails closed (no crash)", "80000.0", null, { type: "stdout_exact", expected: "80000.0", sourceRequirements: [{ pattern: "(", message: "x" }] }, false, hinted);
+t("src: checker without requirements ignores source (old lessons)", "Luas: 40", null, ch2Checker, true, "anything");
+
 let failures = 0;
 for (const c of tests) {
   const result =
     c.kind === "output"
-      ? checkOutput(c.actualStdout, c.actualError, c.checker)
+      ? checkOutput(c.actualStdout, c.actualError, c.checker, c.sourceCode)
       : checkQuizAnswer(c.selected, c.correct);
   const ok = result.passed === c.expectPassed;
   console.log(`${ok ? "PASS" : "FAIL"} — ${c.name} (got passed=${result.passed}: "${result.message}")`);

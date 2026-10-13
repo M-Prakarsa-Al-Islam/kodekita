@@ -22,8 +22,11 @@ export default function Challenge({
     null
   );
 
-  async function handleResult(result: { stdout: string; error: string | null }) {
-    const outcome = checkOutput(result.stdout, result.error, practice.checker);
+  async function handleResult(
+    result: { stdout: string; error: string | null },
+    code: string
+  ) {
+    const outcome = checkOutput(result.stdout, result.error, practice.checker, code);
     setFeedback(outcome);
     if (outcome.passed) {
       await markLessonComplete(chapterSlug, lessonId);

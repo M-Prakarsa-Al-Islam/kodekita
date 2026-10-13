@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getChapterBySlug, getLesson, getAdjacentLessons } from "@/content/chapters";
+import {
+  getChapterBySlug,
+  getLesson,
+  getAdjacentLessons,
+  getNavChapters,
+} from "@/content/chapters";
 import { hasApprovedPurchase } from "@/lib/purchase-server";
 import { PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
 import Practice from "@/components/learn/Practice";
@@ -29,7 +34,11 @@ export default async function LessonPage({
 
   return (
     <section className="mx-auto max-w-2xl px-6 py-16">
-      <LessonNav chapterSlug={chapter.slug} lessonId={lesson.id} />
+      <LessonNav
+        chapterSlug={chapter.slug}
+        lessonId={lesson.id}
+        navChapters={getNavChapters()}
+      />
       <p className="mt-3 text-sm text-ink-soft">
         Lesson {lessonNumber}/{chapter.lessons.length}
       </p>
@@ -41,6 +50,23 @@ export default async function LessonPage({
           <p className="mt-2 whitespace-pre-line text-sm text-ink">
             {lesson.theory.explanation}
           </p>
+          {lesson.theory.sections?.map((section, i) => (
+            <div key={i} className="mt-4">
+              {section.heading && (
+                <p className="text-sm font-semibold text-ink">{section.heading}</p>
+              )}
+              {section.text && (
+                <p className="mt-1 whitespace-pre-line text-sm text-ink">
+                  {section.text}
+                </p>
+              )}
+              {section.code && (
+                <pre className="mt-3 overflow-x-auto rounded-lg bg-ink px-4 py-3 font-mono text-sm text-white">
+                  <code>{section.code}</code>
+                </pre>
+              )}
+            </div>
+          ))}
           {lesson.theory.example && (
             <>
               <p className="mt-4 text-sm text-ink-soft">

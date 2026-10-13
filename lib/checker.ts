@@ -18,10 +18,38 @@ function normalize(output: string): string {
     .trim();
 }
 
+// Returns the message of the first unmet source requirement, or null if
+// there are none / all are met. Fails closed: if requirements exist but
+// no source code was provided, or a pattern is not a valid RegExp, the
+// lesson is not marked correct.
+function firstUnmetRequirement(
+  sourceCode: string | undefined,
+  requirements: Checker["sourceRequirements"]
+): string | null {
+  if (!requirements || requirements.length === 0) return null;
+  if (sourceCode === undefined) {
+    return "Kodemu belum bisa diperiksa. Coba jalankan ulang.";
+  }
+  // Drop "# ..." comments first so a correct signature that is only
+  // written inside a comment doesn't count. (Naive: a "#" inside a string
+  // literal also truncates that line - fine for definition-shape
+  // patterns, which never need to match text after a "#".)
+  const code = sourceCode.replace(/#.*$/gm, "");
+  for (const req of requirements) {
+    try {
+      if (!new RegExp(req.pattern).test(code)) return req.message;
+    } catch {
+      return "Aturan pemeriksaan jawaban tidak valid. Laporkan ke admin.";
+    }
+  }
+  return null;
+}
+
 export function checkOutput(
   actualStdout: string,
   actualError: string | null,
-  checker: Checker
+  checker: Checker,
+  sourceCode?: string
 ): CheckResult {
   if (actualError) {
     return {
@@ -35,6 +63,8 @@ export function checkOutput(
     const expected = normalize(checker.expected);
 
     if (actual === expected) {
+      const unmet = firstUnmetRequirement(sourceCode, checker.sourceRequirements);
+      if (unmet) return { passed: false, message: unmet };
       return { passed: true, message: "Benar!" };
     }
 

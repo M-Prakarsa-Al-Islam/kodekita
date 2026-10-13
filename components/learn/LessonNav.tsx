@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { chapters } from "@/content/chapters";
+// Type-only import (erased at build). Never import the full `chapters`
+// array here: this is a client component, so that would ship every
+// lesson's theory, answers and expected output (incl. paid chapters)
+// to the browser. The trimmed list comes in as a prop instead.
+import type { NavChapter } from "@/content/chapters";
 
 // Two independent dropdown selectors for the lesson page's top bar:
 // - Chapter selector: shows "ChN: <title>", expands to every chapter in
@@ -15,9 +19,11 @@ import { chapters } from "@/content/chapters";
 export default function LessonNav({
   chapterSlug,
   lessonId,
+  navChapters,
 }: {
   chapterSlug: string;
   lessonId: string;
+  navChapters: NavChapter[];
 }) {
   const [openMenu, setOpenMenu] = useState<"chapter" | "lesson" | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
@@ -32,7 +38,7 @@ export default function LessonNav({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const chapter = chapters.find((c) => c.slug === chapterSlug);
+  const chapter = navChapters.find((c) => c.slug === chapterSlug);
   if (!chapter || chapter.status !== "published") return null;
 
   const lessonIndex = chapter.lessons.findIndex((l) => l.id === lessonId);
@@ -55,7 +61,7 @@ export default function LessonNav({
         </button>
         {openMenu === "chapter" && (
           <div className="absolute left-0 top-full z-10 mt-1 max-h-80 w-72 overflow-y-auto rounded-md border border-line bg-white py-1 shadow-lg">
-            {chapters.map((c) => {
+            {navChapters.map((c) => {
               if (c.status !== "published") {
                 return (
                   <div

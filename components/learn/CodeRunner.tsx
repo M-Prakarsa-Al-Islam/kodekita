@@ -12,7 +12,7 @@ export default function CodeRunner({
   starterCode: string;
   // Called only when the "check" button is used (not on a plain run) -
   // this is what triggers grading/marking a lesson complete.
-  onCheck?: (result: RunResult) => void;
+  onCheck?: (result: RunResult, code: string) => void;
   // If provided, a second button is shown next to "Jalankan" that runs
   // the code AND calls onCheck. If omitted, only the plain "Jalankan"
   // (run, no grading) button is shown.
@@ -29,11 +29,11 @@ export default function CodeRunner({
     try {
       const r = await runPython(code);
       setResult(r);
-      if (action === "check") onCheck?.(r);
+      if (action === "check") onCheck?.(r, code);
     } catch (e) {
       const r = { stdout: "", error: "Python runtime gagal dimuat. Coba lagi." };
       setResult(r);
-      if (action === "check") onCheck?.(r);
+      if (action === "check") onCheck?.(r, code);
     } finally {
       setStatus("idle");
       setPendingAction(null);

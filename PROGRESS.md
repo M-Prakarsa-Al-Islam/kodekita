@@ -117,11 +117,11 @@ Check this first before writing new content.
 | 6 | `6-computing` | Komputasi dan Logika Mesin | No | L1-L8 (quiz x2, code x6: pangkat/floor-div, modulo, PEMDAS fix, assignment operators, boolean/not, tantangan kasir) | **Published** |
 | 7 | `7-perbandingan` | Perbandingan | No | L1-L8 (quiz x2, code x6: ==/!= type-sensitivity, relational ops, chained comparison, if, if-else, if-elif-else tantangan) | **Published** |
 | 8 | `8-loop` | Loop | No | L1-L7 (quiz x2, code x5: for+range accumulator, while, break, continue, savings tantangan) | **Published** |
-| 9 | `9-list` | List | No | - | Todo |
-| 10 | `10-dictionary` | Dictionary | No | - | Todo |
-| 11 | `11-set` | Set | No | - | Todo |
-| 12 | `12-error` | Error | No | - | Todo |
-| 13 | `13-type-hints` | Type Hints | No | - | Todo |
+| 9 | `9-list` | List | No | L1-L15 (quiz x3, code x12: indexing, len, negative index+slicing, mutate/append, concat, del, in/not in quiz, .index, for loop quiz, range(len), even filter, max via -inf, tuple quiz, split/join, ERROR-filter tantangan) | **Published** |
+| 10 | `10-dictionary` | Dictionary | No | L1-L9 (quiz x2, code x7: key access, mutate/add, duplicate-key quiz, empty dict, `in`/`del` quiz, basic iteration, `.values()` accumulator, nested dict, nested-dict recap tantangan) | **Published** |
+| 11 | `11-set` | Set | No | L1-L7 (quiz x2, code x5: uniqueness quiz, `.add()`/`.remove()` + `sorted()`, intersection `&`, union `\|`, difference quiz, list->set dedupe with `len()`, seminar-attendance tantangan) | **Published** |
+| 12 | `12-error` | Error dan Exception Handling | No | L1-L7 (quiz x2, code x5: bug-vs-exception quiz, `try`/`except`, specific `except` types, `raise`, guard-clauses quiz, `finally`, ATM-withdrawal tantangan) | **Published** |
+| 13 | `13-type-hints` | Type Hints | No | L1-L6 (quiz x2, code x4: variable hints quiz, function hints, `list[str]`/`dict` hints, union `\|` quiz, fix a wrong return hint, nested-grouping tantangan) | **Published** |
 
 **2026-09-22 revision:** Chapters 1-2 were rewritten from scratch using
 `content/AUTHORING_TEMPLATE.md` (author-provided `.md` files), replacing
@@ -311,6 +311,220 @@ needed migrating. `npx tsc --noEmit`, `npm run build`, and
 `node scripts/test-checker.mjs` (18/18) all pass; re-confirmed no
 answer/snippet leakage into `.next/static`.
 
+**2026-10-11 chapter 9 (List):** Wrote `content/chapters/chapter-9.ts`
+("List") - 15 lessons (3 quiz: `in`/`not in`, why-for-loop, why-tuple;
+12 code: indexing, `len()`, negative index + slicing, `[]=`/`.append()`,
+list `+`, `del`, `.index()`, `range(len())`, even filter with `%`, max via
+`float("-inf")`, `.split()`/`.join()`, and an "ERROR"-filter "Tantangan").
+Largest chapter so far. All 12 code answers re-verified by actually
+running each `answerHint` through real Python and diffing against
+`checker.expected` (all passed), each starter code confirmed NOT to pass
+on its own, and all 3 quizzes confirmed single-correct. `npx tsc
+--noEmit`, `npm run build`, and `node scripts/test-checker.mjs` (18/18)
+all pass; grep of `.next/static` found none of the chapter's
+`answerHint`/`expected` strings.
+
+**App change: optional `Theory.sections`.** Theory is rendered as plain
+text (`whitespace-pre-line`, no markdown) and `Theory` only allowed one
+`example`. Chapter 9 L3 (negative indices + slicing) has ~12 code
+snippets and a table, which can't be expressed that way. Added an
+optional `sections?: {heading?, text?, code?}[]` to `Theory`
+(`content/types.ts`), rendered in order between `explanation` and
+`example` in the lesson page (`app/kursus/python-dasar/[slug]/[lessonId]/page.tsx`)
+with the same dark monospace block as `example.code`. Purely additive -
+chapters 1-8 don't use it and render unchanged. Use it for any future
+long theory instead of putting fenced code or tables inside
+`explanation`. The index/negative-index table in L3 is a monospace
+block for the same reason.
+
+**Fixes made to the source `.md` (flagged in chat):**
+- L3 theory: the paragraph after the `huruf[1:5]` example said "stops
+  before index 4 ("E"), result `['B','C','D']"` - contradicts the
+  example directly above it (`[1:5]` = `['B','C','D','E']`, verified).
+  Rewrote it to match the example.
+- L3 theory: the step example's comment said "Mulai indeks 1" but the
+  code was `huruf[0:5:2]`. Code and output (`['A','C','E']`) were
+  already consistent with each other, so only the comment was changed
+  to "Mulai indeks 0". Also fixed output spacing (`['B','C','D','E']`
+  -> `['B', 'C', 'D', 'E']`, matching real Python), a stray `***`, and
+  a capitalization typo.
+- L6 example: output comments showed `"Truk"` and `["Mobil", "Sepeda"]`;
+  real Python prints `Truk` and `['Mobil', 'Sepeda']`. Comments fixed.
+- L7 quiz: the code expression was inline in the question; moved to
+  `codeSnippet` (per the template's rule) so it renders as a code block.
+- Markdown (`**bold**`, backticks) stripped from all text, since theory,
+  instructions, hints and feedback are plain text (same as chapters 1-8).
+  "SPOILER JAWABAN" hint entries moved into `answerHint`.
+
+**2026-10-11 security fix: `LessonNav` was leaking all lesson content.**
+While grepping `.next/static` after chapter 9, answer strings from
+*other* chapters (e.g. ch4 `bonus_poin = 500`, ch8 `total += i`) turned
+up in the lesson route's client chunk. Cause: `components/learn/LessonNav.tsx`
+("use client", added with chapter 4) imported the full `chapters` array,
+so every lesson page shipped every chapter's theory, `answerHint`
+solutions and `checker.expected` strings - **including paid chapters** -
+to any logged-in user, even one who hasn't purchased (readable via
+devtools from a free lesson page). This bypassed the server-side paywall
+for content, and the earlier "grep found no leaks" checks missed it
+(they covered the header nav menu only). Fixed: `LessonNav` now takes a
+`navChapters: NavChapter[]` prop (type-only import), computed
+server-side with `getNavChapters()` in the lesson page. Lesson route
+bundle went 39.2 kB -> 3.65 kB. Re-grepped `.next/static` for answer
+strings from chapters 1-9: zero matches. **Rule going forward: no client
+component may import `chapters` or any `chapter-N.ts`; pass
+`getNavChapters()` output down as props.** Note: because the old
+bundles were public, solutions for already-deployed chapters were
+exposed until this fix ships - nothing to rotate (they're just lesson
+answers), but worth deploying promptly.
+
+**2026-10-12 chapter 10 (Dictionary):** Wrote `content/chapters/chapter-10.ts`
+- 9 lessons (2 quiz: duplicate keys, `in` checks keys; 7 code: key
+access, mutate/add, empty dict, basic iteration, `.values()`
+accumulator, nested dict, and a nested-dict "Tantangan"). Every
+`answerHint` was run through real Python and diffed against
+`checker.expected` (all pass); each starter confirmed not to pass on
+its own; every non-comment starter line was checked to also appear in
+its full-program `answerHint` (new check, added because of the L2 bug
+below); all theory examples run and match their `# Output:` comments.
+`tsc`, `npm run build`, `test-checker.mjs` (18/18) pass; `.next/static`
+grep for answer strings from chapters 1-10 found zero matches.
+No app/type changes this session.
+
+**Fixes made to the source `.md` (flagged in chat):**
+- L2 spoiler answer used `"judul": "Zelda"` while the starter and the
+  expected output use `"Persona"` - the solution as written would print
+  `{'judul': 'Zelda', ...}` and fail its own checker. Changed to
+  "Persona".
+- L3 and L5 quizzes: code was inline in the question; moved to
+  `codeSnippet` per the template.
+- Numbered steps in instructions (L2, L8, L9) are separated with `\n`
+  (instructions render with `whitespace-pre-line`; joining them with `+`
+  alone produces one long paragraph - this was the ch9 L14/L15 bug).
+- Markdown (`**bold**`, `*italic*`, backticks) stripped, "SPOILER
+  JAWABAN" hint entries moved to `answerHint`, as in earlier chapters.
+
+**Notes for the author (not changed):** L5 is titled "Menghapus Data dan
+Cek Keanggotaan" but its only practice is the `in` quiz (nothing
+practices `del`). L6's starter is a `for` whose body is only a comment,
+which is a SyntaxError if run unmodified - fine for a starter (learner
+must add the body), just don't be surprised by that error text.
+
+**2026-10-13 chapter 11 (Set):** Wrote `content/chapters/chapter-11.ts`
+- 7 lessons (2 quiz: duplicates ignored, `A - B`; 5 code: `.add()`/
+`.remove()` with `sorted()`, `&`, `|`, `set(list)` + `len()`, and a
+two-day attendance "Tantangan"). All 5 `answerHint`s run through real
+Python and match `checker.expected`; starters don't pass alone; starter
+lines consistent with full-program answers; all theory examples run;
+numbered instruction steps are on separate lines. `tsc`,
+`npm run build`, `test-checker.mjs` (18/18) pass; `.next/static` grep for
+answer strings from chapters 1-11: zero matches. No app/type changes.
+Every code lesson prints through `sorted()` (or `len()`), so output is
+deterministic - set print order is not, which is why the author's
+`sorted()` rule matters for the exact-match checker.
+
+**Fixes made to the source `.md` (flagged in chat):**
+- L2 instructions said "Lakukan dua hal" but list three steps; changed
+  to "tiga hal ... secara berurutan".
+- L5 quiz: the code was inline in the question text; moved to
+  `codeSnippet` (also split into 3 lines so `kurang` is defined), and
+  the question wording adjusted to refer to "kode di bawah ini".
+- L1 theory: "Set ini sama seperti list, Bedanya" -> two sentences. L4
+  theory: added the missing period after the `|` sentence.
+- Markdown stripped, spoiler hints moved to `answerHint`, numbered
+  steps on separate lines (same conventions as ch9/ch10).
+
+**2026-10-13 chapter 12 (Error dan Exception Handling):** Wrote
+`content/chapters/chapter-12.ts` - 7 lessons (2 quiz: bug vs exception,
+why guard clauses; 5 code: `try`/`except`, multiple specific `except`,
+`raise ValueError` inside a function, `finally`, and an ATM-withdrawal
+"Tantangan" combining `for` + guard clauses + `try`/`except ... as e`).
+All 5 `answerHint`s run through real Python and match
+`checker.expected`; starters don't pass alone (L2-L4 starters raise an
+uncaught error if run unmodified - expected, the learner adds the
+`try`); starter lines consistent with full-program answers; the two
+theory examples that intentionally raise (L1 `10 / 0`, L4 `raise
+ValueError`) confirmed to raise exactly the error their text names, all
+other examples run. `tsc`, `npm run build`, `test-checker.mjs` (18/18)
+pass; `.next/static` grep for answer strings from chapters 1-12: zero
+matches. No app/type changes.
+
+**Chapter title changed:** the chapter title is now "Error dan Exception
+Handling" (from the author's `.md`); `todo.ts` and the status table
+previously said just "Error". The slug stays `12-error` so URLs and
+existing progress rows are unaffected. Title is not hardcoded anywhere
+else (grepped `app/`, `components/`, `lib/`).
+
+**Conversions (flagged in chat):** markdown stripped, spoiler hints moved
+to `answerHint`, numbered steps on separate lines (L3 and L7 - L7's two
+`-` sub-bullets stay on their own lines), and trailing-whitespace-only
+lines removed from code blocks. No content corrections were needed this
+chapter: every expected output matched real Python on the first run.
+
+**Notes for the author (not changed):**
+- L4's theory example shows `# Output: ValueError: Umur tidak mungkin
+  minus!` - the real output is a multi-line traceback ending in that
+  line. Fine as shorthand, but a learner who copies it will see more.
+- L4 success message calls `as` a "parameter opsional"; it is part of
+  the `except` syntax (a keyword), not a parameter.
+- L1's practice and L5's practice are quizzes only, so `raise` inside a
+  fixed `try` (L4) and `finally` (L6) are the only hands-on code for
+  those concepts - consistent with the plan, just noting L5 (guard
+  clauses) has no coding exercise before the L7 tantangan.
+
+**2026-10-13 chapter 13 (Type Hints) - Python Dasar content is now
+complete (13/13 chapters).** Wrote `content/chapters/chapter-13.ts` - 6
+lessons (2 quiz: type hints don't enforce at runtime, what `int | str`
+means; 4 code: function hints, `list[str]`/`dict` hints, fixing a wrong
+return hint, and a nested-grouping "Tantangan" with
+`dict[str, list[str]]`). All 4 `answerHint`s run through real Python and
+match `checker.expected`; theory examples all run (Pyodide 0.26.2 =
+Python 3.12, so `list[str]` and `int | float` are valid). `todo.ts` is
+now an empty array (kept, since `index.ts` spreads it).
+
+**App change - optional `Checker.sourceRequirements` (needed for this
+chapter).** Type hints never change a program's output, so in L2, L3 and
+L5 the *unchanged starter already printed the expected output* - with a
+stdout-only checker a learner could click "Cek Jawaban" without writing
+anything and pass. Added to `Checker` (`content/types.ts`) an optional
+`sourceRequirements: {pattern, message}[]`: JS RegExp source strings that
+must match the learner's code (with `#` comments stripped, so a correct
+signature hidden in a comment doesn't count). They are checked only
+AFTER stdout matches, and the first unmet one's message is shown
+("Outputnya sudah benar, tapi parameter harga belum dilabeli int.").
+It fails closed (no source passed, or an invalid regex -> not correct).
+`lib/checker.ts` `checkOutput` takes an optional 4th arg `sourceCode`;
+`CodeRunner` now passes the learner's code as a 2nd arg to `onCheck`;
+`Challenge` forwards it. Backward compatible: lessons without
+`sourceRequirements` behave exactly as before (chapters 1-12 untouched;
+the existing 18 checker tests still pass). `scripts/test-checker.mjs`
+mirrors the logic (as before) and gained 11 cases (29/29 pass): unchanged
+starter fails, partial hints fail with the right message, whitespace
+variants pass, comment-only signature fails, no-source and invalid-regex
+fail closed. **Rule: only use `sourceRequirements` when output cannot
+distinguish right from wrong; do not use it for ordinary lessons.**
+Verified end-to-end against the real `lib/checker.ts` with 14 simulated
+learner submissions (unchanged starter, only-params, only-return, odd
+spacing, wrong inner type, bare `list`, etc.).
+
+`tsc`, `npm run build`, `test-checker.mjs` (29/29) pass; `.next/static`
+grep for answer strings from chapters 1-13: zero matches.
+
+**Conversions (flagged in chat):** L1 quiz code moved to `codeSnippet`;
+L4 quiz's inline `def` kept in the question text (a bodiless `def` isn't
+a runnable snippet) but quoted; markdown stripped, spoiler hints moved to
+`answerHint`, numbered steps on separate lines, whitespace-only lines
+removed from code. No content corrections were needed.
+
+**Notes for the author (not changed):**
+- L5's example redefines `bagi_angka` twice (wrong version, then right
+  version) in one block; it runs fine but isn't something to copy.
+- L1 theory's second paragraph is one very long sentence ("...dikarenakan
+  seiring waktu program yang dibuat akan bertambah besar, yang
+  mengakibatkan..."); worth a split if you polish copy later.
+- `-> int | float` in L4's example needs Python 3.10+; fine on the
+  current Pyodide, but the course should keep Pyodide >= 0.23 / Python
+  >= 3.10.
+
 ### How to write the next batch (2-3 chapters)
 
 1. Fill in `content/AUTHORING_TEMPLATE.md`'s template for each chapter and
@@ -340,8 +554,11 @@ answer/snippet leakage into `.next/static`.
    upload a screenshot -> see "Menunggu verifikasi" -> approve it from
    `/admin/purchases` on your admin account -> paid chapters unlock.
    Also confirm a *rejected* purchase lets the user resubmit.
-6. Next content session: write chapters 9-13 (finishes Python Dasar)
-   using `content/AUTHORING_TEMPLATE.md`.
+6. Python Dasar content is complete (chapters 1-13). Next content work:
+   the Word Counter project course (guided, ~Rp10.000) - see "Open
+   questions". Do an end-to-end pass on a real deploy of chapters 9-13
+   (especially the type-hint lessons' new source check: unchanged
+   starter must NOT pass, correct answer must).
 
 ## Open questions for the team
 
