@@ -14,7 +14,7 @@ export default function MarketingHome() {
             Belajar coding. Praktik. Bangun sesuatu.
           </h1>
           <p className="mt-4 max-w-md text-ink-soft">
-            Belajar programming secara mandiri, dalam Bahasa Indonesia — langsung
+            Belajar programming secara mandiri, dalam Bahasa Indonesia, langsung
             menulis dan menjalankan kode di browser, bukan hanya membaca teori.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -116,13 +116,13 @@ print(f"Umur kamu {umur} tahun.")
                 13 chapter dari nol sampai paham struktur data dasar. Chapter 1–5
                 gratis, chapter 6–13 dengan sekali bayar.
               </p>
-              <p className="mt-4 font-mono text-sm text-ink">Rp25.000</p>
+              <p className="mt-4 font-mono text-sm text-ink">Rp20.000</p>
             </div>
             <div className="rounded-lg border border-line bg-white/60 p-6">
               <p className="font-display text-lg font-semibold text-ink">Proyek</p>
               <p className="mt-2 text-sm text-ink-soft">
                 Sudah paham dasar? Bangun program kecil yang nyata, dengan hint
-                bertahap — bukan copy-paste solusi.
+                bertahap, bukan copy-paste solusi.
               </p>
               <p className="mt-4 font-mono text-sm text-ink">mulai Rp10.000</p>
             </div>

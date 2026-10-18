@@ -7,6 +7,7 @@ import Link from "next/link";
 // lesson's theory, answers and expected output (incl. paid chapters)
 // to the browser. The trimmed list comes in as a prop instead.
 import type { NavChapter } from "@/content/chapters";
+import { lessonKey } from "@/lib/progress-keys";
 
 // Two independent dropdown selectors for the lesson page's top bar:
 // - Chapter selector: shows "ChN: <title>", expands to every chapter in
@@ -20,10 +21,13 @@ export default function LessonNav({
   chapterSlug,
   lessonId,
   navChapters,
+  completedKeys = [],
 }: {
   chapterSlug: string;
   lessonId: string;
   navChapters: NavChapter[];
+  // The signed-in learner's own finished lessons, as `${chapterSlug}:${lessonId}`.
+  completedKeys?: string[];
 }) {
   const [openMenu, setOpenMenu] = useState<"chapter" | "lesson" | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
@@ -38,6 +42,7 @@ export default function LessonNav({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const done = new Set(completedKeys);
   const chapter = navChapters.find((c) => c.slug === chapterSlug);
   if (!chapter || chapter.status !== "published") return null;
 
@@ -76,16 +81,24 @@ export default function LessonNav({
                 );
               }
               const isCurrent = c.slug === chapterSlug;
+              const doneCount = c.lessons.filter((l) => done.has(lessonKey(c.slug, l.id))).length;
+              const allDone = c.lessons.length > 0 && doneCount === c.lessons.length;
               return (
                 <Link
                   key={c.slug}
                   href={`/kursus/python-dasar/${c.slug}`}
                   onClick={() => setOpenMenu(null)}
-                  className={`block px-3 py-2 hover:bg-ink/5 ${
+                  className={`flex items-center justify-between gap-2 px-3 py-2 hover:bg-ink/5 ${
                     isCurrent ? "bg-code-bg font-medium text-ink" : "text-ink"
                   }`}
                 >
-                  Ch{c.order}: {c.title}
+                  <span>
+                    Ch{c.order}: {c.title}
+                  </span>
+                  <span className={`shrink-0 text-xs ${allDone ? "text-code" : "text-ink-soft"}`}>
+                    {allDone ? "✓" : `${doneCount}/${c.lessons.length}`}
+                    <span className="sr-only">{allDone ? " selesai" : " lesson selesai"}</span>
+                  </span>
                 </Link>
               );
             })}
@@ -109,16 +122,24 @@ export default function LessonNav({
           <div className="absolute left-0 top-full z-10 mt-1 max-h-80 w-72 overflow-y-auto rounded-md border border-line bg-white py-1 shadow-lg">
             {chapter.lessons.map((l, i) => {
               const isCurrent = l.id === lessonId;
+              const isDone = done.has(lessonKey(chapter.slug, l.id));
               return (
                 <Link
                   key={l.id}
                   href={`/kursus/python-dasar/${chapter.slug}/${l.id}`}
                   onClick={() => setOpenMenu(null)}
-                  className={`block px-3 py-2 hover:bg-ink/5 ${
+                  className={`flex items-center justify-between gap-2 px-3 py-2 hover:bg-ink/5 ${
                     isCurrent ? "bg-code-bg font-medium text-ink" : "text-ink"
                   }`}
                 >
-                  L{i + 1}: {l.title}
+                  <span>
+                    L{i + 1}: {l.title}
+                  </span>
+                  {isDone && (
+                    <span className="shrink-0 text-xs text-code">
+                      ✓<span className="sr-only"> selesai</span>
+                    </span>
+                  )}
                 </Link>
               );
             })}

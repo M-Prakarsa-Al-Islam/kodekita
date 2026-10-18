@@ -1,4 +1,4 @@
--- KodeKita — Phase 4 schema addition (commerce)
+-- PyMula — Phase 4 schema addition (commerce)
 -- Run this in the Supabase SQL editor, after schema.sql, schema_phase2.sql
 -- and schema_phase2b.sql.
 

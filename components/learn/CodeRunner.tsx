@@ -1,8 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { runPython, type RunResult } from "@/lib/pyodide";
 import { Button } from "@/components/ui/Button";
+
+// CodeMirror is ~120 kB gzipped: load it only on lessons that have a code
+// editor, never for quiz / theory-only pages.
+const CodeEditor = dynamic(() => import("./CodeEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-[8rem] bg-ink px-4 py-3 font-mono text-sm text-white/50">
+      Memuat editor...
+    </div>
+  ),
+});
 
 export default function CodeRunner({
   starterCode,
@@ -49,13 +61,7 @@ export default function CodeRunner({
 
   return (
     <div className="overflow-hidden rounded-lg border border-line">
-      <textarea
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        rows={Math.max(4, code.split("\n").length + 1)}
-        spellCheck={false}
-        className="w-full resize-none bg-ink px-4 py-3 font-mono text-sm text-white outline-none"
-      />
+      <CodeEditor value={code} onChange={setCode} />
       <div className="flex items-center gap-2 border-t border-line bg-white/60 px-4 py-2">
         <Button
           type="button"

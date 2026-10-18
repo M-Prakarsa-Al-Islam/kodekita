@@ -18,7 +18,7 @@ export default function KursusPage() {
             13 chapter dari nol sampai paham struktur data dasar. Chapter
             1–5 gratis.
           </p>
-          <p className="mt-4 font-mono text-sm text-ink">Rp25.000</p>
+          <p className="mt-4 font-mono text-sm text-ink">Rp20.000</p>
         </Link>
       </div>
     </section>

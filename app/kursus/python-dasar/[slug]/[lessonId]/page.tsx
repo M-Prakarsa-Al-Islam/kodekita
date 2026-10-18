@@ -10,6 +10,8 @@ import { hasApprovedPurchase } from "@/lib/purchase-server";
 import { PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
 import Practice from "@/components/learn/Practice";
 import LessonNav from "@/components/learn/LessonNav";
+import ChapterProgress from "@/components/learn/ChapterProgress";
+import { getCompletedLessonKeys, lessonKey } from "@/lib/progress-server";
 
 export default async function LessonPage({
   params,
@@ -30,7 +32,13 @@ export default async function LessonPage({
   if (!lesson) notFound();
 
   const { prev, next } = getAdjacentLessons(params.slug, params.lessonId);
-  const lessonNumber = chapter.lessons.findIndex((l) => l.id === lesson.id) + 1;
+
+  // The learner's own progress (null only if somehow signed out).
+  const completed = await getCompletedLessonKeys();
+  const completedKeys = completed ? Array.from(completed) : [];
+  const completedIds = chapter.lessons
+    .filter((l) => completed?.has(lessonKey(chapter.slug, l.id)))
+    .map((l) => l.id);
 
   return (
     <section className="mx-auto max-w-2xl px-6 py-16">
@@ -38,10 +46,15 @@ export default async function LessonPage({
         chapterSlug={chapter.slug}
         lessonId={lesson.id}
         navChapters={getNavChapters()}
+        completedKeys={completedKeys}
       />
-      <p className="mt-3 text-sm text-ink-soft">
-        Lesson {lessonNumber}/{chapter.lessons.length}
-      </p>
+      <div className="mt-4">
+        <ChapterProgress
+          lessons={chapter.lessons.map((l) => ({ id: l.id, title: l.title }))}
+          currentId={lesson.id}
+          completedIds={completedIds}
+        />
+      </div>
       <h1 className="font-display text-2xl font-semibold text-ink">{lesson.title}</h1>
 
       <div className="mt-8 space-y-10">

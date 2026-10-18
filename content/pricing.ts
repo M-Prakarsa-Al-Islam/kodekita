@@ -4,7 +4,7 @@
 export const PYTHON_DASAR_COURSE_SLUG = "python-dasar";
 
 const COURSE_PRICES: Record<string, number> = {
-  [PYTHON_DASAR_COURSE_SLUG]: 25000,
+  [PYTHON_DASAR_COURSE_SLUG]: 20000,
 };
 
 export function getCoursePrice(courseSlug: string): number {

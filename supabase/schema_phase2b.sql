@@ -1,4 +1,4 @@
--- KodeKita — Phase 2b schema addition
+-- PyMula — Phase 2b schema addition
 -- Run this in the Supabase SQL editor, after schema.sql and schema_phase2.sql.
 --
 -- Chapters now contain multiple lessons, so progress needs to be tracked

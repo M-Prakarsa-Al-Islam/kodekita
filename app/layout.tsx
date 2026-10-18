@@ -5,9 +5,9 @@ import Footer from "@/components/site/Footer";
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
-  title: "KodeKita — Belajar Coding. Praktik. Bangun Sesuatu.",
+  title: "PyMula, Belajar Coding. Praktik. Bangun Sesuatu.",
   description:
-    "Belajar programming secara mandiri dalam Bahasa Indonesia — dengan latihan coding langsung di browser dan proyek nyata.",
+    "Belajar programming secara mandiri dalam Bahasa Indonesia dengan latihan coding langsung di browser dan proyek nyata.",
 };
 
 export default function RootLayout({

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { QuizPractice } from "@/content/types";
 import { checkQuizAnswer } from "@/lib/checker";
 import { markLessonComplete } from "@/lib/progress";
@@ -15,6 +16,7 @@ export default function QuizRunner({
   chapterSlug: string;
   lessonId: string;
 }) {
+  const router = useRouter();
   const [selected, setSelected] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [passed, setPassed] = useState(false);
@@ -26,6 +28,7 @@ export default function QuizRunner({
     setPassed(result.passed);
     if (result.passed) {
       await markLessonComplete(chapterSlug, lessonId);
+      router.refresh(); // update progress bar / ticks immediately
     }
   }
 

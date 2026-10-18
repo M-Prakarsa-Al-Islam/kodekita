@@ -1,4 +1,4 @@
--- KodeKita — Phase 2 schema addition
+-- PyMula — Phase 2 schema addition
 -- Run this in the Supabase SQL editor, after schema.sql.
 
 create table if not exists public.chapter_progress (

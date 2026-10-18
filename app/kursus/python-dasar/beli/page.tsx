@@ -4,8 +4,7 @@ import { getLatestPurchase } from "@/lib/purchase-server";
 import PurchaseForm from "@/components/purchase/PurchaseForm";
 import { LinkButton } from "@/components/ui/Button";
 
-// TODO: swap for the real business WhatsApp number before launch.
-const WHATSAPP_URL = "https://wa.me/6280000000000";
+const WHATSAPP_URL = "https://wa.me/6285185203197";
 
 export default async function BeliPage() {
   const price = getCoursePrice(PYTHON_DASAR_COURSE_SLUG);
@@ -71,7 +70,7 @@ export default async function BeliPage() {
       <div className="mt-6 rounded-lg border border-line bg-white p-5 text-center">
         <img
           src="/qris-placeholder.svg"
-          alt="QRIS pembayaran KodeKita"
+          alt="QRIS pembayaran PyMula"
           className="mx-auto h-64 w-64"
         />
         <p className="mt-3 text-xs text-ink-soft">

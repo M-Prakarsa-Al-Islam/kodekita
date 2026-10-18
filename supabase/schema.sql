@@ -1,4 +1,4 @@
--- KodeKita — Phase 1 schema
+-- PyMula — Phase 1 schema
 -- Run this in the Supabase SQL editor of your project.
 
 -- Profiles: one row per auth user, holds display name.

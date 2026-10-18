@@ -1,14 +1,18 @@
 import Link from "next/link";
-import { chapters } from "@/content/chapters";
+import { chapters, getAllLessons } from "@/content/chapters";
 import { getCompletedLessonKeys, lessonKey } from "@/lib/progress-server";
 import { hasApprovedPurchase } from "@/lib/purchase-server";
 import { getCoursePrice, PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
+import { summarizeProgress } from "@/lib/progress-summary";
+import ProgressBar from "@/components/ui/ProgressBar";
+import { LinkButton } from "@/components/ui/Button";
 
 export default async function PythonDasarPage() {
   const completed = await getCompletedLessonKeys();
   const loggedIn = completed !== null;
   const purchased = loggedIn && (await hasApprovedPurchase(PYTHON_DASAR_COURSE_SLUG));
   const price = getCoursePrice(PYTHON_DASAR_COURSE_SLUG);
+  const summary = loggedIn ? summarizeProgress(getAllLessons(), completed, purchased) : null;
 
   return (
     <section className="mx-auto max-w-3xl px-6 py-16">
@@ -43,6 +47,47 @@ export default async function PythonDasarPage() {
         </div>
       )}
 
+      {summary && (
+        <div className="mt-6 rounded-lg border border-line bg-white/60 p-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="font-display text-base font-semibold text-ink">Progres kamu</p>
+            <p className="text-sm text-ink-soft">{summary.percent}%</p>
+          </div>
+          <ProgressBar
+            value={summary.scopeDone}
+            max={summary.scopeTotal}
+            label="Progres Python Dasar"
+            className="mt-3"
+          />
+          <p className="mt-2 text-xs text-ink-soft">
+            {summary.scopeDone}/{summary.scopeTotal} lesson selesai
+            {!purchased && " (chapter gratis)"}
+          </p>
+          {summary.next ? (
+            <LinkButton
+              href={`/kursus/python-dasar/${summary.next.chapterSlug}/${summary.next.lessonId}`}
+              className="mt-4"
+            >
+              {summary.scopeDone > 0 ? "Lanjutkan" : "Mulai"} — {summary.next.chapterTitle}:{" "}
+              {summary.next.lessonTitle}
+            </LinkButton>
+          ) : summary.lockedNext ? (
+            <>
+              <p className="mt-4 text-sm text-code">
+                Semua chapter gratis sudah kamu selesaikan. Kerja bagus!
+              </p>
+              <LinkButton href="/kursus/python-dasar/beli" className="mt-3">
+                Buka chapter berikutnya
+              </LinkButton>
+            </>
+          ) : (
+            <p className="mt-4 text-sm text-code">
+              Semua lesson yang tersedia sudah selesai. Chapter baru akan segera hadir.
+            </p>
+          )}
+        </div>
+      )}
+
       <ol className="mt-8 divide-y divide-line rounded-lg border border-line bg-white/60">
         {chapters.map((chapter) => {
           const isTodo = chapter.status === "todo";
@@ -53,19 +98,32 @@ export default async function PythonDasarPage() {
               : 0;
 
           const inner = (
-            <div className="flex items-center justify-between px-5 py-4">
-              <div>
+            <div className="flex items-center justify-between gap-4 px-5 py-4">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm text-ink-soft">Chapter {chapter.order}</p>
                 <p className="font-display text-base font-medium text-ink">
                   {chapter.title}
                 </p>
                 {loggedIn && !isTodo && (
-                  <p className="mt-1 text-xs text-ink-soft">
-                    {doneLessons}/{totalLessons} lesson selesai
-                  </p>
+                  <div className="mt-2 max-w-xs">
+                    <ProgressBar
+                      value={doneLessons}
+                      max={totalLessons}
+                      size="sm"
+                      label={`Progres Chapter ${chapter.order}`}
+                    />
+                    <p className="mt-1 text-xs text-ink-soft">
+                      {doneLessons}/{totalLessons} lesson selesai
+                    </p>
+                  </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex shrink-0 items-center gap-2 text-xs">
+                {loggedIn && !isTodo && totalLessons > 0 && doneLessons === totalLessons && (
+                  <span className="rounded bg-code-bg px-2 py-1 font-medium text-code">
+                    ✓ Selesai
+                  </span>
+                )}
                 {!chapter.isFree && purchased && (
                   <span className="rounded bg-code-bg px-2 py-1 text-code">Sudah dibeli</span>
                 )}

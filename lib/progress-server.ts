@@ -1,10 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { lessonKey, type CompletedLessonKey } from "@/lib/progress-keys";
 
-export type CompletedLessonKey = string; // `${chapterSlug}:${lessonId}`
-
-export function lessonKey(chapterSlug: string, lessonId: string): CompletedLessonKey {
-  return `${chapterSlug}:${lessonId}`;
-}
+// Re-exported so existing imports from "@/lib/progress-server" keep working.
+export { lessonKey };
+export type { CompletedLessonKey };
 
 // Returns null if nobody is signed in, otherwise the set of completed
 // lesson keys for the current user.

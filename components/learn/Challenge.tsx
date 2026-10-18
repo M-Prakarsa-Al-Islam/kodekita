@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { CodePractice } from "@/content/types";
 import { checkOutput } from "@/lib/checker";
 import { markLessonComplete } from "@/lib/progress";
@@ -16,6 +17,7 @@ export default function Challenge({
   chapterSlug: string;
   lessonId: string;
 }) {
+  const router = useRouter();
   const [hintsShown, setHintsShown] = useState(0);
   const [answerShown, setAnswerShown] = useState(false);
   const [feedback, setFeedback] = useState<{ passed: boolean; message: string } | null>(
@@ -30,6 +32,9 @@ export default function Challenge({
     setFeedback(outcome);
     if (outcome.passed) {
       await markLessonComplete(chapterSlug, lessonId);
+      // Re-render the server parts of the page so the progress bar, segments
+      // and ticks update right away (client state, e.g. the code, is kept).
+      router.refresh();
     }
   }
 
