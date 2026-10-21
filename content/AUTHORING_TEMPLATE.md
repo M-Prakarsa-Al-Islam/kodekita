@@ -23,6 +23,87 @@ the checker/quiz logic to make sure it actually works, and update
 - A chapter can have as many lessons as makes sense (2–4 is typical so
   far), each ending in either a quiz OR a code practice, not both.
 
+## Lessons with several files, input() and reading/writing files
+
+A code practice normally has ONE editor (`starter code:`). It can instead have
+SEVERAL files, shown as tabs above the editor. **You choose the files; the
+learner can edit the text of the editable ones but can never add, delete or
+rename a file.** Use this when the lesson is about files, `import`, or splitting
+a program into modules. Replace `starter code:` / `answer (spoiler):` with:
+
+```
+PRACTICE: code
+instructions: <what to do; name the files, e.g. "Lengkapi main.py ...">
+files:
+file: main.py
+```
+<starter content of main.py>
+```
+file: fungsi.py
+```
+<starter content of fungsi.py>
+```
+file: catatan.txt (read-only)
+```
+<the data the program reads - shown in a tab, the learner cannot edit it>
+```
+stdin (optional - only if the program calls input()):
+Budi
+3
+hints:
+1. <hint>
+answer files (spoiler):
+file: main.py
+```
+<the full correct main.py>
+```
+file: fungsi.py
+```
+<the full correct fungsi.py>
+```
+(only the editable files; read-only files don't need an answer)
+expected output (exact):
+```
+<exactly what the program prints>
+```
+source requirements (optional):
+- main.py must contain: from fungsi import   -> message: <shown if missing>
+- fungsi.py must contain: def sapa            -> message: <shown if missing>
+success message: <shown when they pass>
+```
+
+How it behaves (so you write the lesson to match):
+
+- **`main.py` is the file that runs** (as `__main__`), unless you name another
+  `entry:`. Other files are only used if `main.py` imports them. Every file
+  sits in the same folder, so `open("catatan.txt")` and
+  `from fungsi import x` just work.
+- **Every run starts clean**: files the program wrote are gone on the next run,
+  a data file the learner's code overwrote is restored, and an edited
+  `fungsi.py` is re-imported fresh (no stale code).
+- **input()** reads the `stdin:` lines in order, one per call. The output
+  looks like a terminal: the prompt, then the typed text, then a new line, so
+  `nama = input("Nama: ")` with `Budi` prints `Nama: Budi`. **Your
+  `expected output` must include that echoed line.** The "Input program" box
+  starts with your lines; "Cek Jawaban" always uses exactly your lines.
+- **Check the source too, not only the output.** Printing the right text
+  proves little when the lesson is about *how* it is done (the learner could
+  just `print("Halo, Budi!")`). Add `source requirements` so the right file
+  uses `open(`, `import`, `with`, and so on. A requirement applies to one named
+  file; one with no file applies to all `.py` files together. Comments don't
+  count.
+- **Errors name the file and line** for multi-file programs, e.g.
+  `NameError: name 'y' is not defined (fungsi.py, baris 3)`.
+- **Order matters**: only use ideas the learner has already met. In Chapter 3,
+  for instance, nobody has seen `if`, loops, lists or `.split()` yet.
+- **Inserting a lesson into an existing chapter: never renumber.** Progress is
+  saved against the lesson id (`L8`). Give the new lessons new ids (`L9`,
+  `L10`, ...) and place them where they belong in the list - the displayed
+  order follows the list, not the ids.
+- After adding or changing any lesson, run `npm test` (it runs every lesson in
+  the real Python the site uses: the answer must pass, the untouched starter
+  must fail).
+
 ## How your text is displayed (typography)
 
 Lesson text is plain text, but the page now styles it based on how you write

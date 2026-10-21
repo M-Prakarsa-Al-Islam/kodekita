@@ -1,55 +1,13 @@
-function normalize(output) {
-  return output
-    .replace(/\r\n/g, "\n")
-    .split("\n")
-    .map((line) => line.trimEnd())
-    .join("\n")
-    .trim();
-}
+// Tests for lib/checker.ts. This loads the REAL checker (transpiled), not a
+// copy of its logic, so it can't drift from what the site runs.
+import fs from "node:fs";
+import ts from "typescript";
 
-function firstUnmetRequirement(sourceCode, requirements) {
-  if (!requirements || requirements.length === 0) return null;
-  if (sourceCode === undefined) return "Kodemu belum bisa diperiksa. Coba jalankan ulang.";
-  const code = sourceCode.replace(/#.*$/gm, "");
-  for (const req of requirements) {
-    try {
-      if (!new RegExp(req.pattern).test(code)) return req.message;
-    } catch {
-      return "Aturan pemeriksaan jawaban tidak valid. Laporkan ke admin.";
-    }
-  }
-  return null;
-}
-
-function checkOutput(actualStdout, actualError, checker, sourceCode) {
-  if (actualError) {
-    return { passed: false, message: `Program-nya error: ${actualError}` };
-  }
-  if (checker.type === "stdout_exact") {
-    const actual = normalize(actualStdout);
-    const expected = normalize(checker.expected);
-    if (actual === expected) {
-      const unmet = firstUnmetRequirement(sourceCode, checker.sourceRequirements);
-      if (unmet) return { passed: false, message: unmet };
-      return { passed: true, message: "Benar!" };
-    }
-    return {
-      passed: false,
-      message:
-        actual.length === 0
-          ? "Program belum menghasilkan output apa pun. Pastikan ada print()."
-          : "Outputnya belum sesuai. Coba periksa lagi.",
-    };
-  }
-  return { passed: false, message: "Jenis checker tidak dikenal." };
-}
-
-function checkQuizAnswer(selectedIndex, correctIndex) {
-  return {
-    passed: selectedIndex === correctIndex,
-    message: selectedIndex === correctIndex ? "Benar!" : "Belum tepat, coba lagi.",
-  };
-}
+const src = fs.readFileSync(new URL("../lib/checker.ts", import.meta.url), "utf8");
+const js = ts.transpileModule(src, { compilerOptions: { module: "CommonJS", target: "ES2020" } }).outputText;
+const mod = { exports: {} };
+new Function("require", "module", "exports", js)(() => ({}), mod, mod.exports);
+const { checkOutput, checkQuizAnswer } = mod.exports;
 
 const tests = [];
 function t(name, actualStdout, actualError, checker, expectPassed, sourceCode) {
@@ -114,6 +72,25 @@ t("src: correct signature only inside a # comment does not count", "80000.0", nu
 t("src: hint after code on same line still counts (comment only strips after #)", "80000.0", null, srcChecker, true, hinted + "  # ok");
 t("src: invalid regex fails closed (no crash)", "80000.0", null, { type: "stdout_exact", expected: "80000.0", sourceRequirements: [{ pattern: "(", message: "x" }] }, false, hinted);
 t("src: checker without requirements ignores source (old lessons)", "Luas: 40", null, ch2Checker, true, "anything");
+
+// --- sourceRequirements across several files (multi-file lessons) ---
+const mfChecker = (reqs) => ({ type: "stdout_exact", expected: "Halo, Budi!", sourceRequirements: reqs });
+const importReq = { pattern: "(?:from\\s+fungsi\\s+import|import\\s+fungsi)", message: "main.py belum meng-import fungsi", file: "main.py" };
+const defReq = { pattern: "def\\s+sapa\\s*\\(", message: "fungsi.py belum punya def sapa", file: "fungsi.py" };
+const goodFiles = { "main.py": "from fungsi import sapa\nprint(sapa('Budi'))", "fungsi.py": "def sapa(n):\n    return 'Halo, ' + n + '!'" };
+t("multi-file: each requirement found in its own file passes", "Halo, Budi!", null, mfChecker([importReq, defReq]), true, goodFiles);
+t("multi-file: import missing from main.py fails with ITS message", "Halo, Budi!", null, mfChecker([importReq, defReq]), false, { ...goodFiles, "main.py": "print('x')" });
+t("multi-file: def missing from fungsi.py fails", "Halo, Budi!", null, mfChecker([importReq, defReq]), false, { ...goodFiles, "fungsi.py": "x = 1" });
+t("multi-file: a pattern in the WRONG file does not count (def sapa only in main.py)", "Halo, Budi!", null, mfChecker([importReq, defReq]), false, { "main.py": "from fungsi import sapa\ndef sapa(n):\n    pass", "fungsi.py": "x = 1" });
+t("multi-file: requirement without `file` matches across all .py files", "Halo, Budi!", null, mfChecker([{ pattern: "def\\s+sapa", message: "x" }]), true, goodFiles);
+t("multi-file: requirement without `file` ignores non-.py files", "Halo, Budi!", null, mfChecker([{ pattern: "rahasia", message: "x" }]), false, { ...goodFiles, "catatan.txt": "rahasia" });
+t("multi-file: a named file that does not exist counts as unmet", "Halo, Budi!", null, mfChecker([{ ...defReq, file: "tidak_ada.py" }]), false, goodFiles);
+t("multi-file: the signature only inside a # comment of that file does not count", "Halo, Budi!", null, mfChecker([defReq]), false, { ...goodFiles, "fungsi.py": "# def sapa(n):\nx = 1" });
+t("multi-file: comments are stripped per file (a '#' in one file does not hide the next)", "Halo, Budi!", null, mfChecker([defReq, importReq]), true, { "fungsi.py": "x = 1 # komentar\ndef sapa(n):\n    return n", "main.py": "# a\nfrom fungsi import sapa" });
+t("multi-file: wrong output still fails before requirements are considered", "salah", null, mfChecker([importReq]), false, goodFiles);
+t("multi-file: requirements but no source passed fails closed", "Halo, Budi!", null, mfChecker([importReq]), false, undefined);
+t("legacy: a plain string is still treated as main.py (requirement with file 'main.py' matches)", "Halo, Budi!", null, mfChecker([{ pattern: "sapa", message: "x", file: "main.py" }]), true, "print(sapa)");
+t("legacy: a plain string does not satisfy a requirement for another file", "Halo, Budi!", null, mfChecker([defReq]), false, "def sapa(n): pass");
 
 let failures = 0;
 for (const c of tests) {

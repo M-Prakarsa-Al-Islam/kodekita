@@ -22,19 +22,28 @@ export type Block =
 // ---- inline code -----------------------------------------------------------
 // Each alternative is something that is code and essentially never ordinary
 // Indonesian prose:
-//   CALL   print()  len(list)  .append(x)  float("-inf")  range(len(x))
+//   CALL   print()  len(list)  .append(x)  float("-inf")  math.sqrt(16)
+//          fungsi.sapa("Budi")  file.write("x")  range(len(x))
+//   FILE   main.py  fungsi.py  catatan.txt
 //   INDEX  data[0]  huruf[1:5]  list[str]  dict[str, list[str]]
 //   SNAKE  kata_bersih  hitung_diskon  is_aktif
 //   CONST  True  False  None
 const STR = `"[^"]*"|'[^']*'`;
 const CALL_ARGS = `\\((?:${STR}|[^()\\s"']|\\((?:${STR}|[^()\\s"'])*\\))*\\)`;
-const CALL = `\\.?[A-Za-z_]\\w*${CALL_ARGS}`;
+const CALL = `\\.?(?:[A-Za-z_]\\w*\\.)*[A-Za-z_]\\w*${CALL_ARGS}`;
+const FILE = `\\b[A-Za-z_][\\w-]*\\.(?:py|txt|csv|json|md)\\b`;
 const INDEX = `[A-Za-z_]\\w*\\[(?:[^\\[\\]\\s,]|, ?|\\[[^\\[\\]]*\\])*\\]`;
 const SNAKE = `\\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\\b`;
 const CONST = `\\b(?:True|False|None)\\b`;
-const INLINE_CODE_SOURCE = `${CALL}|${INDEX}|${SNAKE}|${CONST}`;
+const INLINE_CODE_SOURCE = `${CALL}|${FILE}|${INDEX}|${SNAKE}|${CONST}`;
+
+// Safety net: the snake_case pattern can backtrack quadratically on a very long
+// run like "a_a_a_..." (about 80 ms for 6,000 characters). A real paragraph is
+// a few hundred characters, so past this length we just don't style code.
+const MAX_SCAN_CHARS = 4000;
 
 export function splitInline(text: string): Inline[] {
+  if (text.length > MAX_SCAN_CHARS) return text ? [{ type: "text", text }] : [];
   const out: Inline[] = [];
   let last = 0;
   for (const m of text.matchAll(new RegExp(INLINE_CODE_SOURCE, "g"))) {

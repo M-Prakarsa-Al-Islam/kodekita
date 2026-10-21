@@ -22,20 +22,48 @@ export type Checker = {
 export type SourceRequirement = {
   pattern: string;
   message: string;
+  // Multi-file lessons: which file the pattern must match (e.g. "main.py").
+  // If omitted, it is matched against ALL the learner's .py files together.
+  // If the named file doesn't exist the requirement counts as unmet.
+  file?: string;
+};
+
+// One tab in a multi-file lesson. The files are chosen by the author - the
+// learner can edit the content of editable files but cannot add, delete or
+// rename files.
+export type LessonFile = {
+  name: string; // plain file name, no folders: "main.py", "fungsi.py", "catatan.txt"
+  content: string; // what the learner starts with (also what "Reset kode" restores)
+  // Default true. `false` shows the file read-only, e.g. a data file the
+  // program reads (catatan.txt) that the learner should look at, not edit.
+  editable?: boolean;
 };
 
 export type CodePractice = {
   kind: "code";
   instructions: string;
-  starterCode: string;
   hints: string[];
   // Full worked solution. Optional (older lessons don't have one) and
   // deliberately kept OUT of `hints` - it's revealed through its own
   // spoiler-warned UI, never by clicking through the numbered hints.
   answerHint?: string;
+  // Multi-file lessons: the full solution, file name -> complete content.
+  answerFiles?: Record<string, string>;
   checker: Checker;
   successFeedback: string;
-};
+  // Lines typed into input(), one per call. The check ALWAYS uses these (so
+  // the expected output is deterministic) and the "Input program" box starts
+  // with them. The output looks like a terminal session: the prompt, then
+  // the typed text, then a newline (e.g. "Nama: Budi").
+  stdin?: string[];
+  // The file that is run, as __main__. Default "main.py".
+  entry?: string;
+} & (
+  // EITHER one editor (the classic lesson) ...
+  | { starterCode: string; files?: undefined }
+  // ... OR several files shown as tabs.
+  | { files: LessonFile[]; starterCode?: undefined }
+);
 
 export type QuizPractice = {
   kind: "quiz";

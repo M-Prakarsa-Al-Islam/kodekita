@@ -6,6 +6,7 @@ import type { CodePractice } from "@/content/types";
 import { checkOutput } from "@/lib/checker";
 import { markLessonComplete } from "@/lib/progress";
 import CodeRunner from "./CodeRunner";
+import { getEntry, getPracticeFiles } from "@/lib/lesson-files";
 import { Button } from "@/components/ui/Button";
 import CodeBlock from "@/components/learn/CodeBlock";
 import LessonText, { InlineText } from "@/components/learn/LessonText";
@@ -28,9 +29,9 @@ export default function Challenge({
 
   async function handleResult(
     result: { stdout: string; error: string | null },
-    code: string
+    files: Record<string, string>
   ) {
-    const outcome = checkOutput(result.stdout, result.error, practice.checker, code);
+    const outcome = checkOutput(result.stdout, result.error, practice.checker, files);
     setFeedback(outcome);
     if (outcome.passed) {
       await markLessonComplete(chapterSlug, lessonId);
@@ -46,7 +47,9 @@ export default function Challenge({
 
       <div className="mt-6">
         <CodeRunner
-          starterCode={practice.starterCode}
+          files={getPracticeFiles(practice)}
+          entry={getEntry(practice)}
+          stdin={practice.stdin}
           draft={{ chapterSlug, lessonId }}
           onCheck={handleResult}
           checkLabel="Cek Jawaban"
@@ -84,7 +87,7 @@ export default function Challenge({
         </div>
       )}
 
-      {!feedback?.passed && practice.answerHint && (
+      {!feedback?.passed && (practice.answerHint || practice.answerFiles) && (
         <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3">
           {!answerShown ? (
             <Button
@@ -100,7 +103,16 @@ export default function Challenge({
               <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
                 ⚠️ Spoiler — Jawaban Lengkap
               </p>
-              <CodeBlock code={practice.answerHint} size="sm" wrap className="mt-2" />
+              {practice.answerFiles ? (
+                Object.entries(practice.answerFiles).map(([name, code]) => (
+                  <div key={name} className="mt-3">
+                    <p className="font-mono text-xs font-medium text-amber-900">{name}</p>
+                    <CodeBlock code={code} size="sm" wrap className="mt-1" />
+                  </div>
+                ))
+              ) : (
+                <CodeBlock code={practice.answerHint ?? ""} size="sm" wrap className="mt-2" />
+              )}
             </>
           )}
         </div>

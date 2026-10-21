@@ -212,6 +212,19 @@ Use `stdout_exact` for lessons whose goal is just printing; use
 
 ## 8. Runner requirements (build step 1)
 
+> **Status (2026-10-20): step 1 is mostly built.** Done: multi-file virtual
+> disk with a clean slate per run, module-cache reset, seed (read-only) files,
+> scripted `input()` that echoes like a terminal, errors with file and line,
+> `__main__` entry, per-file editor state, file tabs, per-file saved code, an
+> Input box, per-file `sourceRequirements`, and `npm test` running every lesson
+> in the real Pyodide. First used by the new Chapter 3 lessons L9-L16 (see
+> `PROGRESS.md`). **Not built yet:** the `behavior_tests` checker (hidden test
+> script calling the learner's functions), a Web Worker timeout for runaway
+> loops, and file upload into the virtual disk. Chapter 3 needed none of them
+> (output + per-file source rules were enough).
+
+
+
 Current runner (`lib/pyodide.ts`): Pyodide 0.26.2 (Python 3.12) from jsDelivr,
 loaded once, each run uses fresh globals, captures stdout, **no stdin support**,
 and (as far as read) no Web Worker, so it runs on the page's main thread.

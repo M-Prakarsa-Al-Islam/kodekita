@@ -22,22 +22,43 @@ function normalize(output: string): string {
 // there are none / all are met. Fails closed: if requirements exist but
 // no source code was provided, or a pattern is not a valid RegExp, the
 // lesson is not marked correct.
+//
+// `source` is the learner's code: a single string (classic lessons, treated as
+// the file "main.py") or a map of file name -> content (multi-file lessons).
+// A requirement with `file` is matched against that file only; without it,
+// against all the learner's .py files together.
 function firstUnmetRequirement(
-  sourceCode: string | undefined,
+  source: string | Record<string, string> | undefined,
   requirements: Checker["sourceRequirements"]
 ): string | null {
   if (!requirements || requirements.length === 0) return null;
-  if (sourceCode === undefined) {
+  if (source === undefined) {
     return "Kodemu belum bisa diperiksa. Coba jalankan ulang.";
   }
+  const files = typeof source === "string" ? { "main.py": source } : source;
   // Drop "# ..." comments first so a correct signature that is only
   // written inside a comment doesn't count. (Naive: a "#" inside a string
   // literal also truncates that line - fine for definition-shape
   // patterns, which never need to match text after a "#".)
-  const code = sourceCode.replace(/#.*$/gm, "");
+  const stripped: Record<string, string> = {};
+  for (const [name, content] of Object.entries(files)) {
+    stripped[name] = content.replace(/#.*$/gm, "");
+  }
+  const allPython = Object.entries(stripped)
+    .filter(([name]) => name.endsWith(".py"))
+    .map(([, content]) => content)
+    .join("\n");
+
   for (const req of requirements) {
+    let text: string;
+    if (req.file !== undefined) {
+      if (!(req.file in stripped)) return req.message;
+      text = stripped[req.file];
+    } else {
+      text = allPython;
+    }
     try {
-      if (!new RegExp(req.pattern).test(code)) return req.message;
+      if (!new RegExp(req.pattern).test(text)) return req.message;
     } catch {
       return "Aturan pemeriksaan jawaban tidak valid. Laporkan ke admin.";
     }
@@ -49,7 +70,7 @@ export function checkOutput(
   actualStdout: string,
   actualError: string | null,
   checker: Checker,
-  sourceCode?: string
+  sourceCode?: string | Record<string, string>
 ): CheckResult {
   if (actualError) {
     return {

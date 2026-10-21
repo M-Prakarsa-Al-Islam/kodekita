@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { LessonFile } from "@/content/types";
 import { createClient } from "@/lib/supabase/client";
 import {
   draftKey,
@@ -13,29 +14,45 @@ import {
 
 const SAVE_DELAY_MS = 400;
 
-// Editor code state that survives refresh. With no `scope` it behaves like
-// plain useState(starter) and stores nothing.
-export function useCodeDraft(
+type Files = Record<string, string>;
+
+// The learner's files for a lesson, remembered in this browser (see
+// lib/code-drafts.ts). Works for one file (classic lessons: legacy storage
+// key, so old drafts survive) and for several. Read-only files are never
+// stored. With no `scope` it is plain state and stores nothing.
+export function useFilesDraft(
   scope: { chapterSlug: string; lessonId: string } | undefined,
-  starter: string
+  starterFiles: LessonFile[]
 ) {
   const chapterSlug = scope?.chapterSlug;
   const lessonId = scope?.lessonId;
 
-  const [code, setCode] = useState(starter);
-  const [key, setKey] = useState<string | null>(null);
+  // Stable identity for the starters: a new array with the same content must
+  // not reset what the learner typed.
+  const signature = JSON.stringify(starterFiles);
+  const { starters, editableNames, multi } = useMemo(() => {
+    const list = JSON.parse(signature) as LessonFile[];
+    return {
+      starters: Object.fromEntries(list.map((f) => [f.name, f.content])) as Files,
+      editableNames: list.filter((f) => f.editable !== false).map((f) => f.name),
+      multi: list.length > 1,
+    };
+  }, [signature]);
+
+  const [files, setFiles] = useState<Files>(starters);
+  const [keys, setKeys] = useState<Record<string, string> | null>(null);
   const [restored, setRestored] = useState(false);
-  const codeRef = useRef(code);
+  const filesRef = useRef(files);
   useEffect(() => {
-    codeRef.current = code;
+    filesRef.current = files;
   });
 
-  // 1) Whenever the lesson (or its starter) changes: start from the starter,
-  //    then look for a saved draft. The user id comes from the local session
+  // 1) Whenever the lesson (or its starters) change: start from the starters,
+  //    then look for saved drafts. The user id comes from the local session
   //    (getSession reads the cookie; it does not call the network).
   useEffect(() => {
-    setCode(starter);
-    setKey(null);
+    setFiles(starters);
+    setKeys(null);
     setRestored(false);
     if (!chapterSlug || !lessonId) return;
 
@@ -50,37 +67,52 @@ export function useCodeDraft(
       }
       if (cancelled || !userId) return; // signed out: remember nothing
 
-      const k = draftKey(userId, chapterSlug, lessonId);
       const storage = getBrowserStorage();
-      const result = resolveInitialCode(storage ? loadDraft(storage, k) : null, starter);
-      // Don't overwrite code the learner already started typing meanwhile.
-      if (result.restored && codeRef.current === starter) {
-        setCode(result.code);
+      const nextKeys: Record<string, string> = {};
+      const restoredNow: Files = {};
+      for (const name of editableNames) {
+        const k = draftKey(userId, chapterSlug, lessonId, multi ? name : undefined);
+        nextKeys[name] = k;
+        const result = resolveInitialCode(storage ? loadDraft(storage, k) : null, starters[name]);
+        // Don't overwrite a file the learner already started typing meanwhile.
+        if (result.restored && filesRef.current[name] === starters[name]) {
+          restoredNow[name] = result.code;
+        }
+      }
+      if (Object.keys(restoredNow).length > 0) {
+        setFiles((prev) => ({ ...prev, ...restoredNow }));
         setRestored(true);
       }
-      setKey(k);
+      setKeys(nextKeys);
     })();
     return () => {
       cancelled = true;
     };
-  }, [chapterSlug, lessonId, starter]);
+  }, [chapterSlug, lessonId, starters, editableNames, multi]);
 
   // 2) Save shortly after typing stops.
   useEffect(() => {
-    if (!key) return;
+    if (!keys) return;
     const storage = getBrowserStorage();
     if (!storage) return;
-    const t = setTimeout(() => saveDraft(storage, key, code, starter), SAVE_DELAY_MS);
+    const t = setTimeout(() => {
+      for (const name of editableNames) {
+        if (keys[name]) saveDraft(storage, keys[name], files[name], starters[name]);
+      }
+    }, SAVE_DELAY_MS);
     return () => clearTimeout(t);
-  }, [code, key, starter]);
+  }, [files, keys, starters, editableNames]);
 
   // 3) Don't lose the last half second when the page is refreshed / closed /
   //    switched away from (mobile browsers often kill background tabs).
   useEffect(() => {
-    if (!key) return;
+    if (!keys) return;
     function flush() {
       const storage = getBrowserStorage();
-      if (storage && key) saveDraft(storage, key, codeRef.current, starter);
+      if (!storage || !keys) return;
+      for (const name of editableNames) {
+        if (keys[name]) saveDraft(storage, keys[name], filesRef.current[name], starters[name]);
+      }
     }
     function onVisibility() {
       if (document.visibilityState === "hidden") flush();
@@ -91,23 +123,33 @@ export function useCodeDraft(
       window.removeEventListener("pagehide", flush);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [key, starter]);
+  }, [keys, starters, editableNames]);
+
+  const setFile = useCallback((name: string, code: string) => {
+    setFiles((prev) => (prev[name] === code ? prev : { ...prev, [name]: code }));
+  }, []);
 
   const reset = useCallback(() => {
-    setCode(starter);
+    setFiles(starters);
     setRestored(false);
-    if (key) {
+    if (keys) {
       const storage = getBrowserStorage();
-      if (storage) removeDraft(storage, key);
+      if (storage) for (const name of editableNames) if (keys[name]) removeDraft(storage, keys[name]);
     }
-  }, [key, starter]);
+  }, [keys, starters, editableNames]);
+
+  // At least one editable file differs from its starter.
+  const changed = editableNames.some((n) => files[n] !== starters[n]);
 
   return {
-    code,
-    setCode,
+    files,
+    setFile,
     reset,
     restored,
-    // There is something saved for this lesson (the code differs from the starter).
-    hasDraft: key !== null && code !== starter,
+    starters,
+    // Something differs from the starter (show "Reset kode").
+    changed,
+    // ...and it is being saved (show "tersimpan di perangkat ini").
+    hasDraft: keys !== null && changed,
   };
 }

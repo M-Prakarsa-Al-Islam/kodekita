@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node scripts/test-checker.mjs && node scripts/test-editor.mjs && node scripts/test-progress.mjs && node scripts/test-drafts.mjs && node scripts/test-lesson-text.mjs && node scripts/test-logo.mjs && node scripts/test-runner.mjs && node scripts/test-lessons-pyodide.mjs && node scripts/test-ui.cjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",
@@ -27,7 +28,9 @@
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^30.1.3",
     "postcss": "^8.4.47",
+    "pyodide": "0.26.2",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.5.0"
   }

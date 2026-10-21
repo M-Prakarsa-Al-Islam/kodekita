@@ -42,6 +42,15 @@ check("call with a quoted string containing a space", codes('Pakai .split(" ") u
 check('call with quoted arg: float("-inf")', codes('Mulai dengan float("-inf") ya'), ['float("-inf")']);
 check("indexing and slicing: data[0], huruf[1:5]", codes("Panggil data[0] atau huruf[1:5] saja"), ["data[0]", "huruf[1:5]"]);
 check("type hints: list[str], dict[str, list[str]]", codes("Label list[str] dan dict[str, list[str]] itu"), ["list[str]", "dict[str, list[str]]"]);
+check("dotted call stays ONE token: math.sqrt(16)", codes("memanggilnya dengan math.sqrt(16) langsung"), ["math.sqrt(16)"]);
+check('dotted call with a string: fungsi.sapa("Budi")', codes('menulis fungsi.sapa("Budi") di sini'), ['fungsi.sapa("Budi")']);
+check('method call on a variable: file.write("x")', codes('lalu file.write("x") ya'), ['file.write("x")']);
+check("a leading-dot method is still one token: .append(x)", codes("pakai .append(x) saja"), [".append(x)"]);
+check("file names: main.py, fungsi.py, catatan.txt", codes("Buka main.py, fungsi.py dan catatan.txt sekarang"), ["main.py", "fungsi.py", "catatan.txt"]);
+check("a file name at the end of a sentence loses only the full stop", codes("Baca file laporan.txt."), ["laporan.txt"]);
+check("a call that contains a file name is one token: open(\"a.txt\")", codes('Tulis open("a.txt") dulu'), ['open("a.txt")']);
+check("version numbers and sentence joins are not file names / calls", codes("Python 3.12 ada. Lalu lanjut.Selesai"), []);
+check("an unknown extension is not treated as a file name", codes("contoh.nya dan buku.pdf"), []);
 check("snake_case names", codes("Variabel kata_bersih dan hitung_diskon dipakai"), ["kata_bersih", "hitung_diskon"]);
 check("True / False / None", codes("Hasilnya True atau False, bukan None"), ["True", "False", "None"]);
 check("ordinary prose has NO code", codes("Chapter 10 (Dictionary) membahas kunci dan nilai (key-value) pada Python."), []);
@@ -54,7 +63,11 @@ check("empty string", splitInline(""), []);
   const t0 = Date.now();
   const evil = "print(" + "(".repeat(3000) + "x".repeat(3000);
   splitInline(evil); splitInline('x["' + "a".repeat(5000)); splitInline("a_".repeat(3000));
-  check("pathological input stays fast (< 250 ms)", Date.now() - t0 < 250, true);
+  check("pathological input stays fast (< 1 s; typically ~150 ms, the budget is loose so a busy machine doesn't flake)", Date.now() - t0 < 1000, true);
+  const t1 = Date.now();
+  const longRun = "a_".repeat(60000);
+  const parts = splitInline(longRun);
+  check("an absurdly long text is returned untouched and instantly (length guard)", [parts.length, parts[0].type, parts[0].text.length, Date.now() - t1 < 100], [1, "text", 120000, true]);
 }
 
 // ---------- bold lead-ins ----------

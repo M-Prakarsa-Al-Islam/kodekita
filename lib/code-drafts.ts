@@ -26,8 +26,17 @@ export type DraftStorage = {
 
 export type SavedDraft = { code: string; starter: string; savedAt: number };
 
-export function draftKey(userId: string, chapterSlug: string, lessonId: string): string {
-  return `${DRAFT_PREFIX}${userId}:${chapterSlug}:${lessonId}`;
+// A single-editor lesson uses the key without a file name (exactly as before
+// multi-file existed, so drafts already saved keep working). A multi-file
+// lesson stores each editable file under its own key.
+export function draftKey(
+  userId: string,
+  chapterSlug: string,
+  lessonId: string,
+  fileName?: string
+): string {
+  const base = `${DRAFT_PREFIX}${userId}:${chapterSlug}:${lessonId}`;
+  return fileName ? `${base}:${fileName}` : base;
 }
 
 // Tolerant of anything that could be in storage (corrupt JSON, an older

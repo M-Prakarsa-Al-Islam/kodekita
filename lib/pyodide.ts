@@ -4,6 +4,8 @@
 // See PROGRESS.md for why (Piston's public API stopped being free;
 // self-hosting a sandbox was judged unnecessary for a Python-only course).
 
+import { PYTHON_HARNESS } from "@/lib/python-harness";
+
 const PYODIDE_VERSION = "0.26.2";
 const PYODIDE_CDN = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 
@@ -51,23 +53,48 @@ export type RunResult = {
   error: string | null;
 };
 
-export async function runPython(code: string): Promise<RunResult> {
-  const pyodide = await getPyodide();
-  pyodide.globals.set("__user_code__", code);
+export type ProjectFiles = Record<string, string>;
 
-  const result = await pyodide.runPythonAsync(`
-import sys, io, contextlib
-__stdout__ = io.StringIO()
-__error__ = None
-try:
-    with contextlib.redirect_stdout(__stdout__):
-        exec(__user_code__, {})
-except Exception as e:
-    __error__ = f"{type(e).__name__}: {e}"
-(__stdout__.getvalue(), __error__)
-`);
+export type ProjectRun = {
+  files: ProjectFiles;
+  entry?: string;
+  stdin?: string[];
+};
 
-  const [stdout, error] = result.toJs();
-  result.destroy();
-  return { stdout, error };
+// Run a small project on a given Pyodide instance: every file is written to
+// its virtual disk and `entry` is executed as __main__ (rules in
+// lib/python-harness.ts: clean slate per run, fresh module imports, scripted
+// input()). Takes the instance as a parameter so it can be tested in Node.
+export async function runProjectWith(pyodide: any, opts: ProjectRun): Promise<RunResult> {
+  if (!pyodide.globals.has("__pymula_run__")) {
+    await pyodide.runPythonAsync(PYTHON_HARNESS);
+  }
+  const entry = opts.entry ?? "main.py";
+  // Only multi-file programs get "(file, baris N)" appended to errors; a
+  // single-file lesson keeps the plain "Type: message" it always had.
+  const showLocation = Object.keys(opts.files).length > 1;
+
+  const run = pyodide.globals.get("__pymula_run__");
+  try {
+    const result = run(
+      JSON.stringify(opts.files),
+      entry,
+      JSON.stringify(opts.stdin ?? []),
+      showLocation
+    );
+    const [stdout, error] = result.toJs();
+    result.destroy();
+    return { stdout, error };
+  } finally {
+    run.destroy();
+  }
+}
+
+export async function runProject(opts: ProjectRun): Promise<RunResult> {
+  return runProjectWith(await getPyodide(), opts);
+}
+
+// Single-file convenience (what every lesson used before multi-file existed).
+export async function runPython(code: string, stdin?: string[]): Promise<RunResult> {
+  return runProject({ files: { "main.py": code }, entry: "main.py", stdin });
 }

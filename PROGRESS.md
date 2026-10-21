@@ -70,6 +70,13 @@ To hand me new chapter content, use the format in
   page background; WCAG exempts logotypes and it is large and semibold, but
   don't use it for small text on a light background. The footer still writes
   "PyMula" as plain text inside a sentence.
+- **Testing (2026-10-20): run `npm test`.** It runs every suite: checker,
+  editor, progress, drafts, lesson-text, logo, runner (real Pyodide), all 108
+  lessons in the real Pyodide (answers must pass, untouched starters must fail,
+  examples must run), and the UI behaviours in jsdom. Two devDependencies make
+  that possible: `pyodide` pinned to **0.26.2, the exact version the site loads
+  from the CDN** (keep them in step - bump both together) and `jsdom`. Neither
+  reaches the browser bundle (checked). Run it after changing any lesson.
 - **Hosting constraints (checked 2026-10-16):** Vercel Hobby is
   personal/non-commercial only, so PyMula must move to Vercel Pro ($20/mo)
   or another host **before accepting real payments** (owner is aware).
@@ -173,9 +180,11 @@ To hand me new chapter content, use the format in
             `purchases` first.
 - [ ] **Phase 5 - Project courses** (starting with "Build a Word Counter"; design
       in `PROJECT_DESIGN.md`). Build order:
-      1. Runner: multi-file virtual FS, module-cache reset + file reset before
-         every run, seed files, scripted `input()` + input box, `behavior_tests`
-         harness. **Stop and report after this step.**
+      1. Runner: **mostly done (2026-10-20)** - multi-file virtual disk, clean
+         slate + module-cache reset every run, seed/read-only files, scripted
+         `input()` with terminal-style echo, Input box, file tabs, per-file
+         drafts, per-file `sourceRequirements`; first used by Chapter 3 L9-L16.
+         Still open: `behavior_tests` checker, Web Worker timeout, file upload.
       2. Project route + workspace: generalize routes hard-coded to
          `python-dasar`, tab bar, localStorage drafts, `project_progress` table +
          upsert, spoiler + Copy, `help_used`, project catalog/detail pages,
@@ -773,6 +782,67 @@ a quiz, and the header on desktop and a phone. Known limits: plain words such as
 `if` / `for` / `%` can't be detected as code; a bold lead-in is a heuristic
 (e.g. step titles like "Hitung nilai_akhir dengan formula:" are bolded); the
 logo's amber is low-contrast on the light header.
+
+**2026-10-20 multi-file editor tabs + Chapter 3 gets 8 new lessons.**
+*Engine.* `lib/python-harness.ts` (the Python side) + `runProject` /
+`runProjectWith` in `lib/pyodide.ts`: every run writes all files to a fresh
+folder, forgets learner modules, runs the entry file (default `main.py`) as
+`__main__`, replaces `input()` with a function that reads scripted lines and
+echoes them like a terminal (`Nama: Budi`; running out raises EOFError),
+appends "(file, baris N)" to errors of multi-file programs only, and restores
+cwd / sys.path / input afterwards. Content types: `LessonFile`, `CodePractice`
+now takes EITHER `starterCode` OR `files`, plus `answerFiles`, `stdin`, `entry`;
+`SourceRequirement.file`. UI: `CodeEditor` keeps one CodeMirror state PER FILE
+(content, cursor, undo history survive tab switches; a stale parked state is
+discarded), `CodeRunner` shows an ARIA tab bar (arrow keys / Home / End; "baca
+saja" label for read-only files; "●" on edited files), an "Input program" box
+when the lesson has `stdin` ("Jalankan" uses the box, "Cek Jawaban" always uses
+the lesson's input and says so), "Reset kode" resets all files; drafts are per
+file (single-file lessons keep the old key, so saved drafts still load).
+`checkOutput` takes a file map; `lib/lesson-files.ts` normalises a practice into
+files. The files are always chosen by us - the learner can't create, delete or
+rename any.
+*Content (DRAFT written by Claude, owner to review).* Chapter 3 "Fungsi" gets
+L9 `input()`, L10 `input()` is text + `int()`, L11 read a file (`open`/`read`),
+L12 `with`, L13 write a file (`"w"`/`"a"`), L14 `import math`, L15 split
+functions into `fungsi.py` (two files), L16 combine input + file + module.
+They sit BEFORE the Tantangan (id `L8`), with new ids L9-L16 so existing
+progress keeps pointing at the right lesson; the displayed order follows the
+list. Written only with concepts taught by chapter 3 (no `if`, loops, lists,
+`.split()`, `len()`; `int()` is introduced in L10 because nothing earlier teaches
+it). Every lesson has `sourceRequirements` so hard-coding the output fails.
+*Findings.* (a) `importlib.invalidate_caches()` costs ~120 ms per call in
+Pyodide; replaced by dropping only the work folder's finder cache: **~200 ms ->
+3 ms per run**. (b) Pyodide's custom stdin does not echo typed text, so `input`
+is replaced in Python instead (also simpler and testable). (c) The old
+`test-checker.mjs` tested a COPY of the checker logic; it now loads the real
+`lib/checker.ts`. (d) Running all 108 lessons through the real runner found two
+deliberate oddities in old content, now allow-listed in the test, not "fixed":
+chapter 1 L1 is a "just press Run" warm-up (the starter IS the answer, no
+answer needed) and chapter 4 L2's example ends in a `NameError` on purpose.
+(e) Lesson text styling: dotted calls (`math.sqrt(16)`) and file names
+(`main.py`, `catatan.txt`) are now one code token; a 4,000-character guard stops
+a quadratic regex case on absurdly long text.
+*Verification.* `tsc`, `npm run build` (lesson route 10.1 kB, First Load 175 kB;
+editor lazy chunks unchanged at ~131 KB gzip) and all suites pass: checker 42,
+editor 33, progress 24, drafts 32, lesson-text 59 (739 real texts lossless),
+logo 8, runner 40, lessons-in-Pyodide (108 lessons: 81 code incl. 4 multi-file
+and 3 with input, 27 quiz), UI 65. Also simulated 28 learner solutions for the
+new lessons against the real runner + checker (valid alternatives such as
+`from math import sqrt`, `import fungsi` + `fungsi.sapa(...)` or `int(input())`
+pass; shortcuts such as hard-coded output, forgetting `int()`, writing all three
+lines with `"w"`, or defining the function in `main.py` fail with the specific
+message). No answer strings in `.next/static`; `pyodide` / `jsdom` are not in the
+browser bundle.
+*Not verified (no browser in the sandbox).* How the tab bar, the "baca saja"
+labels and the Input box actually look and feel on desktop and phone (many tabs
+scroll sideways); real mobile keyboards in the editor; the new lessons' wording
+and difficulty. Please click through Chapter 3 L9-L16 while signed in.
+*Known limits.* No `behavior_tests` checker yet (not needed by these lessons);
+no timeout for an infinite loop; browsers can't really keep files between runs
+(by design, and L13 tells the learner); `input()` echo means every `expected
+output` of an input lesson contains the typed text (documented in
+`content/AUTHORING_TEMPLATE.md`).
 
 ### How to write the next batch (2-3 chapters)
 
