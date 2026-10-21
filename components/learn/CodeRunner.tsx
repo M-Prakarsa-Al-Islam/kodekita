@@ -3,6 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { runPython, type RunResult } from "@/lib/pyodide";
+import { useCodeDraft } from "@/lib/use-code-draft";
 import { Button } from "@/components/ui/Button";
 
 // CodeMirror is ~120 kB gzipped: load it only on lessons that have a code
@@ -20,8 +21,13 @@ export default function CodeRunner({
   starterCode,
   onCheck,
   checkLabel,
+  draft,
 }: {
   starterCode: string;
+  // If provided, what the learner types is remembered in this browser (keyed
+  // by user + lesson) so it survives a refresh, and a "Reset kode" button
+  // appears. If omitted, the editor starts from the starter every time.
+  draft?: { chapterSlug: string; lessonId: string };
   // Called only when the "check" button is used (not on a plain run) -
   // this is what triggers grading/marking a lesson complete.
   onCheck?: (result: RunResult, code: string) => void;
@@ -30,7 +36,7 @@ export default function CodeRunner({
   // (run, no grading) button is shown.
   checkLabel?: string;
 }) {
-  const [code, setCode] = useState(starterCode);
+  const { code, setCode, reset, restored, hasDraft } = useCodeDraft(draft, starterCode);
   const [result, setResult] = useState<RunResult | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "running">("idle");
   const [pendingAction, setPendingAction] = useState<"run" | "check" | null>(null);
@@ -59,10 +65,14 @@ export default function CodeRunner({
     return idleLabel;
   }
 
+  function handleReset() {
+    if (window.confirm("Kembalikan ke kode awal? Kode yang kamu tulis akan hilang.")) reset();
+  }
+
   return (
     <div className="overflow-hidden rounded-lg border border-line">
       <CodeEditor value={code} onChange={setCode} />
-      <div className="flex items-center gap-2 border-t border-line bg-white/60 px-4 py-2">
+      <div className="flex flex-wrap items-center gap-2 border-t border-line bg-white/60 px-4 py-2">
         <Button
           type="button"
           variant={checkLabel ? "secondary" : "primary"}
@@ -82,6 +92,25 @@ export default function CodeRunner({
           >
             {label("check", checkLabel)}
           </Button>
+        )}
+        {draft && (hasDraft || code !== starterCode) && (
+          <div className="ml-auto flex items-center gap-3 text-xs text-ink-soft">
+            {hasDraft && (
+              <span>
+                {restored ? "Kode terakhirmu dipulihkan · " : ""}tersimpan di perangkat ini
+              </span>
+            )}
+            {code !== starterCode && (
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={status !== "idle"}
+                className="underline hover:text-ink disabled:opacity-50"
+              >
+                Reset kode
+              </button>
+            )}
+          </div>
         )}
       </div>
       {result && (

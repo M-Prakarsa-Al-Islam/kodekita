@@ -11,6 +11,8 @@ import { PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
 import Practice from "@/components/learn/Practice";
 import LessonNav from "@/components/learn/LessonNav";
 import ChapterProgress from "@/components/learn/ChapterProgress";
+import CodeBlock from "@/components/learn/CodeBlock";
+import LessonText from "@/components/learn/LessonText";
 import { getCompletedLessonKeys, lessonKey } from "@/lib/progress-server";
 
 export default async function LessonPage({
@@ -55,45 +57,43 @@ export default async function LessonPage({
           completedIds={completedIds}
         />
       </div>
-      <h1 className="font-display text-2xl font-semibold text-ink">{lesson.title}</h1>
+      <h1 className="mt-8 text-balance font-display text-3xl font-semibold leading-tight tracking-tight text-ink">
+        {lesson.title}
+      </h1>
 
-      <div className="mt-8 space-y-10">
+      <div className="mt-8 space-y-14">
         <div>
-          <p className="font-mono text-xs uppercase text-code">Teori</p>
-          <p className="mt-2 whitespace-pre-line text-sm text-ink">
-            {lesson.theory.explanation}
+          <p className="font-mono text-xs font-medium uppercase tracking-widest text-code">
+            Teori
           </p>
+          <LessonText text={lesson.theory.explanation} className="mt-3" />
           {lesson.theory.sections?.map((section, i) => (
-            <div key={i} className="mt-4">
+            <div key={i} className={section.heading ? "mt-10" : "mt-5"}>
               {section.heading && (
-                <p className="text-sm font-semibold text-ink">{section.heading}</p>
+                <h2 className="font-display text-xl font-semibold leading-snug text-ink">
+                  {section.heading}
+                </h2>
               )}
               {section.text && (
-                <p className="mt-1 whitespace-pre-line text-sm text-ink">
-                  {section.text}
-                </p>
+                <LessonText text={section.text} className={section.heading ? "mt-2" : ""} />
               )}
-              {section.code && (
-                <pre className="mt-3 overflow-x-auto rounded-lg bg-ink px-4 py-3 font-mono text-sm text-white">
-                  <code>{section.code}</code>
-                </pre>
-              )}
+              {section.code && <CodeBlock code={section.code} className="mt-4" />}
             </div>
           ))}
           {lesson.theory.example && (
-            <>
-              <p className="mt-4 text-sm text-ink-soft">
-                {lesson.theory.example.description}
-              </p>
-              <pre className="mt-3 overflow-x-auto rounded-lg bg-ink px-4 py-3 font-mono text-sm text-white">
-                <code>{lesson.theory.example.code}</code>
-              </pre>
-            </>
+            <div className="mt-10">
+              <LessonText
+                text={lesson.theory.example.description}
+                size="sm"
+                className="text-ink-soft"
+              />
+              <CodeBlock code={lesson.theory.example.code} className="mt-3" />
+            </div>
           )}
         </div>
 
         <div>
-          <p className="font-mono text-xs uppercase text-code">
+          <p className="font-mono text-xs font-medium uppercase tracking-widest text-code">
             {lesson.practice.kind === "quiz" ? "Kuis" : "Latihan"}
           </p>
           <div className="mt-3">

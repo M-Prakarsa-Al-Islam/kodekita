@@ -13,6 +13,8 @@ const config: Config = {
         code: "#0F8A6B",
         "code-bg": "#E4F5EF",
         line: "#E1E4E8",
+        // PyMula wordmark: "Py" + "Mula" (exact colours from the owner).
+        brand: { py: "#29235c", mula: "#f2ad3d" },
       },
       fontFamily: {
         display: ["var(--font-display)", "serif"],

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LinkButton } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "./SignOutButton";
+import Logo from "./Logo";
 
 export default async function Header() {
   const supabase = createClient();
@@ -11,9 +12,7 @@ export default async function Header() {
   return (
     <header className="border-b border-line bg-paper">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/" className="font-display text-xl font-semibold text-ink">
-          PyMula
-        </Link>
+        <Logo />
 
         <nav className="hidden items-center gap-6 text-sm text-ink-soft md:flex">
           <Link href="/kursus" className="hover:text-ink">

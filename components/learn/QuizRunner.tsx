@@ -6,6 +6,8 @@ import type { QuizPractice } from "@/content/types";
 import { checkQuizAnswer } from "@/lib/checker";
 import { markLessonComplete } from "@/lib/progress";
 import { Button } from "@/components/ui/Button";
+import CodeBlock from "@/components/learn/CodeBlock";
+import LessonText, { InlineText } from "@/components/learn/LessonText";
 
 export default function QuizRunner({
   practice,
@@ -39,14 +41,12 @@ export default function QuizRunner({
 
   return (
     <div>
-      <p className="whitespace-pre-line text-sm text-ink">{practice.question}</p>
+      <LessonText text={practice.question} />
       {practice.codeSnippet && (
-        <pre className="mt-3 overflow-x-auto rounded-lg bg-ink px-4 py-3 font-mono text-sm text-white">
-          <code>{practice.codeSnippet}</code>
-        </pre>
+        <CodeBlock code={practice.codeSnippet} className="mt-4" />
       )}
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-5 space-y-2.5">
         {practice.options.map((option, i) => {
           const isSelected = selected === i;
           const isCorrectAnswer = submitted && i === practice.correctIndex;
@@ -58,7 +58,7 @@ export default function QuizRunner({
               type="button"
               disabled={submitted}
               onClick={() => setSelected(i)}
-              className={`block w-full rounded-md border px-4 py-2.5 text-left text-sm transition-colors disabled:cursor-default ${
+              className={`block w-full rounded-md border px-4 py-3 text-left text-[0.9375rem] leading-snug transition-colors disabled:cursor-default ${
                 isCorrectAnswer
                   ? "border-code bg-code-bg text-ink"
                   : isWrongSelected
@@ -68,7 +68,7 @@ export default function QuizRunner({
                   : "border-line bg-white text-ink hover:border-ink/40"
               }`}
             >
-              {option}
+              <InlineText text={option} />
             </button>
           );
         })}
@@ -85,10 +85,10 @@ export default function QuizRunner({
         </Button>
       ) : (
         <div className="mt-4">
-          <p className={`text-sm font-medium ${passed ? "text-code" : "text-amber-700"}`}>
+          <p className={`text-[0.9375rem] font-medium ${passed ? "text-code" : "text-amber-700"}`}>
             {passed ? "Benar!" : "Belum tepat."}
           </p>
-          <p className="mt-1 text-sm text-ink-soft">{practice.explanation}</p>
+          <LessonText text={practice.explanation} size="sm" className="mt-1 text-ink-soft" />
           {!passed && (
             <Button type="button" variant="ghost" className="mt-2 px-0 text-sm underline" onClick={tryAgain}>
               Coba lagi

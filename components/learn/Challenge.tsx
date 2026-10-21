@@ -7,6 +7,8 @@ import { checkOutput } from "@/lib/checker";
 import { markLessonComplete } from "@/lib/progress";
 import CodeRunner from "./CodeRunner";
 import { Button } from "@/components/ui/Button";
+import CodeBlock from "@/components/learn/CodeBlock";
+import LessonText, { InlineText } from "@/components/learn/LessonText";
 
 export default function Challenge({
   practice,
@@ -40,11 +42,12 @@ export default function Challenge({
 
   return (
     <div>
-      <p className="whitespace-pre-line text-sm text-ink">{practice.instructions}</p>
+      <LessonText text={practice.instructions} />
 
-      <div className="mt-4">
+      <div className="mt-6">
         <CodeRunner
           starterCode={practice.starterCode}
+          draft={{ chapterSlug, lessonId }}
           onCheck={handleResult}
           checkLabel="Cek Jawaban"
         />
@@ -52,19 +55,20 @@ export default function Challenge({
 
       {feedback && (
         <p
-          className={`mt-3 text-sm font-medium ${
+          className={`mt-4 whitespace-pre-line text-[0.9375rem] font-medium leading-relaxed ${
             feedback.passed ? "text-code" : "text-amber-700"
           }`}
         >
-          {feedback.passed ? practice.successFeedback : feedback.message}
+          {feedback.passed ? <InlineText text={practice.successFeedback} /> : feedback.message}
         </p>
       )}
 
       {!feedback?.passed && practice.hints.length > 0 && (
         <div className="mt-4">
           {practice.hints.slice(0, hintsShown).map((hint, i) => (
-            <p key={i} className="mt-1 text-sm text-ink-soft">
-              Hint {i + 1}: {hint}
+            <p key={i} className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">
+              <span className="font-medium text-ink">Hint {i + 1}:</span>{" "}
+              <InlineText text={hint} />
             </p>
           ))}
           {hintsShown < practice.hints.length && (
@@ -96,9 +100,7 @@ export default function Challenge({
               <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
                 ⚠️ Spoiler — Jawaban Lengkap
               </p>
-              <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded bg-ink px-3 py-2 font-mono text-xs text-white">
-                {practice.answerHint}
-              </pre>
+              <CodeBlock code={practice.answerHint} size="sm" wrap className="mt-2" />
             </>
           )}
         </div>

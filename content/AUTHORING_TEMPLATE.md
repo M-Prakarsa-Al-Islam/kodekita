@@ -1,4 +1,4 @@
-# How to write a chapter for KodeKita
+# How to write a chapter for PyMula
 
 Copy the block below for each chapter, fill it in, and send it to me
 (pasted in chat, or as a `.md`/`.txt` file — either is fine) along with
@@ -22,6 +22,34 @@ the checker/quiz logic to make sure it actually works, and update
   example is usually enough.
 - A chapter can have as many lessons as makes sense (2–4 is typical so
   far), each ending in either a quiz OR a code practice, not both.
+
+## How your text is displayed (typography)
+
+Lesson text is plain text, but the page now styles it based on how you write
+it. You don't need any special syntax - just write like this:
+
+- **A blank line starts a new paragraph.** A single line break stays a line
+  break inside the paragraph (so "Tugasmu:" followed by numbered steps works).
+- **Lists:** start a line with `- ` for bullets, or `1. `, `2. ` for numbered
+  steps. Put each item on its own line. An intro line directly above the list
+  is fine.
+- **A short term followed by a colon at the start of a list item is shown in
+  bold**, e.g. `- Unik (Tidak Menerima Duplikat): jika kamu memasukkan ...`
+  or `- .split(separator): memotong string ...`. Keep the term short (at most
+  4 words, no comma) - a long sentence with a colon is left as normal text.
+- **Call-outs:** a paragraph that starts with `Penting:`, `Peringatan:` or
+  `Catatan:` (or `Catatan khusus untuk .items():`) is shown in a highlighted
+  box. Use them sparingly, for the one thing the learner must not miss.
+- **Code inside a sentence is detected automatically** and shown in a code
+  style: function calls (`print()`, `len(list)`, `.append(x)`), indexing and
+  type hints (`data[0]`, `list[str]`, `dict[str, int]`), snake_case names
+  (`kata_bersih`), and `True` / `False` / `None`. Don't add backticks - they
+  would show up as literal characters. Plain words like `if`, `for`, `else`
+  or an operator such as `%` can't be detected, so they stay normal text.
+- **Whole code samples** always go in the `code:` / `starter code:` blocks,
+  never inline in a paragraph.
+- **Nothing is ever dropped or reworded** by this styling (it is tested over
+  every existing lesson), so a typo in the text is a typo on the page.
 
 ## Template — copy this per chapter
 

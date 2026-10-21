@@ -1,7 +1,8 @@
-# KodeKita — Progress Log
+# PyMula — Progress Log
 
-Upload this file (plus the repo, plus `master_builder_prompt.md`) at the
-start of a new chat and say "continue KodeKita from Phase X" — or, for a
+Upload this file (plus the repo, plus `master_builder_prompt.md`, plus
+`PROJECT_DESIGN.md` for any project-course or Phase 5 work) at the
+start of a new chat and say "continue PyMula from Phase X" — or, for a
 content-only session, "write chapters N-M" — to resume.
 
 To hand me new chapter content, use the format in
@@ -55,6 +56,47 @@ To hand me new chapter content, use the format in
   code/success `#0F8A6B`. Fonts: Fraunces (display), Inter (body), JetBrains
   Mono (code).
 
+- **Product name: PyMula** (renamed from KodeKita on 2026-10-18; all code, docs
+  and SQL comments updated). Things that may still say "KodeKita" and are
+  *not* in this repo: the GitHub repository URL/name, the Vercel project and
+  its domain, the Supabase project name, and the owner's copy of
+  `master_builder_prompt.md` (a renamed copy was provided in chat). No
+  storage keys, bucket names or env vars used the old name, so no user data
+  was affected. The old tagline in `app/layout.tsx` ("Belajar Coding. Praktik.
+  Bangun Sesuatu.") was kept - revisit it, since "PyMula" suggests Python.
+- **Brand wordmark (2026-10-19):** "Py" in `#29235c` and "Mula" in `#f2ad3d`
+  (Tailwind tokens `brand-py` / `brand-mula`, component `components/site/Logo.tsx`,
+  used in the header on every page). The amber is only 1.8:1 against the light
+  page background; WCAG exempts logotypes and it is large and semibold, but
+  don't use it for small text on a light background. The footer still writes
+  "PyMula" as plain text inside a sentence.
+- **Hosting constraints (checked 2026-10-16):** Vercel Hobby is
+  personal/non-commercial only, so PyMula must move to Vercel Pro ($20/mo)
+  or another host **before accepting real payments** (owner is aware).
+  Supabase Free pauses a project after 7 days idle - owner pings it
+  manually for now (scheduled ping or Pro $25/mo later). Supabase Free:
+  500 MB DB, 5 GB egress, 50k MAU, API requests not capped. Pyodide loads
+  from jsDelivr, so it doesn't use Vercel bandwidth. Numbers come from
+  third-party summaries of vendor docs - re-verify before launch.
+- **Project courses (decided 2026-10-16, full detail in
+  `PROJECT_DESIGN.md`):** hybrid - learners code in the browser (story ->
+  instructions -> code -> check), then "take it home". A cumulative
+  two-file workspace (`main.py` + `fungsi.py`, tab bar, files fixed by the
+  project) where each lesson starts from the learner's saved code. One
+  `project_progress` row per user per project, **UPDATE not INSERT**, no
+  history; localStorage is the typing-time draft cache, Supabase is written
+  only on pass / "Lanjut". Checks use **behavioral tests** (hidden test
+  script calling the learner's functions) for function lessons,
+  `stdout_exact` for print-only lessons. Spoiler shows the full solution
+  read-only with a Copy button (never overwrites the learner's code); **no
+  "Lewati" button in the MVP**. `help_used` (spoiler opened per lesson) is
+  owner analytics. The zip (`main.py`, `fungsi.py`, README, sample article)
+  is generated in the browser; chapter 8 guides running locally and
+  uploading to GitHub. Must work on desktop and mobile. Python Dasar does
+  not teach file I/O, `import` or `input()`, so the project teaches them.
+  Word Counter is a small beginner project - market it as "your first
+  complete Python program", not "portfolio-ready".
+
 ## Phase status (code / infrastructure)
 
 - [x] **Phase 1 - Foundation.** Scaffold, design system, landing page,
@@ -100,7 +142,47 @@ To hand me new chapter content, use the format in
       directly now redirects to `/beli`, not just UI-hidden.
       `npx tsc --noEmit`, `npm run build`, and
       `node scripts/test-checker.mjs` (18/18) all pass.
-- [ ] Phase 5 - Project courses (starting with "Build a Word Counter")
+- [ ] **Phase 5-pre - Platform improvements before projects** (owner-driven,
+      details given per session; context in `PROJECT_DESIGN.md` section 11):
+      - [x] Editor rework (code done 2026-10-16, **needs manual device test**):
+            CodeMirror 6, lazy-loaded (~131 KB gzip, only on code lessons).
+            Tab inserts 4-column-stop spaces AT THE CURSOR (selected lines are
+            indented), Shift+Tab dedents, Python auto-indent, Backspace over
+            indentation, line numbers, highlighting, **no line wrapping
+            (long lines scroll horizontally)**,
+            mobile-safe attributes, Indent/Outdent buttons on touch devices,
+            Esc-then-Tab focus escape (CodeMirror built-in). Reusable
+            `components/learn/CodeEditor.tsx` (+ `readOnly`) for the project
+            workspace; config in `lib/editor-extensions.ts`; tests in
+            `scripts/test-editor.mjs` (33/33). Checklist:
+            `PROJECT_DESIGN.md` section 11. Learner's code is now remembered
+            and there is a "Reset kode" button (2026-10-19, below). Still open:
+            spoiler display as read-only `CodeEditor`.
+      - [x] Progress UI (done 2026-10-18, **needs a visual check in a browser**):
+            progress bars + per-lesson indicators; see the session log. Still
+            open: lock icons for paid chapters in the lesson nav, progress in the
+            header course menu.
+      - [x] Lesson typography (done 2026-10-19, **needs a visual check in a
+            browser**): see the session log and `PROJECT_DESIGN.md` section 11.
+      - [ ] Account / settings page (master prompt page #13): view account,
+            rename, change password, delete account. Deletion needs the Supabase
+            service-role key **server-side only** (server action, env var without
+            `NEXT_PUBLIC_`) and cleanup of `payment-proofs` objects; **decision
+            needed** on what happens to `purchases` (financial records) when an
+            account is deleted; verify FK behavior of `lesson_progress` /
+            `purchases` first.
+- [ ] **Phase 5 - Project courses** (starting with "Build a Word Counter"; design
+      in `PROJECT_DESIGN.md`). Build order:
+      1. Runner: multi-file virtual FS, module-cache reset + file reset before
+         every run, seed files, scripted `input()` + input box, `behavior_tests`
+         harness. **Stop and report after this step.**
+      2. Project route + workspace: generalize routes hard-coded to
+         `python-dasar`, tab bar, localStorage drafts, `project_progress` table +
+         upsert, spoiler + Copy, `help_used`, project catalog/detail pages,
+         purchase gate.
+      3. Content: Word Counter chapters + take-home chapter; extend
+         `content/AUTHORING_TEMPLATE.md` for projects.
+      4. Later: Web Worker timeout, file upload, public share page, "Lewati".
 - [ ] Phase 6 - Polish & launch
 
 ## Chapter content status (Python Dasar, 13 chapters)
@@ -433,6 +515,11 @@ deterministic - set print order is not, which is why the author's
 - Markdown stripped, spoiler hints moved to `answerHint`, numbered
   steps on separate lines (same conventions as ch9/ch10).
 
+**Note for the author (not changed):** L1 says sets are created with
+`{}`, but ch10 L4 teaches that `{}` is an *empty dictionary*. An empty
+set must be written `set()`. Nothing in ch11 breaks on this, but a
+learner may try `x = {}` and get a dict. Worth one sentence in L1 or L6.
+
 **2026-10-13 chapter 12 (Error dan Exception Handling):** Wrote
 `content/chapters/chapter-12.ts` - 7 lessons (2 quiz: bug vs exception,
 why guard clauses; 5 code: `try`/`except`, multiple specific `except`,
@@ -525,6 +612,168 @@ removed from code. No content corrections were needed.
   current Pyodide, but the course should keep Pyodide >= 0.23 / Python
   >= 3.10.
 
+**2026-10-16 project-course planning session (docs only, no code
+changes).** Agreed the project-course approach with the owner and wrote
+`PROJECT_DESIGN.md` (context, format, Word Counter outline, data model,
+checking, runner requirements, take-home, build order, verification
+checklist). Findings worth remembering: (a) Python Dasar teaches no file I/O,
+`import` or `input()` (grep over all 13 chapters), so the project must teach
+all three; (b) Vercel Hobby forbids commercial use and Supabase Free pauses
+after 7 days idle (see Key decisions); (c) the "unchanged starter already
+passes" problem seen in chapter 13 will recur in projects, hence behavioral
+tests; (d) the owner wants editor/progress/typography/account improvements
+first (Phase 5-pre). Two technical traps to handle in the runner are
+documented in `PROJECT_DESIGN.md` section 8 (module cache and persistent
+virtual disk between runs).
+
+**2026-10-16 editor rework (CodeMirror 6).** Replaced the `<textarea>` in
+`CodeRunner` with a lazy-loaded CodeMirror 6 editor so learners can press Tab
+to indent (previously Tab moved focus to the next control). New files:
+`lib/editor-extensions.ts`, `components/learn/CodeEditor.tsx`,
+`scripts/test-editor.mjs`; `CodeRunner.tsx` now renders `CodeEditor` through
+`next/dynamic`. New dependencies in `package.json`: `@codemirror/state`,
+`@codemirror/view`, `@codemirror/commands`, `@codemirror/language`,
+`@codemirror/lang-python`, `@lezer/highlight` (**run `npm install`**).
+Measured: lazy chunks total about 131 KB gzip; lesson route First Load JS
+168 -> 169 kB, so CodeMirror is not in the initial load. `tsc`, `npm run
+build`, `test-checker.mjs` (29/29), `test-editor.mjs` (21/21) pass; answer-
+string grep of `.next/static` finds nothing. A throw-away jsdom run
+confirmed the real keydown wiring (Tab prevented + indents, Esc-then-Tab not
+prevented, expiry after 2 s, mobile attributes present). Lesson learned: the
+first version had a hand-written Esc-release for the Tab keyboard trap; a
+test exposed that CodeMirror >= 6.37 already ships one (Esc then Tab within
+2 s), so ours was removed. **Not verified (needs real devices):** Android /
+iPhone keyboards, touch selection, focus behaviour in real browsers - run the
+checklist in `PROJECT_DESIGN.md` section 11. Mobile fallback if Android is
+bad: plain `<textarea>` on touch devices only.
+
+**2026-10-18 editor fixes after the owner's first test.** Two reports:
+(1) Tab indented the whole line instead of inserting at the cursor;
+(2) a long line wasn't scrollable sideways. Causes - (1) I had bound Tab to
+CodeMirror's `indentMore` (via `indentWithTab`), which always indents the whole
+line; (2) I had enabled `EditorView.lineWrapping` (thinking it friendlier on
+phones) so long lines wrapped instead of scrolling. Fixes in
+`lib/editor-extensions.ts`: new `insertIndentAtCursor` command (spaces at the
+cursor up to the next 4-column stop, selected lines indented when there is a
+selection, refused when read-only) bound to Tab and used by the touch "Indent"
+button; line wrapping removed and `.cm-scroller` set to `overflow-x: auto`;
+`CodeEditor` wrapper got `min-w-0` so a long line can't widen the page.
+`scripts/test-editor.mjs` rewritten for cursor-position behaviour (33/33; one
+of my own tests had a wrong cursor position and was fixed - the code was right).
+Re-verified the real keydown wiring in a throw-away jsdom run. `tsc`, build,
+`test-checker.mjs` (29/29) pass; lazy chunks still ~131 KB gzip; no answer
+strings in `.next/static`. **Still not visually verified** (no browser in the
+sandbox): that the horizontal scrollbar appears inside the editor and the page
+doesn't scroll sideways - checklist items 2, 8, 13 in `PROJECT_DESIGN.md`
+section 11. Interpretation note: I read "baris panjang disatukan (tidak ada
+scroll)" as "wants one line + horizontal scroll"; ask the owner if that is
+wrong.
+
+**2026-10-18 rename to PyMula + progress UI.** (1) Renamed KodeKita ->
+PyMula across 14 files (UI text in Header/Footer/layout/QRIS alt text,
+`package.json` + lockfile name, SQL comments, README, docs). Grep for any
+spelling variant now returns nothing; the only "kodekita" left in `.next` is
+the sandbox folder path. (2) **Progress UI.** Before: only the text "x/y lesson
+selesai"; the lesson page fetched no progress at all; the dashboard "Lanjutkan"
+button could point at a paid chapter and bounce a free learner to the purchase
+page. Now:
+- `components/ui/ProgressBar.tsx`: accessible bar (`role=progressbar`, aria
+  values, clamped, `motion-reduce` aware).
+- `components/learn/ChapterProgress.tsx`: on every lesson page, "Lesson N/M - x
+  selesai" plus one segment per lesson (green = done, amber ring = current).
+- `components/learn/LessonNav.tsx`: new optional `completedKeys` prop (the
+  signed-in learner's own `${chapter}:${lesson}` keys; no lesson content) ->
+  tick on finished lessons and "x/y" or tick per chapter in the dropdowns.
+- Course page (`/kursus/python-dasar`): "Progres kamu" card (bar, percent,
+  Lanjutkan / Mulai button) plus a bar and a "Selesai" badge per chapter.
+- Dashboard: same card; **paywall-aware**: a learner who hasn't purchased gets
+  progress over the FREE chapters only and, once those are done, a "Semua chapter
+  gratis sudah kamu selesaikan" message with a "Buka chapter berikutnya" button to
+  `/kursus/python-dasar/beli` instead of a link that redirects.
+- `Challenge` and `QuizRunner` call `router.refresh()` right after a lesson is
+  marked complete, so the bar, segments and ticks update immediately (client
+  state such as the typed code is preserved).
+- Logic lives in pure `lib/progress-summary.ts` (+ `lib/progress-keys.ts`;
+  `progress-server.ts` re-exports `lessonKey`). Only lessons that exist are
+  counted, so stale DB rows (renamed/removed lessons) can't produce >100%.
+Tests: `scripts/test-progress.mjs` (24/24: next-lesson rules, free-only scope,
+paywall state, stale rows, rounding, empty course, plus the markup of both
+components). `tsc`, `npm run build`, `test-checker.mjs` (29/29),
+`test-editor.mjs` (33/33) pass; no answer strings in `.next/static`. **Not
+verified (no browser in the sandbox, and no Supabase to sign in):** how the new
+bars look and whether the immediate refresh feels right on a real device - open
+the dashboard, course page and a lesson while signed in and pass a lesson.
+
+**2026-10-19 the editor remembers the learner's code.** Problem: refreshing
+or closing the tab threw the code away (it lived only in React state). Now
+`lib/code-drafts.ts` + `lib/use-code-draft.ts` keep it in `localStorage`
+(local only - nothing is sent to Supabase for lessons; a draft doesn't follow
+the learner to another device). Behaviour: saved 400 ms after typing stops and
+flushed on `pagehide` / tab hidden (so the last keystrokes survive a refresh or
+a phone killing the tab); key includes the user id (`pymula:draft:v1:<user>:
+<chapter>:<lesson>`, user id read from the local session - no extra network
+call) so two accounts on one computer don't see each other's code; code equal to
+the starter is not stored; cleared on sign-out (both `SignOutButton`s) removing
+only our keys; if the author later edits a lesson's starter, a learner who never
+edited sees the new one, one who did keeps their code. `CodeRunner` got a
+`draft` prop (passed by `Challenge`), a "tersimpan di perangkat ini" /
+"Kode terakhirmu dipulihkan" line and a **Reset kode** button with a confirm (a
+reset is now the only way back to the starter). Fails soft everywhere: blocked
+storage (private mode), full storage or corrupt data just mean "no draft".
+Tests: `scripts/test-drafts.mjs` (32/32: round trip, one entry not history,
+oversize, quota/blocked storage, corrupt/odd JSON, starter-changed cases, clear
+only touches our keys, two users). Also verified in a throw-away jsdom run
+(not committed) with a fake Supabase session: first visit, debounce, refresh
+restores, pagehide and tab-hidden flush, reset, refresh after reset, other
+account, other lesson, starter changed, typing before the lookup finishes is
+not clobbered, signed-out, no scope, blocked localStorage (19/19). `tsc`,
+`npm run build`, `test-checker` (29/29), `test-editor` (33/33),
+`test-progress` (24/24), `test-drafts` (32/32) pass; no answer strings in
+`.next/static`; lesson route 5.98 kB (First Load 171 kB). **Not verified:**
+real browsers/phones (esp. Safari, which can evict localStorage for sites not
+visited for about a week) - checklist items 15-20 in `PROJECT_DESIGN.md`
+section 11. Known limits: single-device; clearing site data or a Safari
+eviction loses drafts; the project workspace will add server sync (design doc
+6.2).
+
+**2026-10-19 lesson typography + PyMula logo.** (1) Logo: `Logo` component,
+"Py" `#29235c` + "Mula" `#f2ad3d` via new Tailwind tokens, used in `Header`
+(top-left of every page); the built CSS contains the exact values
+(`rgb(41 35 92)` / `rgb(242 173 61)`). (2) Typography for ALL lessons. Before:
+every text block was `text-sm` (14px) with `whitespace-pre-line` (no paragraph
+spacing, lists shown as raw "- " / "1. ", no code styling, `<pre>` blocks
+re-declared with slightly different classes in four places). Because chapter
+content is plain text with no markdown/backticks (stripped on purpose from
+chapter 9 on), `lib/lesson-text.ts` infers structure from how the text is
+written: paragraphs on blank lines; `- ` and `N. ` lists (numbering resumes via
+`start` when an indented bullet list interrupts); `Penting:` / `Peringatan:` /
+`Catatan:` call-outs; short bold term lead-ins on list items (<= 4 words, no
+comma, starts with a capital or a dot); and code-like words inside sentences
+(calls, indexing/type hints, snake_case, True/False/None). New components
+`LessonText` / `InlineText` and `CodeBlock`; applied in the lesson page
+(theory, sections, captions, headings, title), `Challenge` (instructions,
+hints, success message, spoiler) and `QuizRunner` (question, options,
+explanation, snippet). Scale: prose 17px/1.75 (small 15px), `max-w-2xl` column,
+3xl balanced title, Fraunces xl section headings, mono labels with wider
+tracking, `pre:focus-visible` ring for the now-focusable code blocks. Failure
+messages from the checker (can contain the learner's output) are intentionally
+left as plain text. Tests: `scripts/test-lesson-text.mjs` (49/49: inline code
+true/false cases, lead-ins, blocks, markup, XSS-escaping, a pathological-input
+speed check, and **lossless over all 689 real lesson texts in both sizes**; with
+`--report` it lists everything that got styled - reviewed: 213 distinct code
+tokens, 21 bold lead-ins, 3 call-outs, no false positives found) and
+`scripts/test-logo.mjs` (8/8). Also checked that every Tailwind class the new
+UI needs (arbitrary sizes, `text-pretty`/`text-balance`, `marker:`, opacity
+colours, the first-child override) exists in the built CSS. All suites pass:
+checker 29, editor 33, progress 24, drafts 32, lesson-text 49, logo 8; `tsc` and
+`npm run build` clean; lesson route 7.22 kB (First Load 172 kB); no answer
+strings in `.next/static`. **Not verified (no browser in the sandbox):** how it
+actually looks - check a theory-heavy lesson (e.g. chapter 9 L3, chapter 12 L7),
+a quiz, and the header on desktop and a phone. Known limits: plain words such as
+`if` / `for` / `%` can't be detected as code; a bold lead-in is a heuristic
+(e.g. step titles like "Hitung nilai_akhir dengan formula:" are bolded); the
+logo's amber is low-contrast on the light header.
+
 ### How to write the next batch (2-3 chapters)
 
 1. Fill in `content/AUTHORING_TEMPLATE.md`'s template for each chapter and
@@ -554,15 +803,24 @@ removed from code. No content corrections were needed.
    upload a screenshot -> see "Menunggu verifikasi" -> approve it from
    `/admin/purchases` on your admin account -> paid chapters unlock.
    Also confirm a *rejected* purchase lets the user resubmit.
-6. Python Dasar content is complete (chapters 1-13). Next content work:
-   the Word Counter project course (guided, ~Rp10.000) - see "Open
-   questions". Do an end-to-end pass on a real deploy of chapters 9-13
-   (especially the type-hint lessons' new source check: unchanged
-   starter must NOT pass, correct answer must).
+6. Python Dasar content is complete (chapters 1-13). Do an end-to-end pass on
+   a real deploy of chapters 9-13 (especially the type-hint lessons' source
+   check: unchanged starter must NOT pass, correct answer must).
+7. **Phase 5-pre** (owner-driven): editor rework, progress UI, lesson
+   typography, account/settings page - see Phase status above and
+   `PROJECT_DESIGN.md` section 11.
+8. Then **Phase 5 step 1** (runner) per `PROJECT_DESIGN.md` section 12.
+9. Before accepting real payments: move off Vercel Hobby (Pro or another
+   host) and decide how to keep Supabase from pausing (manual ping for now).
 
 ## Open questions for the team
 
 - Real QRIS image and business WhatsApp number - both currently
   placeholders (see "Next steps" above).
-- Who is writing chapters 9-13 and the Word Counter project - use the
-  authoring template.
+- Word Counter outline: author writes it, or Claude drafts the 8-chapter
+  outline in `PROJECT_DESIGN.md` section 5 for review? Final project price
+  (target ~Rp10.000, configurable in `content/pricing.ts`).
+- Account deletion: what happens to `purchases` rows (retain anonymized /
+  block while pending / other)?
+- Editor: decided (CodeMirror 6); waiting on the owner's manual test on real
+  Android / iPhone devices (checklist in `PROJECT_DESIGN.md` section 11).
