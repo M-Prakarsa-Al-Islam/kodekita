@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { guardRedirect } from "@/lib/route-guard";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } });
@@ -26,24 +27,24 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // The chapter LIST (/kursus/python-dasar) is public — logged-out
-  // visitors can see what's there, with a reminder to log in. Anything
-  // nested under it (an actual chapter or lesson) requires an account.
-  const isProtected =
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/akun") ||
-    pathname.startsWith("/kursus/python-dasar/") ||
-    pathname.startsWith("/admin");
-
-  if (isProtected && !data.user) {
-    const redirectUrl = new URL("/login", request.url);
-    redirectUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(redirectUrl);
+  // Decisions live in lib/route-guard.ts (tested): logged-out visitors are sent
+  // to /login from protected pages; logged-in visitors are sent away from
+  // /login and /register (to ?next= or "/").
+  const redirectTo = guardRedirect(pathname, Boolean(data.user), request.nextUrl.searchParams.get("next"));
+  if (redirectTo) {
+    return NextResponse.redirect(new URL(redirectTo, request.url));
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/akun/:path*", "/kursus/python-dasar/:path*", "/admin/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/akun/:path*",
+    "/kursus/python-dasar/:path*",
+    "/admin/:path*",
+    "/login",
+    "/register",
+  ],
 };

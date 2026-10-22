@@ -21,6 +21,7 @@ function load(file, shims = {}) {
 }
 const A = load("lib/account.ts");
 const P = load("lib/password-reset.ts", { "./account": A });
+const G = load("lib/route-guard.ts");
 
 let failures = 0, count = 0;
 function check(name, actual, expected) {
@@ -164,6 +165,31 @@ const IN = { password: "baru1234", confirm: "baru1234" };
   check("failing to sign out other devices does not fail the reset", (await P.resetPasswordFlow(deps, IN)).ok, true);
 }
 
+// ---- route guard (middleware decisions) --------------------------------------------------------
+for (const [input, want] of [
+  ["/akun", "/akun"], ["/kursus/python-dasar/1-pengenalan", "/kursus/python-dasar/1-pengenalan"], ["/dashboard?x=1", "/dashboard?x=1"],
+  ["https://evil.com", "/"], ["//evil.com", "/"], ["/\\evil.com", "/"], ["/\\/evil.com", "/"], ["/ok\\x", "/"],
+  ["/a\nb", "/"], ["/a\tb", "/"], ["javascript:alert(1)", "/"], ["", "/"], [null, "/"], [undefined, "/"], ["akun", "/"],
+]) {
+  check(`safeInternalPath(${JSON.stringify(input)}) -> ${JSON.stringify(want)}`, G.safeInternalPath(input), want);
+}
+check("safeInternalPath uses the given fallback", G.safeInternalPath("//evil.com", "/dashboard"), "/dashboard");
+// The real reason for the backslash rule: how a URL parser resolves it.
+check("a backslash path WOULD leave the site if it were followed", new URL("/\\evil.com", "https://pymula.live").host, "evil.com");
+check("every accepted path stays on our own host", ["/akun", "/dashboard?x=1", "/kursus/python-dasar/a"].map((x) => new URL(G.safeInternalPath(x), "https://pymula.live").host), ["pymula.live", "pymula.live", "pymula.live"]);
+
+check("logged out on a protected page -> /login?next=<page>", G.guardRedirect("/akun", false, null), "/login?next=%2Fakun");
+check("logged out on a lesson -> /login with next", G.guardRedirect("/kursus/python-dasar/1-pengenalan", false, null), "/login?next=%2Fkursus%2Fpython-dasar%2F1-pengenalan");
+check("logged out on /admin -> login", G.guardRedirect("/admin/purchases", false, null), "/login?next=%2Fadmin%2Fpurchases");
+check("the public chapter list needs no login", G.guardRedirect("/kursus/python-dasar", false, null), null);
+check("logged out may see /login, /register, /lupa-password, /reset-password", ["/login", "/register", "/lupa-password", "/reset-password"].map((x) => G.guardRedirect(x, false, null)), [null, null, null, null]);
+check("logged in on /login goes home (the reported bug)", G.guardRedirect("/login", true, null), "/");
+check("logged in on /register goes home", G.guardRedirect("/register", true, null), "/");
+check("logged in on /login?next=/akun goes to /akun", G.guardRedirect("/login", true, "/akun"), "/akun");
+check("logged in: an evil next is ignored", [G.guardRedirect("/login", true, "//evil.com"), G.guardRedirect("/login", true, "/\\evil.com"), G.guardRedirect("/login", true, "https://evil.com")], ["/", "/", "/"]);
+check("logged in: next pointing at login/register cannot loop", [G.guardRedirect("/login", true, "/login"), G.guardRedirect("/login", true, "/register"), G.guardRedirect("/login", true, "/login?x=1"), G.guardRedirect("/register", true, "/login/foo")], ["/", "/", "/", "/"]);
+check("logged in on normal pages: nothing happens", ["/akun", "/dashboard", "/lupa-password", "/reset-password", "/kursus/python-dasar/a"].map((x) => G.guardRedirect(x, true, null)), [null, null, null, null, null]);
+
 // ---- static guards over the source ----------------------------------------------------------
 const read = (f) => fs.readFileSync(path.join(root, f), "utf8");
 function walk(dir) {
@@ -185,6 +211,10 @@ check("Keluar is on the account page", /<SignOutButton/.test(read("app/akun/page
 check("the login page links to lupa password", /href="\/lupa-password"/.test(read("app/login/page.tsx")), true);
 check("the account password form and delete form link to lupa password", [/href="\/lupa-password"/.test(read("components/account/PasswordForm.tsx")), /href="\/lupa-password"/.test(read("components/account/DeleteAccountForm.tsx"))], [true, true]);
 check("/reset-password and /lupa-password are NOT behind the login-only middleware", !/reset-password|lupa-password/.test(read("middleware.ts")), true);
+const mw = read("middleware.ts");
+check("middleware uses the tested guard and covers /login and /register", /guardRedirect\(/.test(mw) && /"\/login"/.test(mw) && /"\/register"/.test(mw), true);
+check("the login page uses the safe-path helper (no hand-rolled next check)", /safeInternalPath\(/.test(read("app/login/page.tsx")) && !/startsWith\("\/\/"\)/.test(read("app/login/page.tsx")), true);
+check("the lupa-password page tells the form whether the visitor is signed in", /signedIn=\{/.test(read("app/lupa-password/page.tsx")), true);
 check("the callback route exists", fs.existsSync(path.join(root, "app/auth/callback/route.ts")), true);
 
 console.log(`\n${count - failures}/${count} password-reset test-cases behaved as expected.`);

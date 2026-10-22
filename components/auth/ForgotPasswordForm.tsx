@@ -13,9 +13,11 @@ import { Button } from "@/components/ui/Button";
 
 export default function ForgotPasswordForm({
   linkError = false,
+  signedIn = false,
   cooldownSeconds = RESEND_COOLDOWN_SECONDS,
 }: {
   linkError?: boolean;
+  signedIn?: boolean; // true: the visitor is already logged in, so go back to /akun, not /login
   cooldownSeconds?: number;
 }) {
   const [email, setEmail] = useState("");
@@ -102,9 +104,15 @@ export default function ForgotPasswordForm({
 
       <p className="text-sm text-ink-soft">
         Ingat password-nya?{" "}
-        <a href="/login" className="font-medium text-ink underline">
-          Kembali masuk
-        </a>
+        {signedIn ? (
+          <a href="/akun" className="font-medium text-ink underline">
+            Kembali ke akun
+          </a>
+        ) : (
+          <a href="/login" className="font-medium text-ink underline">
+            Kembali masuk
+          </a>
+        )}
       </p>
     </div>
   );

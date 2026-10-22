@@ -480,6 +480,10 @@ async function mountEl(el) { const c = w.document.createElement("div"); w.docume
     pm = await mountEl(React.createElement(Forgot, { linkError: true }));
     check("lupa: an expired/invalid link shows the 'minta link baru' banner", pm.c.textContent.includes("Link tidak valid atau sudah kedaluwarsa"));
     check("lupa: there is a way back to login", !!pm.c.querySelector('a[href="/login"]'));
+    check("lupa: signed-out visitors see 'Kembali masuk' and no link to /akun", pm.c.textContent.includes("Kembali masuk") && !pm.c.querySelector('a[href="/akun"]'));
+    await pm.unmount();
+    pm = await mountEl(React.createElement(Forgot, { signedIn: true }));
+    check("lupa: a signed-in visitor gets 'Kembali ke akun' -> /akun instead of the login page (the reported bug)", !!pm.c.querySelector('a[href="/akun"]') && pm.c.textContent.includes("Kembali ke akun") && !pm.c.querySelector('a[href="/login"]') && !pm.c.textContent.includes("Kembali masuk"));
     await pm.unmount();
 
     // --- reset password

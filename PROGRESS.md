@@ -983,6 +983,29 @@ email template to the `token_hash` link so it works across devices.
 8. Eye icon: password fields start hidden everywhere (login, register, `/akun`, reset); toggling shows and hides; the form does not submit when you tap it.
 9. Request resets several times quickly: after the email limit the page shows the "Terlalu banyak permintaan" message (this is why custom SMTP matters).
 
+**2026-10-22 bug fix: "Kembali masuk" sent signed-in users to the login page.**
+Reported: from `/akun` -> "Lupa password?" -> `/lupa-password` -> "Kembali masuk"
+always opened `/login`, even though the learner was still signed in. Cause: that
+link was hard-wired to `/login`, and `/login` itself never redirected a signed-in
+visitor. Fix on both sides: (1) `/lupa-password` now checks the session on the
+server and passes `signedIn` to `ForgotPasswordForm`; a signed-in visitor sees
+"Kembali ke akun" -> `/akun`, a signed-out one still sees "Kembali masuk" ->
+`/login`. (2) New `lib/route-guard.ts` holds the middleware decisions (tested):
+signed-in visitors on `/login` or `/register` are sent to `?next=` or `/`
+(never to another login/register page, so no loop); signed-out visitors on
+protected pages still go to `/login?next=...`; `middleware.ts` matcher now also
+covers `/login` and `/register`. While there, closed a small hole: the login
+page's `?next=` check let `/\evil.com` through, and URL parsers read a backslash
+as a slash (`new URL("/\\evil.com", base).host === "evil.com"`); `safeInternalPath`
+now rejects backslashes, control characters and `//`, and the login page uses it.
+Tests: `scripts/test-password-reset.mjs` 85/85 (+32: safe-path cases incl. the
+backslash trick, every guard branch, loop protection, static checks); 2 new
+checks in `scripts/test-ui.cjs`. All suites, `tsc`, `npm run build` pass.
+*Side effect to know:* a signed-in person can no longer open `/login` or
+`/register` (they are redirected); to switch accounts, use "Keluar" on `/akun`
+first. *Not verified in a real browser:* the redirect after the real Supabase
+session check on Vercel.
+
 ### How to write the next batch (2-3 chapters)
 
 1. Fill in `content/AUTHORING_TEMPLATE.md`'s template for each chapter and

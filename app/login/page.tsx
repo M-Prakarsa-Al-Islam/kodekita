@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { safeInternalPath } from "@/lib/route-guard";
 import { Button } from "@/components/ui/Button";
 import PasswordInput from "@/components/ui/PasswordInput";
 
@@ -34,7 +35,7 @@ export default function LoginPage() {
     }
 
     const next = searchParams.get("next");
-    const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+    const safeNext = safeInternalPath(next, "/dashboard");
     router.push(safeNext);
     router.refresh();
   }
