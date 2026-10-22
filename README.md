@@ -80,11 +80,3 @@ chapters. The database only tracks accounts and per-user lesson progress
   progress when logged in), chapter/lesson pages (require login)
 - Pyodide-based code runner + quiz runner, with a tested checker
   (`scripts/test-checker.mjs`)
-- Chapters 1–2 written for real (2 lessons each); chapters 3–13 stubbed as
-  `todo` — see `PROGRESS.md` for the full table
-
-## What's next
-
-Write chapters 3–5 (finishes the free tier) using
-`content/AUTHORING_TEMPLATE.md`, and/or start Phase 4 (QRIS commerce). See
-`PROGRESS.md` for details.

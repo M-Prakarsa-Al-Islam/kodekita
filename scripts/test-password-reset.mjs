@@ -125,6 +125,7 @@ function rDeps(over = {}) {
     getUserId: async () => { calls.push("user?"); return "user" in over ? over.user : "u1"; },
     updatePassword: async (pw) => { calls.push("update:" + pw); return over.updateError ?? null; },
     clearRecoveryCookie: () => calls.push("clear"),
+    markResetDone: () => calls.push("done"),
     signOutOtherSessions: async () => { calls.push("signout-others"); if (over.signOutThrows) throw new Error("x"); },
   };
   return { deps: d, calls };
@@ -133,7 +134,7 @@ const IN = { password: "baru1234", confirm: "baru1234" };
 {
   const { deps, calls } = rDeps();
   const r = await P.resetPasswordFlow(deps, IN);
-  check("reset succeeds and runs update -> clear cookie -> sign out others", [r.ok, calls], [true, ["cookie?", "user?", "update:baru1234", "clear", "signout-others"]]);
+  check("reset succeeds and runs update -> clear recovery cookie -> mark done -> sign out others", [r.ok, calls], [true, ["cookie?", "user?", "update:baru1234", "clear", "done", "signout-others"]]);
 }
 {
   const { deps, calls } = rDeps();
@@ -159,11 +160,37 @@ const IN = { password: "baru1234", confirm: "baru1234" };
   const { deps, calls } = rDeps({ updateError: { code: "same_password", message: "x" } });
   const r = await P.resetPasswordFlow(deps, IN);
   check("update error is shown in Indonesian and the cookie is KEPT so the learner can retry", [r, calls.includes("clear")], [{ ok: false, message: "Password baru harus berbeda dari password lama." }, false]);
+  check("a failed reset is NOT marked as done", calls.includes("done"), false);
 }
 {
   const { deps } = rDeps({ signOutThrows: true });
   check("failing to sign out other devices does not fail the reset", (await P.resetPasswordFlow(deps, IN)).ok, true);
 }
+
+// ---- what /reset-password shows (the "success flashes then error" bug) ---------------------------
+const view = (hasRecoveryCookie, hasDoneCookie, hasUser) => P.resetPageView({ hasRecoveryCookie, hasDoneCookie, hasUser });
+check("arriving from a real email link shows the form", view(true, false, true), "form");
+check("REGRESSION: right after a successful reset (recovery cookie cleared, done flag set) the page keeps showing the success message, not the error", view(false, true, true), "done");
+check("...and it keeps doing so on every re-render/refresh", [view(false, true, true), view(false, true, true), view(false, true, true)], ["done", "done", "done"]);
+check("the success message stays even if the session is gone", view(false, true, false), "done");
+check("a NEW email link wins over an old done flag (a second reset works)", view(true, true, true), "form");
+check("an ordinary session without any cookie is still refused", view(false, false, true), "invalid");
+check("no session and no cookies is refused", view(false, false, false), "invalid");
+check("a recovery cookie without a session is refused (cannot reset)", view(true, false, false), "invalid");
+{
+  // The whole story in order: link -> form -> success -> re-render -> still success
+  const { deps } = rDeps();
+  const jar = { recovery: true, done: false };
+  deps.hasRecoveryCookie = () => jar.recovery;
+  deps.clearRecoveryCookie = () => { jar.recovery = false; };
+  deps.markResetDone = () => { jar.done = true; };
+  const before = view(jar.recovery, jar.done, true);
+  const r = await P.resetPasswordFlow(deps, IN);
+  const afterRerender = view(jar.recovery, jar.done, true);
+  check("end to end: form -> reset ok -> the re-render shows the success view", [before, r.ok, afterRerender], ["form", true, "done"]);
+  check("the success message text is shared", r.message, P.RESET_SUCCESS_MESSAGE);
+}
+check("the done flag lasts minutes, not seconds", P.RESET_DONE_COOKIE_MAX_AGE >= 300, true);
 
 // ---- route guard (middleware decisions) --------------------------------------------------------
 for (const [input, want] of [
@@ -215,6 +242,9 @@ const mw = read("middleware.ts");
 check("middleware uses the tested guard and covers /login and /register", /guardRedirect\(/.test(mw) && /"\/login"/.test(mw) && /"\/register"/.test(mw), true);
 check("the login page uses the safe-path helper (no hand-rolled next check)", /safeInternalPath\(/.test(read("app/login/page.tsx")) && !/startsWith\("\/\/"\)/.test(read("app/login/page.tsx")), true);
 check("the lupa-password page tells the form whether the visitor is signed in", /signedIn=\{/.test(read("app/lupa-password/page.tsx")), true);
+const resetPage = read("app/reset-password/page.tsx");
+check("the reset page decides its view with resetPageView and renders ResetSuccess", /resetPageView\(/.test(resetPage) && /<ResetSuccess/.test(resetPage), true);
+check("the reset action sets the done cookie and no longer revalidates the whole site", /RESET_DONE_COOKIE/.test(read("app/reset-password/actions.ts")) && !/revalidatePath\(/.test(read("app/reset-password/actions.ts")), true);
 check("the callback route exists", fs.existsSync(path.join(root, "app/auth/callback/route.ts")), true);
 
 console.log(`\n${count - failures}/${count} password-reset test-cases behaved as expected.`);

@@ -430,8 +430,9 @@ async function mountEl(el) { const c = w.document.createElement("div"); w.docume
       } }) },
       "@/app/reset-password/actions": { resetPassword: async (a, b) => { calls.resetAction.push([a, b]); return resetResult; } },
     };
+    const ResetSuccess = load("components/auth/ResetSuccess.tsx", base).default;
     const Forgot = load("components/auth/ForgotPasswordForm.tsx", base).default;
-    const ResetForm = load("components/auth/ResetPasswordForm.tsx", base).default;
+    const ResetForm = load("components/auth/ResetPasswordForm.tsx", { ...base, "./ResetSuccess": { default: ResetSuccess } }).default;
     const SignOut = load("components/site/SignOutButton.tsx", base).default;
     const setVal = async (el, v) => act(async () => { Object.getOwnPropertyDescriptor(w.HTMLInputElement.prototype, "value").set.call(el, v); el.dispatchEvent(new w.Event("input", { bubbles: true })); });
     const submit = async (form) => act(async () => { form.dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true })); await sleep(20); });
@@ -500,7 +501,14 @@ async function mountEl(el) { const c = w.document.createElement("div"); w.docume
     resetResult = { ok: true, message: "Password berhasil diubah. Kamu sudah masuk dengan password baru." };
     await submit(pm.c.querySelector("form"));
     check("reset: success sends both values and shows the success state with a dashboard link", JSON.stringify(calls.resetAction[1]) === JSON.stringify(["baru1234", "baru1234"]) && pm.c.textContent.includes("Password berhasil diubah") && !!pm.c.querySelector('a[href="/"]') && !pm.c.querySelector("#reset-baru"));
-    check("reset: the page is refreshed so the header updates", calls.refresh >= 1);
+    check("reset: the success view says no new reset is needed and the email link being spent is normal", pm.c.textContent.includes("tidak perlu mengulang proses reset") && pm.c.textContent.includes("sudah tidak berlaku lagi"));
+    check("reset: the success view stays on screen (does not switch away by itself)", await (async () => { await act(async () => { await sleep(1500); }); return pm.c.textContent.includes("Password berhasil diubah") && !!pm.c.querySelector('a[href="/"]'); })());
+    check("reset: the page is refreshed after success", calls.refresh >= 1);
+    await pm.unmount();
+
+    // --- the server-rendered success view looks the same as the one in the form
+    pm = await mountEl(React.createElement(ResetSuccess, { message: reset.RESET_SUCCESS_MESSAGE }));
+    check("reset: the shared success component shows the message, the note and the dashboard link", pm.c.textContent.includes("Password berhasil diubah. Kamu sudah masuk dengan password baru.") && pm.c.textContent.includes("tidak perlu mengulang") && !!pm.c.querySelector('a[href="/"]'));
     await pm.unmount();
 
     // --- Keluar (now on /akun)

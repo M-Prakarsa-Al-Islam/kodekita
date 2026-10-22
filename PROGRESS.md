@@ -1006,6 +1006,53 @@ checks in `scripts/test-ui.cjs`. All suites, `tsc`, `npm run build` pass.
 first. *Not verified in a real browser:* the redirect after the real Supabase
 session check on Vercel.
 
+**2026-10-22 bug fix: the "password changed" message vanished after < 2 s and sent the learner to "link tidak valid".**
+Cause (ours): on success the reset action deletes the recovery cookie on purpose
+(so the email link cannot be reused), but `/reset-password` re-renders right after
+(the form's `router.refresh()`, the action's `revalidatePath`, and the cookie
+change itself). On that re-render the page saw "no recovery cookie" and redirected
+to `/lupa-password?error=link`, even though the password HAD changed, so the
+learner could think it failed and repeat the reset. Fix: the page now decides what
+to show from the cookies on every render with the tested `resetPageView()`:
+`form` (real email link), `done` (a short-lived display-only `pymula_reset_done`
+cookie, 10 minutes, set by the action after a successful reset), or `invalid`.
+`done` keeps the confirmation on screen however often the page re-renders and
+does not switch away by itself; a NEW email link still wins and shows the form.
+The confirmation is one shared component (`components/auth/ResetSuccess.tsx`) used
+by both the form and the server page, so nothing flickers; it now also says that
+no new reset is needed and that the email link being spent afterwards is normal.
+The action no longer calls `revalidatePath` (nothing else on the site changes).
+The security rule is unchanged: the done cookie only controls what is DISPLAYED,
+it never allows setting a password. Tests: `scripts/test-password-reset.mjs` 99/99
+(+14: every view case incl. the regression "recovery cookie gone + done flag =>
+success, not error", the end-to-end form -> reset -> re-render story, a failed
+reset is not marked done, static checks); `scripts/test-ui.cjs` +3 checks (the
+success view stays after 1.5 s, the explanatory text, the shared component). All
+suites, `tsc`, build pass. *Not verified in a real browser:* the exact timing on
+Vercel; run checklist item 3 of the forgot-password list again.
+
+**2026-10-22 bug fix: the menu (Kursus / Proyek / Tentang) was invisible on phones.**
+Cause: the header menu was `hidden ... md:flex`, so below 768 px it vanished and
+nothing replaced it. Also found: `/proyek` and `/tentang` did not exist, so those
+two links were 404s even on desktop. Fix: `components/site/Header.tsx` keeps ONE
+`NAV_LINKS` list and renders it twice, the desktop menu (md and up) and a second
+row under the header on phones (`md:hidden`, plain links, no JavaScript); added
+temporary placeholder pages `app/proyek/page.tsx` ("Kelas proyek sedang
+disiapkan") and `app/tentang/page.tsx` ("Halaman ini sedang disusun") so nothing
+404s until the real pages exist. New `scripts/test-nav.mjs` (11 checks, in
+`npm test`): the three links exist, both menus come from the same list, the phone
+menu is not hidden on phones, and every link in the header has a page; verified
+that it FAILS on the old header. *Not verified in a real browser:* the look of the
+phone row at 360-390 px.
+
+**Owner decisions on service life (2026-10-22), for the About page / notice work:**
+maintain at most until October 2027 but may stop earlier (owner is unsure); NO
+permanent countdown banner; a pop-up notice at least 30 days before the shutdown
+date; after shutdown the domain, Supabase and anything else paid are NOT renewed.
+Still to decide (proposed, see the chat): the refund window for recent buyers, the
+contact channel that outlives the domain, the exact end date (must be before the
+`pymula.live` expiry), and whether materials go to a free public GitHub repo.
+
 ### How to write the next batch (2-3 chapters)
 
 1. Fill in `content/AUTHORING_TEMPLATE.md`'s template for each chapter and

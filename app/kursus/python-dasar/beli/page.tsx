@@ -57,7 +57,7 @@ export default async function BeliPage() {
     <section className="mx-auto max-w-md px-6 py-16">
       <h1 className="font-display text-2xl font-semibold text-ink">Buka Chapter 6–13</h1>
       <p className="mt-2 text-ink-soft">
-        Sekali bayar, akses selamanya. Rp{price.toLocaleString("id-ID")}.
+        Sekali bayar, tanpa biaya berlangganan. Rp{price.toLocaleString("id-ID")}.
       </p>
 
       {purchase.status === "rejected" && (

@@ -16,6 +16,11 @@ export const CALLBACK_PATH = "/auth/callback";
 export const LINK_ERROR_PATH = `${FORGOT_PAGE_PATH}?error=link`;
 export const RECOVERY_COOKIE = "pymula_recovery";
 export const RECOVERY_COOKIE_MAX_AGE = 15 * 60; // seconds
+// Set after a SUCCESSFUL reset so /reset-password keeps showing the success
+// message (instead of bouncing to "link tidak valid") however often the page
+// re-renders. Purely a display flag; it grants nothing.
+export const RESET_DONE_COOKIE = "pymula_reset_done";
+export const RESET_DONE_COOKIE_MAX_AGE = 10 * 60; // seconds
 export const RESEND_COOLDOWN_SECONDS = 60;
 
 export function isValidEmail(email: string): boolean {
@@ -84,11 +89,24 @@ export async function resolveCallback(params: CallbackParams, deps: CallbackDeps
 }
 
 // ---- /reset-password (the server action's logic) ------------------------------
+// What /reset-password should show. Order matters: a fresh recovery link always
+// wins (even if an old "done" flag is still around); after a successful reset the
+// recovery cookie is gone, so the done flag keeps the success message on screen.
+export type ResetPageView = "form" | "done" | "invalid";
+export function resetPageView(s: { hasRecoveryCookie: boolean; hasDoneCookie: boolean; hasUser: boolean }): ResetPageView {
+  if (s.hasRecoveryCookie && s.hasUser) return "form";
+  if (s.hasDoneCookie) return "done";
+  return "invalid";
+}
+
+export const RESET_SUCCESS_MESSAGE = "Password berhasil diubah. Kamu sudah masuk dengan password baru.";
+
 export type ResetDeps = {
   hasRecoveryCookie(): boolean;
   getUserId(): Promise<string | null>;
   updatePassword(password: string): Promise<{ message?: string; code?: string } | null>; // null = ok
   clearRecoveryCookie(): void;
+  markResetDone(): void;
   signOutOtherSessions(): Promise<void>;
 };
 
@@ -108,10 +126,11 @@ export async function resetPasswordFlow(
   if (error) return { ok: false, message: mapPasswordUpdateError(error) }; // cookie kept: the learner can retry
 
   deps.clearRecoveryCookie();
+  deps.markResetDone();
   try {
     await deps.signOutOtherSessions();
   } catch {
     /* best effort */
   }
-  return { ok: true, message: "Password berhasil diubah. Kamu sudah masuk dengan password baru." };
+  return { ok: true, message: RESET_SUCCESS_MESSAGE };
 }

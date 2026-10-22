@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { resetPassword } from "@/app/reset-password/actions";
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, validateNewPassword } from "@/lib/account";
-import { Button, LinkButton } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button";
+import ResetSuccess from "./ResetSuccess";
 import PasswordInput from "@/components/ui/PasswordInput";
 
 export default function ResetPasswordForm() {
@@ -42,16 +43,7 @@ export default function ResetPasswordForm() {
     }
   }
 
-  if (done) {
-    return (
-      <div className="space-y-4">
-        <p role="status" className="text-sm text-code">
-          {done}
-        </p>
-        <LinkButton href="/">Ke dashboard</LinkButton>
-      </div>
-    );
-  }
+  if (done) return <ResetSuccess message={done} />;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

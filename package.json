@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node scripts/test-checker.mjs && node scripts/test-editor.mjs && node scripts/test-progress.mjs && node scripts/test-drafts.mjs && node scripts/test-lesson-text.mjs && node scripts/test-logo.mjs && node scripts/test-runner.mjs && node scripts/test-worker.mjs && node scripts/test-account.mjs && node scripts/test-password-reset.mjs && node scripts/test-lessons-pyodide.mjs && node scripts/test-ui.cjs"
+    "test": "node scripts/test-checker.mjs && node scripts/test-editor.mjs && node scripts/test-progress.mjs && node scripts/test-drafts.mjs && node scripts/test-lesson-text.mjs && node scripts/test-logo.mjs && node scripts/test-runner.mjs && node scripts/test-worker.mjs && node scripts/test-account.mjs && node scripts/test-password-reset.mjs && node scripts/test-nav.mjs && node scripts/test-lessons-pyodide.mjs && node scripts/test-ui.cjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",
