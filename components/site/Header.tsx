@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/server";
-import SignOutButton from "./SignOutButton";
 import Logo from "./Logo";
 
 export default async function Header() {
@@ -32,7 +31,9 @@ export default async function Header() {
               <Link href="/" className="text-sm font-medium text-ink-soft hover:text-ink">
                 Dashboard
               </Link>
-              <SignOutButton />
+              <Link href="/akun" className="text-sm font-medium text-ink-soft hover:text-ink">
+                Akun
+              </Link>
             </>
           ) : (
             <>

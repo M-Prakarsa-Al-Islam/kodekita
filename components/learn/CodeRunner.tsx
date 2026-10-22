@@ -3,7 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import dynamic from "next/dynamic";
 import type { LessonFile } from "@/content/types";
-import { runProject, type RunResult } from "@/lib/pyodide";
+import { runProject, stopRun, type RunResult } from "@/lib/pyodide";
 import { useFilesDraft } from "@/lib/use-code-draft";
 import { DEFAULT_ENTRY, defaultActiveFile, isEditable } from "@/lib/lesson-files";
 import { Button } from "@/components/ui/Button";
@@ -93,7 +93,12 @@ export default function CodeRunner({
     // is deterministic; "Jalankan" uses whatever is in the box.
     const lines = action === "check" ? stdin ?? [] : parseLines(inputText);
     try {
-      const r = await runProject({ files: contents, entry, stdin: lines });
+      const r = await runProject({
+        files: contents,
+        entry,
+        stdin: lines,
+        onStart: () => setStatus("running"),
+      });
       setResult(r);
       if (action === "check") onCheck?.(r, contents);
     } catch (e) {
@@ -242,6 +247,16 @@ export default function CodeRunner({
             className="px-4 py-1.5"
           >
             {label("check", checkLabel)}
+          </Button>
+        )}
+        {status === "running" && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => stopRun()}
+            className="px-4 py-1.5"
+          >
+            Hentikan
           </Button>
         )}
         {multi && <span className="text-xs text-ink-soft">menjalankan {entry}</span>}

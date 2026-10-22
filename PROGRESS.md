@@ -171,27 +171,26 @@ To hand me new chapter content, use the format in
             header course menu.
       - [x] Lesson typography (done 2026-10-19, **needs a visual check in a
             browser**): see the session log and `PROJECT_DESIGN.md` section 11.
-      - [ ] Account / settings page (master prompt page #13): view account,
-            rename, change password, delete account. Deletion needs the Supabase
-            service-role key **server-side only** (server action, env var without
-            `NEXT_PUBLIC_`) and cleanup of `payment-proofs` objects; **decision
-            needed** on what happens to `purchases` (financial records) when an
-            account is deleted; verify FK behavior of `lesson_progress` /
-            `purchases` first.
+      - [x] Account / settings page (done 2026-10-21, **needs a real-project
+            test**): `/akun` with rename, change password, delete account; see
+            the session log and `PROJECT_DESIGN.md` section 11. Before using it:
+            run `supabase/schema_phase5_account.sql` and set
+            `SUPABASE_SERVICE_ROLE_KEY` (server only) locally and in Vercel.
 - [ ] **Phase 5 - Project courses** (starting with "Build a Word Counter"; design
       in `PROJECT_DESIGN.md`). Build order:
       1. Runner: **mostly done (2026-10-20)** - multi-file virtual disk, clean
          slate + module-cache reset every run, seed/read-only files, scripted
          `input()` with terminal-style echo, Input box, file tabs, per-file
          drafts, per-file `sourceRequirements`; first used by Chapter 3 L9-L16.
-         Still open: `behavior_tests` checker, Web Worker timeout, file upload.
+         **Web Worker timeout / Stop button / output cap done 2026-10-21.**
+         Still open: `behavior_tests` checker, file upload.
       2. Project route + workspace: generalize routes hard-coded to
          `python-dasar`, tab bar, localStorage drafts, `project_progress` table +
          upsert, spoiler + Copy, `help_used`, project catalog/detail pages,
          purchase gate.
       3. Content: Word Counter chapters + take-home chapter; extend
          `content/AUTHORING_TEMPLATE.md` for projects.
-      4. Later: Web Worker timeout, file upload, public share page, "Lewati".
+      4. Later: file upload, public share page, "Lewati".
 - [ ] Phase 6 - Polish & launch
 
 ## Chapter content status (Python Dasar, 13 chapters)
@@ -844,6 +843,146 @@ no timeout for an infinite loop; browsers can't really keep files between runs
 output` of an input lesson contains the typed text (documented in
 `content/AUTHORING_TEMPLATE.md`).
 
+**2026-10-21 safeguard against infinite loops / runaway programs.**
+Problem: Pyodide ran on the page's main thread, so `while True: pass` froze the
+whole tab (only closing it helped). Fix, all client-side (no server cost):
+`public/pyodide-worker.js` (new, classic worker, runs Pyodide + the harness off
+the main thread); `lib/pyodide.ts` `runProject` now talks to that worker with
+`RUN_TIMEOUT_MS = 8000` (Pyodide load time not counted), `stopRun()`, crash
+handling, a one-at-a-time queue, and a main-thread fallback when `Worker` does
+not exist (`runProjectWith` is unchanged, so the Node tests are too);
+`lib/python-harness.ts` caps captured output at 100,000 characters
+(`_PymulaOut`); `CodeRunner` shows a **Hentikan** button while a program runs and
+now switches the label from "Memuat Python..." to "Menjalankan..." when the
+program really starts (`onStart`). On timeout / stop / crash the worker is
+terminated and a fresh one is started in the background; the result has
+`stopped: true` and a clear message, which the checker treats as an error (it can
+never pass a lesson). Tests: `scripts/test-worker.mjs` (26/26, in `npm test`)
+runs the REAL `public/pyodide-worker.js` with the real Pyodide in a Node
+`worker_thread` (helper `scripts/_node-worker-shim.cjs`): normal, multi-file and
+`input()` runs, infinite `while True`, a `try/except` loop, endless printing, a
+heavy-but-finite loop still finishing, the Stop button, a simulated worker crash,
+queued simultaneous runs, the page's timers still ticking during a loop (never
+frozen), and recovery after every case. `test-ui.cjs` gained 6 checks for the
+Hentikan button. Everything else still passes: checker 42, editor 33, progress 24,
+drafts 32, lesson-text 59, logo 8, runner 40, 108 lessons in Pyodide, UI;
+`tsc` and `npm run build` clean (lesson route 11 kB, First Load 175 kB, unchanged);
+no answer strings in `.next/static`. *Not verified (no browser in the sandbox):*
+that the real browser Worker loads `/pyodide-worker.js` and Pyodide from jsDelivr
+on Vercel, how long a restart takes on a real phone, and Safari/Android behaviour
+- see checklist below. *Known limits:* partial output is lost when a run is
+stopped; the limit is a flat 8 s (raise `RUN_TIMEOUT_MS` if slow phones kill
+legitimate programs); the first-ever run still waits for Pyodide to download.
+
+**Manual checklist for the safeguard (run on a real deploy, desktop and phone):**
+1. Run `while True: pass`: after about 8 s the red/amber message appears, the
+   page stays scrollable the whole time, and "Jalankan" works again.
+2. Press **Hentikan** while it loops: stops at once with "Program dihentikan.".
+3. Right after, run `print("halo")`: it works (may take a few seconds to restart).
+4. Run `while True: print("x")`: stops quickly with the "Output terlalu banyak" message.
+5. "Cek Jawaban" on a looping program: shows an error, does not mark the lesson done.
+6. A normal lesson (Chapter 3 L9 with input, L15 with two files) still passes.
+7. Network tab: `/pyodide-worker.js` loads (200) and Pyodide files come from jsDelivr.
+
+**2026-10-21 account page ("Halaman akun", `/akun`).** Owner decisions:
+payment-proof screenshots are kept on the owner's device and deleted from
+Supabase manually (not automatic); after deleting an account the same email may
+register again but starts from zero; `purchases` stays as an anonymous record.
+*Finding:* `purchases.user_id` was `NOT NULL ... ON DELETE CASCADE` (via
+`profiles`), so deleting a user would have silently erased the sales ledger, and
+`payment-proofs` files would have been left behind. *Built:*
+`supabase/schema_phase5_account.sql` (user_id / proof_path nullable, FK `ON DELETE
+SET NULL`, service-role-only `purchases_survive_user_deletion()` check);
+`lib/account.ts` (rules + `deleteAccountFlow` with injected dependencies, so the
+order of steps is testable); `lib/supabase/admin.ts` (service-role client,
+`import "server-only"`) and `lib/supabase/stateless.ts` (anon client with no
+session, only to re-check a password); `app/akun/page.tsx` + `app/akun/actions.ts`
+(`updateName`, `changePassword`, `deleteAccount`; each re-checks the caller from
+the session cookie); `components/account/{ProfileForm,PasswordForm,
+DeleteAccountForm}.tsx`; "Akun" link in `Header`; `/akun` protected in
+`middleware.ts`; `/login?deleted=1` notice; `/admin/purchases` tolerates null
+`user_id` / `proof_path`; `.env.example` + README updated. *Behaviour:* rename
+writes `profiles.name` AND the auth metadata (the dashboard greeting reads the
+metadata, the admin page reads `profiles`). Password change needs the current
+password, 6-72 characters (same minimum as register), and signs out other
+sessions. Delete needs the password and the word HAPUS, warns that paid access is
+lost for good, is blocked while a payment is `pending`, refuses for admin
+accounts, and refuses to run if the migration was not applied. Order: checks ->
+remove the user's proof files -> null `note` / `proof_path` -> delete the auth user
+LAST, so a failure leaves the account intact and the button can be pressed again.
+*Tests:* `scripts/test-account.mjs` (37/37, in `npm test`: validators, every
+abort path, order of steps, retry after failure, migration text); 23 new checks
+in `scripts/test-ui.cjs` for the three forms; the migration was also run on a real
+Postgres (PGlite, outside the repo) on top of the real `schema*.sql` files: the
+purchase row survives with `user_id` NULL and note/proof cleared, profile and
+lesson progress cascade, and without the migration the cascade erases the
+purchase (the contrast case the migration check protects against). `tsc` and
+`npm run build` clean (`/akun` 3.5 kB, First Load 168 kB); a canary service-role
+value is NOT in `.next/static`; no answer strings in the bundle. *Not verified
+(needs the real Supabase project and a browser):* the actual
+`auth.admin.deleteUser`, storage `list`/`remove` and `rpc` calls, that Supabase
+does not refuse to delete a user who still owns storage objects, the cookie
+behaviour after sign-out in a server action, and how the page looks on a phone.
+
+**Manual checklist for the account page (real deploy, use a throw-away account):**
+1. Run `schema_phase5_account.sql`; add `SUPABASE_SERVICE_ROLE_KEY` locally and in Vercel; redeploy.
+2. `/akun` while signed out redirects to login; while signed in it shows the right email and name.
+3. Rename: the dashboard greeting and `/admin/purchases` both show the new name after a refresh.
+4. Change password: wrong current password is refused; success works; another browser is signed out; log in again with the new password.
+5. Delete with a `pending` payment: refused with the clear message.
+6. Delete an account that has an APPROVED purchase and a proof file: it succeeds; you land on `/login?deleted=1`; in Supabase the user, its `profiles` row and `payment-proofs/<id>/` are gone, and the `purchases` row remains with `user_id`, `note` and `proof_path` empty.
+7. Register again with the same email: works, empty progress, and the paid chapters are locked.
+8. Try deleting your admin account: refused. Try the delete before running the migration: refused with the migration message.
+
+**2026-10-21 account page follow-ups: Keluar, show/hide password, forgot password.**
+*Keluar:* the header no longer has the sign-out button; `/akun` has a "Keluar"
+section (same component, `variant` prop; it still clears saved lesson code).
+*Show/hide:* new `components/ui/PasswordInput.tsx` (hidden by default, eye toggle,
+`aria-pressed`, never submits the form, phone keyboards told not to autocorrect),
+used by login, register, change-password (3 fields), delete-account and the new
+reset form. *Forgot password:* `/lupa-password` (`ForgotPasswordForm`: validates the
+email, always shows the same neutral message, 60 s cooldown with a countdown, maps
+rate-limit errors, tells the learner to open the link in the same browser);
+`/auth/callback` route (`code` exchange, or `token_hash`+`type=recovery`);
+`/reset-password` (`ResetPasswordForm` + server action). Links: "Lupa password?" on
+the login page, and under the password field in the change-password and delete
+forms. *Security decisions:* the reset page changes the password WITHOUT the old
+one, so it only works with a 15-minute httpOnly `pymula_recovery` cookie that the
+callback sets after a real email link (an ordinary session cannot use it; it is
+kept on a failed attempt so the learner can retry, cleared on success); the
+callback redirects only to an allow-list (`/reset-password`, otherwise `/`), so no
+open redirect; other devices are signed out after a reset; update errors are shown
+in Indonesian (`mapPasswordUpdateError`, also used by the account page now).
+*Tests:* `scripts/test-password-reset.mjs` (53/53, in `npm test`: email and redirect
+rules, open-redirect attempts, every callback branch incl. expired/foreign links
+and exceptions, the reset flow incl. "no cookie = refused" and "cookie kept on
+error", plus source guards: no raw `type="password"` anywhere, hooks files start
+with "use client", Keluar only on `/akun`, middleware does not lock the reset
+pages); 28 new checks in `scripts/test-ui.cjs` (toggle, forgot form incl. cooldown,
+reset form, Keluar). All 12 suites, `tsc` and `npm run build` pass (new routes
+`/lupa-password`, `/reset-password`, `/auth/callback`; First Load 166-168 kB); the
+service-role canary is not in `.next/static`. *Not verified (needs the real
+Supabase project, real email and a browser):* that the email arrives, that the
+link signs the learner in through the callback, the cookie behaviour across the
+redirect on Vercel, same-device vs other-device links, and the look on a phone.
+
+**Dashboard setup REQUIRED for forgot password (see README):** add
+`https://<domain>/auth/callback` (and the localhost one) to Supabase Redirect URLs;
+turn on a custom SMTP provider (the built-in email sender is limited to a few
+emails per hour for the whole project); optionally switch the Reset Password
+email template to the `token_hash` link so it works across devices.
+
+**Manual checklist for forgot password (real deploy):**
+1. `/login` shows "Lupa password?"; it opens `/lupa-password`.
+2. Enter a registered email: the neutral message appears, the button counts down 60 s, and the email arrives (check spam). Enter an unregistered email: the SAME message, no email.
+3. Open the link in the same browser: you land on `/reset-password` showing your email. Set a new password; "Ke dashboard" works and you are signed in.
+4. Log out (button is now on `/akun`) and log in with the new password; the old one is refused. Another browser that was signed in is signed out.
+5. Open the same email link a second time: you get the "link tidak valid atau kedaluwarsa" banner on `/lupa-password`.
+6. While signed in normally, open `/reset-password` directly: you are sent to `/lupa-password?error=link`.
+7. Open the link on a phone while the request was made on a laptop: with the default template it may fail (expected, see README step 3); with the `token_hash` template it works.
+8. Eye icon: password fields start hidden everywhere (login, register, `/akun`, reset); toggling shows and hides; the form does not submit when you tap it.
+9. Request resets several times quickly: after the email limit the page shows the "Terlalu banyak permintaan" message (this is why custom SMTP matters).
+
 ### How to write the next batch (2-3 chapters)
 
 1. Fill in `content/AUTHORING_TEMPLATE.md`'s template for each chapter and
@@ -880,7 +1019,13 @@ output` of an input lesson contains the typed text (documented in
    typography, account/settings page - see Phase status above and
    `PROJECT_DESIGN.md` section 11.
 8. Then **Phase 5 step 1** (runner) per `PROJECT_DESIGN.md` section 12.
-9. Before accepting real payments: move off Vercel Hobby (Pro or another
+9. Account page: run `supabase/schema_phase5_account.sql`, set
+   `SUPABASE_SERVICE_ROLE_KEY` (server only) locally and in Vercel, then run the
+   account checklist in the session log. Delete payment-proof screenshots from the
+   `payment-proofs` bucket by hand after verifying each payment.
+10. Forgot password: do the Supabase dashboard setup in the README (Redirect URLs,
+    custom SMTP, optional email template), then run its checklist.
+11. Before accepting real payments: move off Vercel Hobby (Pro or another
    host) and decide how to keep Supabase from pausing (manual ping for now).
 
 ## Open questions for the team
@@ -890,7 +1035,7 @@ output` of an input lesson contains the typed text (documented in
 - Word Counter outline: author writes it, or Claude drafts the 8-chapter
   outline in `PROJECT_DESIGN.md` section 5 for review? Final project price
   (target ~Rp10.000, configurable in `content/pricing.ts`).
-- Account deletion: what happens to `purchases` rows (retain anonymized /
-  block while pending / other)?
+- ~~Account deletion: what happens to `purchases` rows?~~ Decided 2026-10-21:
+  keep anonymously, block while a payment is pending (see the session log).
 - Editor: decided (CodeMirror 6); waiting on the owner's manual test on real
   Android / iPhone devices (checklist in `PROJECT_DESIGN.md` section 11).

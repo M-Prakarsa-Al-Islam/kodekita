@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,19 +59,27 @@ export default function LoginPage() {
           />
         </div>
         <div>
-          <label htmlFor="password" className="text-sm font-medium text-ink">
-            Password
-          </label>
-          <input
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="password" className="text-sm font-medium text-ink">
+              Password
+            </label>
+            <a href="/lupa-password" className="text-xs font-medium text-ink-soft underline hover:text-ink">
+              Lupa password?
+            </a>
+          </div>
+          <PasswordInput
             id="password"
-            type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-md border border-line bg-white px-3 py-2 text-sm"
           />
         </div>
 
+        {searchParams.get("deleted") === "1" && (
+          <p role="status" className="text-sm text-code">
+            Akunmu sudah dihapus. Kamu boleh mendaftar lagi kapan saja.
+          </p>
+        )}
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <Button type="submit" disabled={loading} className="w-full">

@@ -27,8 +27,13 @@ chapters. The database only tracks accounts and per-user lesson progress
    - `supabase/schema.sql`
    - `supabase/schema_phase2.sql`
    - `supabase/schema_phase2b.sql`
-3. Copy `.env.example` to `.env.local` and fill in your project's URL and anon
-   key (Supabase dashboard → Project Settings → API).
+   - `supabase/schema_phase4.sql`
+   - `supabase/schema_phase5_account.sql` (account deletion: keeps `purchases`
+     as an anonymous record; the delete-account button refuses to run without it)
+3. Copy `.env.example` to `.env.local` and fill in your project's URL, anon
+   key and **service-role key** (Supabase dashboard → Project Settings → API).
+   The service-role key is server-only (never `NEXT_PUBLIC_`); the account page
+   needs it to delete an account.
 4. Install and run:
 
    ```bash
@@ -44,10 +49,28 @@ chapters. The database only tracks accounts and per-user lesson progress
 
 1. Push this repo to GitHub.
 2. Import it in Vercel.
-3. Add the same two env vars from `.env.local` in the Vercel project settings
-   (Environment Variables).
+3. Add the same env vars from `.env.local` in the Vercel project settings
+   (Environment Variables), including `SUPABASE_SERVICE_ROLE_KEY` (Production).
 4. Deploy. Confirm register/login and the chapter/lesson flow work against
    the *same* Supabase project you set up locally.
+
+## Supabase Auth setup for "lupa password" (do this once, dashboard only)
+
+1. **Authentication -> URL Configuration:** set *Site URL* to the production
+   address and add these to *Redirect URLs* (both, exact):
+   `https://<your-domain>/auth/callback` and `http://localhost:3000/auth/callback`.
+   Without this, Supabase ignores our redirect and the link lands on the wrong page.
+2. **Authentication -> SMTP Settings:** turn on a custom SMTP provider (Resend,
+   Brevo, ...) before real users arrive. The built-in sender is limited to a
+   handful of emails per hour for the WHOLE project, so password-reset (and
+   sign-up confirmation) emails would silently stop arriving. Check the current
+   limit in Supabase's docs.
+3. *Optional, recommended:* so the reset link also works when it is opened on
+   another device than the one that asked for it, edit **Authentication -> Email
+   Templates -> Reset Password** and point the button at
+   `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery`.
+   Leave the default template if unsure: it works when the link is opened in the
+   same browser (the page tells the learner this).
 
 ## What's built
 

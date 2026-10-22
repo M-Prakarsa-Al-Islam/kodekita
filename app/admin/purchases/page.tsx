@@ -28,13 +28,17 @@ export default async function AdminPurchasesPage() {
   const withDetails = await Promise.all(
     rows.map(async (p) => {
       const [{ data: signed }, { data: submitter }] = await Promise.all([
-        supabase.storage.from("payment-proofs").createSignedUrl(p.proof_path, 300),
-        supabase.from("profiles").select("name").eq("id", p.user_id).single(),
+        p.proof_path
+          ? supabase.storage.from("payment-proofs").createSignedUrl(p.proof_path, 300)
+          : Promise.resolve({ data: null }),
+        p.user_id
+          ? supabase.from("profiles").select("name").eq("id", p.user_id).single()
+          : Promise.resolve({ data: null }),
       ]);
       return {
         ...p,
         proofUrl: signed?.signedUrl ?? null,
-        submitterName: submitter?.name || p.user_id,
+        submitterName: submitter?.name || p.user_id || "(akun dihapus)",
       };
     })
   );

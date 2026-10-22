@@ -18,7 +18,9 @@
 //     the scripted lines and prints exactly what a terminal would show (the
 //     prompt, then the typed text and a newline). Running out of lines raises
 //     EOFError like a closed stdin does.
-//  5. Restores everything (cwd, sys.path, input) afterwards, even on error.
+//  5. Caps the captured output (see _PymulaOut) so an endless print loop cannot
+//     eat all memory before the time limit in lib/pyodide.ts stops it.
+//  6. Restores everything (cwd, sys.path, input) afterwards, even on error.
 //
 // IMPORTANT when editing: this is String.raw, so Python backslashes are kept
 // as written; never put a backtick or ${ in the Python code.
@@ -29,6 +31,15 @@ _PYMULA_WORK = "/home/pyodide/__pymula_work__"
 
 
 sys.dont_write_bytecode = True  # no stale/extra .pyc files in the work folder
+
+
+class _PymulaOut(io.StringIO):
+    LIMIT = 100000  # characters; far more than any lesson prints
+
+    def write(self, text):
+        if self.tell() + len(text) > self.LIMIT:
+            raise RuntimeError("Output terlalu banyak (lebih dari 100.000 karakter). Apakah ada loop yang terus mencetak?")
+        return super().write(text)
 
 
 def _pymula_forget_modules():
@@ -45,7 +56,7 @@ def _pymula_forget_modules():
 def __pymula_run__(files_json, entry, stdin_json, show_location):
     files = json.loads(files_json)
     stdin_lines = [str(x) for x in json.loads(stdin_json)]
-    out = io.StringIO()
+    out = _PymulaOut()
     error = None
 
     if entry not in files:

@@ -31,6 +31,7 @@ export async function middleware(request: NextRequest) {
   // nested under it (an actual chapter or lesson) requires an account.
   const isProtected =
     pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/akun") ||
     pathname.startsWith("/kursus/python-dasar/") ||
     pathname.startsWith("/admin");
 
@@ -44,5 +45,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/kursus/python-dasar/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/akun/:path*", "/kursus/python-dasar/:path*", "/admin/:path*"],
 };

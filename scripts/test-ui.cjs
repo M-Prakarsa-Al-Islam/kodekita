@@ -33,7 +33,15 @@ function load(file, shims = {}) {
 let currentUser = "user-A";
 const fakeSupabase = { createClient: () => ({ auth: { getSession: async () => ({ data: { session: currentUser ? { user: { id: currentUser } } : null } }) } }) };
 const runCalls = []; let runResult = { stdout: "ok\n", error: null };
-const fakePyodide = { runProject: async (o) => { runCalls.push(JSON.parse(JSON.stringify(o))); return runResult; } };
+let hang = false, hangResolve = null, stopCalls = 0;
+const fakePyodide = {
+  runProject: async (o) => {
+    runCalls.push(JSON.parse(JSON.stringify(o)));
+    if (hang) { o.onStart && o.onStart(); return new Promise((res) => { hangResolve = res; }); }
+    return runResult;
+  },
+  stopRun: () => { stopCalls++; hangResolve && hangResolve({ stdout: "", error: "Program dihentikan.", stopped: true }); },
+};
 function build() {
   const editorLib = load("lib/editor-extensions.ts");
   const CodeEditor = load("components/learn/CodeEditor.tsx", { "@/lib/editor-extensions": editorLib }).default;
@@ -268,6 +276,7 @@ async function mountEl(el) { const c = w.document.createElement("div"); w.docume
     check("without a scope nothing is stored", hk.box.api.files["main.py"] === "x\n" && w.localStorage.length === 0);
     await hk.unmount();
 
+    global.__realLocalStorageDescriptor = Object.getOwnPropertyDescriptor(w, "localStorage");
     Object.defineProperty(w, "localStorage", { get() { throw new Error("SecurityError"); }, configurable: true });
     const blocked = build();
     const hb = { api: null };
@@ -277,6 +286,228 @@ async function mountEl(el) { const c = w.document.createElement("div"); w.docume
     await act(async () => { hb.api.setFile("main.py", "works anyway\n"); }); await act(async () => { await sleep(550); });
     check("blocked storage (private mode): no crash, typing still works", hb.api.files["main.py"] === "works anyway\n");
     await act(async () => rb.unmount());
+  }
+
+  // ================= CodeRunner: the stop button (runaway-program safeguard) =================
+  console.log("--- CodeRunner (Hentikan)");
+  {
+    const buttonByText = (c, t) => [...c.querySelectorAll("button")].find((b) => b.textContent.trim() === t);
+    const one = [{ name: "main.py", content: "while True:\n    pass\n" }];
+    const got = []; hang = true;
+    const mm = await mountEl(React.createElement(CodeRunner, { files: one, entry: "main.py", checkLabel: "Cek Jawaban", onCheck: (r) => got.push(r) }));
+    check("no 'Hentikan' button while idle", !buttonByText(mm.c, "Hentikan"));
+    await act(async () => { buttonByText(mm.c, "Jalankan").dispatchEvent(new w.MouseEvent("click", { bubbles: true })); });
+    await act(async () => { await sleep(30); });
+    check("'Hentikan' appears once the program is running", !!buttonByText(mm.c, "Hentikan"));
+    check("Jalankan / Cek Jawaban are disabled while it runs", buttonByText(mm.c, "Menjalankan...")?.disabled === true && buttonByText(mm.c, "Cek Jawaban")?.disabled === true);
+    await act(async () => { buttonByText(mm.c, "Hentikan").dispatchEvent(new w.MouseEvent("click", { bubbles: true })); });
+    await act(async () => { await sleep(30); });
+    check("clicking Hentikan calls stopRun once", stopCalls === 1);
+    check("the stop message is shown and the buttons are usable again", mm.c.textContent.includes("Program dihentikan.") && !buttonByText(mm.c, "Hentikan") && buttonByText(mm.c, "Jalankan")?.disabled === false);
+    await act(async () => { buttonByText(mm.c, "Cek Jawaban").dispatchEvent(new w.MouseEvent("click", { bubbles: true })); });
+    await act(async () => { await sleep(30); });
+    await act(async () => { buttonByText(mm.c, "Hentikan").dispatchEvent(new w.MouseEvent("click", { bubbles: true })); });
+    await act(async () => { await sleep(30); });
+    check("a stopped 'Cek Jawaban' is reported to onCheck as an error result (so it cannot pass)", got.length === 1 && got[0].stopped === true && !!got[0].error);
+    hang = false;
+    await mm.unmount();
+  }
+
+  // ================= Halaman akun: ganti nama, ganti password, hapus akun =================
+  console.log("--- Halaman akun");
+  {
+    // an earlier test replaced localStorage with a throwing getter; the account page needs the real one back
+    if (global.__realLocalStorageDescriptor) Object.defineProperty(w, "localStorage", global.__realLocalStorageDescriptor);
+    const calls = { updateName: [], changePassword: [], deleteAccount: [], replace: [], refresh: 0, signOut: 0 };
+    let nextDelete = { ok: true };
+    const actions = {
+      updateName: async (n) => { calls.updateName.push(n); return { ok: true, message: "Nama berhasil diubah." }; },
+      changePassword: async (...a) => { calls.changePassword.push(a); return { ok: true, message: "Password berhasil diubah. Perangkat lain dikeluarkan." }; },
+      deleteAccount: async (pw, c) => { calls.deleteAccount.push([pw, c]); return nextDelete; },
+    };
+    const account = load("lib/account.ts");
+    const drafts2 = load("lib/code-drafts.ts");
+    const Btn = ({ children, variant, ...rest }) => React.createElement("button", rest, children);
+    const shim = {
+      "@/app/akun/actions": actions, "@/lib/account": account, "@/components/ui/Button": { Button: Btn },
+      "@/components/ui/PasswordInput": { default: load("components/ui/PasswordInput.tsx").default },
+      "next/navigation": { useRouter: () => ({ replace: (u) => calls.replace.push(u), refresh: () => { calls.refresh++; }, push: () => {} }) },
+      "@/lib/supabase/client": { createClient: () => ({ auth: { signOut: async () => { calls.signOut++; } } }) },
+      "@/lib/code-drafts": drafts2,
+    };
+    const ProfileForm = load("components/account/ProfileForm.tsx", shim).default;
+    const PasswordForm = load("components/account/PasswordForm.tsx", shim).default;
+    const DeleteAccountForm = load("components/account/DeleteAccountForm.tsx", shim).default;
+    const setVal = async (el, v) => act(async () => { Object.getOwnPropertyDescriptor(w.HTMLInputElement.prototype, "value").set.call(el, v); el.dispatchEvent(new w.Event("input", { bubbles: true })); });
+    const submit = async (form) => act(async () => { form.dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true })); await sleep(20); });
+    const click = async (el) => act(async () => { el.dispatchEvent(new w.MouseEvent("click", { bubbles: true })); await sleep(20); });
+    const btn = (c, t) => [...c.querySelectorAll("button")].find((b) => b.textContent.trim() === t);
+
+    // --- rename
+    let pm = await mountEl(React.createElement(ProfileForm, { email: "a@b.id", initialName: "Budi" }));
+    check("akun: email is shown read-only", pm.c.querySelector("#akun-email").readOnly === true && pm.c.querySelector("#akun-email").value === "a@b.id");
+    check("akun: the save button is disabled until the name changes", btn(pm.c, "Simpan nama").disabled === true);
+    await setVal(pm.c.querySelector("#akun-nama"), "  Ani   Lestari ");
+    check("akun: it enables once the name differs", btn(pm.c, "Simpan nama").disabled === false);
+    await submit(pm.c.querySelector("form"));
+    check("akun: the name is sent to the server action", calls.updateName.length === 1 && calls.updateName[0] === "  Ani   Lestari ");
+    check("akun: success message shown and the page refreshed", pm.c.textContent.includes("Nama berhasil diubah.") && calls.refresh === 1);
+    check("akun: the field shows the tidied name afterwards", pm.c.querySelector("#akun-nama").value === "Ani Lestari");
+    await setVal(pm.c.querySelector("#akun-nama"), "   ");
+    await submit(pm.c.querySelector("form"));
+    check("akun: an empty name is rejected on the page without calling the server", calls.updateName.length === 1 && pm.c.textContent.includes("Nama tidak boleh kosong."));
+    await pm.unmount();
+
+    // --- password
+    pm = await mountEl(React.createElement(PasswordForm));
+    await setVal(pm.c.querySelector("#pw-sekarang"), "lama123");
+    await setVal(pm.c.querySelector("#pw-baru"), "baru1234");
+    await setVal(pm.c.querySelector("#pw-ulang"), "beda1234");
+    await submit(pm.c.querySelector("form"));
+    check("akun: mismatching confirmation is caught on the page, server not called", calls.changePassword.length === 0 && pm.c.textContent.includes("Konfirmasi password tidak cocok."));
+    await setVal(pm.c.querySelector("#pw-ulang"), "baru1234");
+    await submit(pm.c.querySelector("form"));
+    check("akun: valid change calls the server action with the three values", JSON.stringify(calls.changePassword) === JSON.stringify([["lama123", "baru1234", "baru1234"]]));
+    check("akun: success message shown and the three fields are cleared", pm.c.textContent.includes("Password berhasil diubah") && ["#pw-sekarang", "#pw-baru", "#pw-ulang"].every((q) => pm.c.querySelector(q).value === ""));
+    check("akun: password inputs use the right autocomplete hints", pm.c.querySelector("#pw-sekarang").autocomplete === "current-password" && pm.c.querySelector("#pw-baru").autocomplete === "new-password");
+    await pm.unmount();
+
+    // --- delete
+    w.localStorage.clear();
+    w.localStorage.setItem("pymula:draft:v1:u1:3-fungsi:L9", "x"); w.localStorage.setItem("other-site-key", "keep");
+    pm = await mountEl(React.createElement(DeleteAccountForm, { hasPaidAccess: true, hasPendingPurchase: false }));
+    check("akun: delete starts collapsed (no password field yet)", !pm.c.querySelector("#hapus-password") && !!btn(pm.c, "Hapus akun..."));
+    await click(btn(pm.c, "Hapus akun..."));
+    check("akun: it explains that paid access is lost for good", pm.c.textContent.includes("Akses chapter berbayarmu hilang permanen"));
+    check("akun: it explains re-registering starts from scratch", pm.c.textContent.includes("mulai dari awal"));
+    const delBtn = () => btn(pm.c, "Hapus akun saya permanen");
+    check("akun: the delete button is disabled at first", delBtn().disabled === true);
+    await setVal(pm.c.querySelector("#hapus-password"), "rahasia");
+    await setVal(pm.c.querySelector("#hapus-konfirmasi"), "hapus");
+    check("akun: lowercase 'hapus' does not enable it", delBtn().disabled === true);
+    await setVal(pm.c.querySelector("#hapus-konfirmasi"), "HAPUS");
+    check("akun: password + HAPUS enable it", delBtn().disabled === false);
+    nextDelete = { ok: false, message: "Password salah." };
+    await submit(pm.c.querySelector("form"));
+    check("akun: a server refusal is shown and nothing redirects or signs out", pm.c.textContent.includes("Password salah.") && calls.replace.length === 0 && calls.signOut === 0 && w.localStorage.getItem("pymula:draft:v1:u1:3-fungsi:L9") === "x");
+    nextDelete = { ok: true };
+    await submit(pm.c.querySelector("form"));
+    check("akun: the action got the password and the confirmation word", JSON.stringify(calls.deleteAccount[1]) === JSON.stringify(["rahasia", "HAPUS"]));
+    check("akun: success redirects to login with the deleted notice", JSON.stringify(calls.replace) === JSON.stringify(["/login?deleted=1"]));
+    check("akun: success signs out the browser session", calls.signOut === 1);
+    check("akun: success clears the saved lesson drafts but not other sites' keys", w.localStorage.getItem("pymula:draft:v1:u1:3-fungsi:L9") === null && w.localStorage.getItem("other-site-key") === "keep");
+    await pm.unmount();
+
+    pm = await mountEl(React.createElement(DeleteAccountForm, { hasPaidAccess: false, hasPendingPurchase: true }));
+    await click(btn(pm.c, "Hapus akun..."));
+    check("akun: without paid access the 'paid access lost' line is absent", !pm.c.textContent.includes("Akses chapter berbayarmu"));
+    check("akun: a pending payment shows the warning up front", pm.c.textContent.includes("menunggu verifikasi"));
+    await click(btn(pm.c, "Batal"));
+    check("akun: Batal collapses the form again", !pm.c.querySelector("#hapus-password"));
+    await pm.unmount();
+  }
+
+  // ================= Lupa password, show/hide password, Keluar di halaman akun =================
+  console.log("--- Lupa password / PasswordInput / Keluar");
+  {
+    const calls = { reset: [], resetAction: [], push: [], refresh: 0, signOut: 0 };
+    let sendResult = { error: null };
+    let resetResult = { ok: true, message: "Password berhasil diubah. Kamu sudah masuk dengan password baru." };
+    const Btn = ({ children, variant, ...rest }) => React.createElement("button", { ...rest, "data-variant": variant }, children);
+    const LinkBtn = ({ children, href }) => React.createElement("a", { href }, children);
+    const account = load("lib/account.ts");
+    const reset = load("lib/password-reset.ts", { "./account": account });
+    const drafts3 = load("lib/code-drafts.ts");
+    const PasswordInput = load("components/ui/PasswordInput.tsx").default;
+    const base = {
+      "@/components/ui/Button": { Button: Btn, LinkButton: LinkBtn },
+      "@/components/ui/PasswordInput": { default: PasswordInput },
+      "@/lib/account": account, "@/lib/password-reset": reset, "@/lib/code-drafts": drafts3,
+      "next/navigation": { useRouter: () => ({ push: (u) => calls.push.push(u), replace: (u) => calls.push.push(u), refresh: () => { calls.refresh++; } }) },
+      "@/lib/supabase/client": { createClient: () => ({ auth: {
+        resetPasswordForEmail: async (email, opts) => { calls.reset.push([email, opts]); return sendResult; },
+        signOut: async () => { calls.signOut++; },
+      } }) },
+      "@/app/reset-password/actions": { resetPassword: async (a, b) => { calls.resetAction.push([a, b]); return resetResult; } },
+    };
+    const Forgot = load("components/auth/ForgotPasswordForm.tsx", base).default;
+    const ResetForm = load("components/auth/ResetPasswordForm.tsx", base).default;
+    const SignOut = load("components/site/SignOutButton.tsx", base).default;
+    const setVal = async (el, v) => act(async () => { Object.getOwnPropertyDescriptor(w.HTMLInputElement.prototype, "value").set.call(el, v); el.dispatchEvent(new w.Event("input", { bubbles: true })); });
+    const submit = async (form) => act(async () => { form.dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true })); await sleep(20); });
+    const click = async (el) => act(async () => { el.dispatchEvent(new w.MouseEvent("click", { bubbles: true })); await sleep(20); });
+
+    // --- show / hide password
+    let submits = 0;
+    let pm = await mountEl(React.createElement("form", { onSubmit: (e) => { e.preventDefault(); submits++; } },
+      React.createElement("label", { htmlFor: "p1" }, "Password"),
+      React.createElement(PasswordInput, { id: "p1", autoComplete: "current-password", required: true })));
+    const pw = pm.c.querySelector("#p1"), tg = pm.c.querySelector("button");
+    check("password: hidden by default", pw.type === "password" && tg.getAttribute("aria-pressed") === "false");
+    check("password: the label still points at the input", pm.c.querySelector("label").htmlFor === "p1" && pw.id === "p1");
+    check("password: extra props (autocomplete, required) reach the input", pw.autocomplete === "current-password" && pw.required === true);
+    check("password: phone keyboards are told not to autocorrect", pw.getAttribute("autocapitalize") === "off" && pw.getAttribute("autocorrect") === "off" && pw.getAttribute("spellcheck") === "false");
+    await setVal(pw, "rahasia123");
+    await click(tg);
+    check("password: clicking the eye shows the text", pw.type === "text" && tg.getAttribute("aria-pressed") === "true" && tg.title === "Sembunyikan password");
+    check("password: what was typed is kept when toggling", pw.value === "rahasia123");
+    await click(tg);
+    check("password: clicking again hides it", pw.type === "password" && tg.title === "Tampilkan password" && pw.value === "rahasia123");
+    check("password: the toggle is a plain button and never submits the form", tg.type === "button" && submits === 0);
+    await pm.unmount();
+
+    // --- forgot password
+    pm = await mountEl(React.createElement(Forgot, { cooldownSeconds: 1 }));
+    check("lupa: no link-error banner by default", !pm.c.textContent.includes("kedaluwarsa"));
+    await setVal(pm.c.querySelector("#lupa-email"), "bukan-email");
+    await submit(pm.c.querySelector("form"));
+    check("lupa: an invalid email is caught on the page, nothing sent", calls.reset.length === 0 && pm.c.textContent.includes("alamat email yang valid"));
+    await setVal(pm.c.querySelector("#lupa-email"), " siti@mail.id ");
+    await submit(pm.c.querySelector("form"));
+    check("lupa: the email is sent (trimmed) to Supabase", calls.reset.length === 1 && calls.reset[0][0] === "siti@mail.id");
+    check("lupa: redirectTo is this site's callback asking for /reset-password", calls.reset[0][1].redirectTo === "https://pymula.test/auth/callback?next=%2Freset-password");
+    check("lupa: the neutral message is shown (no account probing)", pm.c.textContent.includes("Jika email itu terdaftar"));
+    check("lupa: it tells the learner to open the link in the same browser", pm.c.textContent.includes("browser yang sama"));
+    const sendBtn = () => [...pm.c.querySelectorAll("button")].find((b) => b.type === "submit");
+    check("lupa: the button is disabled during the cooldown and shows the countdown", sendBtn().disabled === true && /Kirim ulang dalam 1 dtk/.test(sendBtn().textContent));
+    await act(async () => { await sleep(1200); });
+    check("lupa: after the cooldown it can be pressed again", sendBtn().disabled === false && /Kirim ulang link/.test(sendBtn().textContent));
+    sendResult = { error: { status: 429, message: "email rate limit exceeded" } };
+    await submit(pm.c.querySelector("form"));
+    check("lupa: a rate-limit error is explained and hides the success message", pm.c.textContent.includes("Terlalu banyak permintaan") && !pm.c.textContent.includes("Jika email itu terdaftar"));
+    sendResult = { error: null };
+    await pm.unmount();
+    pm = await mountEl(React.createElement(Forgot, { linkError: true }));
+    check("lupa: an expired/invalid link shows the 'minta link baru' banner", pm.c.textContent.includes("Link tidak valid atau sudah kedaluwarsa"));
+    check("lupa: there is a way back to login", !!pm.c.querySelector('a[href="/login"]'));
+    await pm.unmount();
+
+    // --- reset password
+    pm = await mountEl(React.createElement(ResetForm));
+    check("reset: both fields are hidden-by-default password fields with toggles", ["#reset-baru", "#reset-ulang"].every((q) => pm.c.querySelector(q).type === "password") && pm.c.querySelectorAll('button[aria-pressed]').length === 2);
+    await setVal(pm.c.querySelector("#reset-baru"), "baru1234");
+    await setVal(pm.c.querySelector("#reset-ulang"), "beda1234");
+    await submit(pm.c.querySelector("form"));
+    check("reset: a mismatch is caught on the page, server not called", calls.resetAction.length === 0 && pm.c.textContent.includes("Konfirmasi password tidak cocok."));
+    resetResult = { ok: false, message: "Link reset sudah kedaluwarsa atau tidak valid. Minta link baru." };
+    await setVal(pm.c.querySelector("#reset-ulang"), "baru1234");
+    await submit(pm.c.querySelector("form"));
+    check("reset: a server refusal is shown and the form stays", calls.resetAction.length === 1 && pm.c.textContent.includes("kedaluwarsa") && !!pm.c.querySelector("#reset-baru"));
+    resetResult = { ok: true, message: "Password berhasil diubah. Kamu sudah masuk dengan password baru." };
+    await submit(pm.c.querySelector("form"));
+    check("reset: success sends both values and shows the success state with a dashboard link", JSON.stringify(calls.resetAction[1]) === JSON.stringify(["baru1234", "baru1234"]) && pm.c.textContent.includes("Password berhasil diubah") && !!pm.c.querySelector('a[href="/"]') && !pm.c.querySelector("#reset-baru"));
+    check("reset: the page is refreshed so the header updates", calls.refresh >= 1);
+    await pm.unmount();
+
+    // --- Keluar (now on /akun)
+    w.localStorage.clear();
+    w.localStorage.setItem("pymula:draft:v1:u1:3-fungsi:L9", "x"); w.localStorage.setItem("other-site-key", "keep");
+    pm = await mountEl(React.createElement(SignOut, { variant: "secondary" }));
+    const so = pm.c.querySelector("button");
+    check("keluar: the button says Keluar and uses the variant it was given", so.textContent.trim() === "Keluar" && so.getAttribute("data-variant") === "secondary");
+    await click(so);
+    check("keluar: signs out, clears saved lesson code (not other sites'), and goes home", calls.signOut === 1 && w.localStorage.getItem("pymula:draft:v1:u1:3-fungsi:L9") === null && w.localStorage.getItem("other-site-key") === "keep" && calls.push.includes("/"));
+    await pm.unmount();
   }
 
   console.log(fail ? `\n${fail} FAILED` : "\nAll UI behaviours verified."); process.exit(fail ? 1 : 0);

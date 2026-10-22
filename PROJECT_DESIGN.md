@@ -218,9 +218,10 @@ Use `stdout_exact` for lessons whose goal is just printing; use
 > `__main__` entry, per-file editor state, file tabs, per-file saved code, an
 > Input box, per-file `sourceRequirements`, and `npm test` running every lesson
 > in the real Pyodide. First used by the new Chapter 3 lessons L9-L16 (see
-> `PROGRESS.md`). **Not built yet:** the `behavior_tests` checker (hidden test
-> script calling the learner's functions), a Web Worker timeout for runaway
-> loops, and file upload into the virtual disk. Chapter 3 needed none of them
+> `PROGRESS.md`). **Runaway-program safeguard built 2026-10-21** (Web Worker +
+> timeout + Stop button + output cap, see the "Hangs" bullet below).
+> **Not built yet:** the `behavior_tests` checker (hidden test
+> script calling the learner's functions) and file upload into the virtual disk. Chapter 3 needed none of them
 > (output + per-file source rules were enough).
 
 
@@ -246,9 +247,23 @@ Required for projects:
   are written into the working directory so `open("contoh-artikel.txt")` works.
 - **`input()`:** add a small "Input program" box under the editor, one line per
   `input()` call, fed through Pyodide's stdin hook; tests use scripted input.
-- **Hangs:** an infinite loop freezes the tab (main thread). MVP: show "jika
-  macet, muat ulang - kodemu aman karena draf tersimpan". Later: Web Worker with
-  a timeout.
+- **Hangs - DONE (2026-10-21).** An infinite loop used to freeze the tab
+  (Pyodide on the main thread). Now the program runs in a Web Worker
+  (`public/pyodide-worker.js`, a plain classic worker; the Python harness is
+  sent to it in the `init` message so there is one source of truth). In
+  `lib/pyodide.ts`: after `RUN_TIMEOUT_MS` (8 s, not counting Pyodide's load
+  time) or when the learner presses **Hentikan** (`stopRun()`), or if the
+  worker crashes (e.g. out of memory), the page calls `worker.terminate()`,
+  starts a fresh worker in the background and shows a clear Indonesian message
+  (`RunResult.stopped = true`; the checker treats it as an error, so "Cek
+  Jawaban" can never pass on it). Learner `try/except` cannot swallow it. The
+  harness also caps captured output at 100,000 characters (`_PymulaOut`) so an
+  endless `print` fails fast with a message instead of eating memory. Runs are
+  queued one at a time. No `SharedArrayBuffer` / COOP-COEP headers are needed
+  (that is why we terminate instead of using Pyodide's interrupt buffer). If a
+  browser has no `Worker`, it falls back to the main thread (works, but without
+  the safeguard). Trade-off: after a stop, the next run waits for Pyodide to
+  re-initialise (a few seconds; files come from the browser cache).
 - None of the above touches Supabase or Vercel; it all happens in the learner's
   browser memory.
 
@@ -362,15 +377,50 @@ with that in mind:
   lesson texts and checks every character is still there. The checker's failure
   messages (which may contain the learner's output) are deliberately NOT
   restyled.
-- **Account / settings page** (master prompt page #13, not built): view account
-  info, rename (`profiles.name`; an update RLS policy already exists), change
-  password, **delete account**. Deleting an auth user needs the Supabase
-  **service-role key in a server action** (env var, never `NEXT_PUBLIC_`, never
-  in client code). Before building, verify the foreign-key behavior of
-  `lesson_progress` and `purchases`, and remove the user's `payment-proofs`
-  storage objects. **Decision needed:** purchases are financial records - what
-  happens to them on account deletion (retain anonymized, block deletion while a
-  purchase is pending, etc.)?
+- **Account / settings page - DONE (2026-10-21), needs real-project testing.**
+  Route `/akun` (protected in `middleware.ts`, linked as "Akun" in the header):
+  change name, change password, delete account. Decisions (owner, 2026-10-21):
+  payment-proof screenshots are saved on the owner's own device and deleted from
+  Supabase **by hand** (no automatic delete on approve/reject); after deleting an
+  account the same email can register again but starts from scratch (progress and
+  paid access do NOT come back). `purchases` is kept as an **anonymous**
+  transaction record: `supabase/schema_phase5_account.sql` makes `user_id` and
+  `proof_path` nullable and the user FK `ON DELETE SET NULL` (before this, the
+  cascade silently erased the sales ledger). Delete flow
+  (`lib/account.ts` `deleteAccountFlow`, wired in `app/akun/actions.ts`): password
+  re-check -> migration check (`purchases_survive_user_deletion()`; refuses if
+  the migration was not run) -> admins cannot delete themselves -> a `pending`
+  payment blocks deletion -> remove the user's files in `payment-proofs/<id>/` ->
+  null `note` / `proof_path` -> delete the auth user LAST (hard delete, email
+  freed). Every step before the last is harmless if a later one fails, so the
+  button can be pressed again. Needs `SUPABASE_SERVICE_ROLE_KEY` (server only,
+  `lib/supabase/admin.ts` imports `server-only`). Rename updates BOTH
+  `profiles.name` and the auth metadata (the greeting reads the metadata).
+  Password change re-checks the current password on a stateless client, then
+  signs out the other sessions. Email cannot be changed (out of MVP scope).
+  Legal note (information, not advice; the owner is not a lawyer either): UU PDP
+  Art. 43 requires deletion on request, with exceptions for legal obligations;
+  keeping an anonymous ledger is the cautious middle path. Say so in the
+  terms/privacy text ("bukti pembayaran dihapus setelah diverifikasi; catatan
+  transaksi disimpan tanpa identitas").
+
+- **Account page follow-ups - DONE (2026-10-21).** (1) "Keluar" moved from the
+  header to `/akun` (own section; the header now shows Dashboard + Akun).
+  (2) Every password field uses `components/ui/PasswordInput.tsx`: hidden by
+  default, eye toggle (a plain `type="button"` with `aria-pressed`), phone
+  autocorrect/capitalise off; a test fails if a raw `type="password"` is added
+  anywhere else. (3) **Forgot password**: "Lupa password?" on `/login`, plus links
+  in the change-password and delete-account forms, all to `/lupa-password`
+  (email -> `resetPasswordForEmail`, always the same neutral answer so accounts
+  cannot be probed, 60 s resend cooldown, rate-limit message). The email link opens
+  `/auth/callback` (`code` exchange, or `token_hash` + `type=recovery`), which sets
+  a 15-minute httpOnly cookie `pymula_recovery` and redirects to `/reset-password`.
+  That page and its action REQUIRE the cookie: a recovery session is an ordinary
+  signed-in session, and this page changes the password without the old one, so an
+  ordinary (possibly stolen) session must not be able to use it. After a reset the
+  other sessions are signed out. The callback only redirects to an allow-list
+  (`/reset-password`, else `/`), so it cannot be an open redirect. Logic is in
+  `lib/password-reset.ts` (tested). Needs the dashboard setup in the README.
 
 ### Editor manual test checklist (run before calling the editor done)
 
@@ -435,7 +485,7 @@ Remembering code (desktop and phone):
 3. **Content:** Word Counter chapters and the take-home chapter (zip, README).
    Extend `content/AUTHORING_TEMPLATE.md` for projects (story, per-lesson
    `scaffold`, `solutionFiles`, tests, seed files, README template).
-4. **Later:** Web Worker with timeout, optional file upload into the virtual FS,
+4. **Later:** optional file upload into the virtual FS,
    public share page, "Lewati" button if data supports it.
 
 ### Tentative content shape (for step 3; not yet in `content/types.ts`)
