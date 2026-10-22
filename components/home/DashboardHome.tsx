@@ -6,12 +6,14 @@ import { PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
 import { getCompletedLessonKeys } from "@/lib/progress-server";
 import { summarizeProgress } from "@/lib/progress-summary";
 import { hasApprovedPurchase } from "@/lib/purchase-server";
+import { salesOpen } from "@/lib/site-config";
 
 export default async function DashboardHome({ name }: { name: string }) {
   const completed = (await getCompletedLessonKeys()) ?? new Set<string>();
   const purchased = await hasApprovedPurchase(PYTHON_DASAR_COURSE_SLUG);
   const summary = summarizeProgress(getAllLessons(), completed, purchased);
   const hasStarted = summary.doneAll > 0;
+  const canBuy = salesOpen(new Date());
 
   return (
     <section className="mx-auto max-w-3xl px-6 py-16">
@@ -51,9 +53,11 @@ export default async function DashboardHome({ name }: { name: string }) {
             <p className="mt-4 text-sm text-code">
               Semua chapter gratis sudah kamu selesaikan. Kerja bagus!
             </p>
-            <LinkButton href="/kursus/python-dasar/beli" className="mt-3">
-              Buka chapter berikutnya
-            </LinkButton>
+            {canBuy && (
+              <LinkButton href="/kursus/python-dasar/beli" className="mt-3">
+                Buka chapter berikutnya
+              </LinkButton>
+            )}
           </>
         ) : (
           <p className="mt-4 text-sm text-code">

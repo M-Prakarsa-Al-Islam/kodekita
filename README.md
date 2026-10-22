@@ -54,6 +54,19 @@ chapters. The database only tracks accounts and per-user lesson progress
 4. Deploy. Confirm register/login and the chapter/lesson flow work against
    the *same* Supabase project you set up locally.
 
+## Masa layanan, halaman Tentang, dan penutupan (lihat `SHUTDOWN.md`)
+
+- Semua angka (tanggal akhir, jendela refund, kontak WhatsApp/email) ada di
+  **`lib/site-config.ts`**. Jangan menulisnya langsung di halaman.
+- Tanggal akhir maksimal 1 Oktober 2027. Pop-up pemberitahuan dan penutupan
+  penjualan terjadi otomatis 45 hari sebelumnya; setelah tanggal itu semua
+  alamat menampilkan halaman perpisahan tanpa menyentuh Supabase.
+- **Sebelum deploy:** buat alamat email `halo@pymula.live` yang benar-benar
+  menerima surat (name.com -> My Domains -> pymula.live -> Email Forwarding ->
+  Add Record, diteruskan ke emailmu; jangan teruskan ke alamat yang sendirinya
+  meneruskan ke tempat lain). Kalau memakai alamat lain, ubah `CONTACT_EMAIL`.
+- Opsional: isi `OWNER_NAME` (tampil di halaman Tentang) dan `LEGACY_URL`.
+
 ## Supabase Auth setup for "lupa password" (do this once, dashboard only)
 
 1. **Authentication -> URL Configuration:** set *Site URL* to the production
@@ -80,3 +93,11 @@ chapters. The database only tracks accounts and per-user lesson progress
   progress when logged in), chapter/lesson pages (require login)
 - Pyodide-based code runner + quiz runner, with a tested checker
   (`scripts/test-checker.mjs`)
+- Chapters 1–2 written for real (2 lessons each); chapters 3–13 stubbed as
+  `todo` — see `PROGRESS.md` for the full table
+
+## What's next
+
+Write chapters 3–5 (finishes the free tier) using
+`content/AUTHORING_TEMPLATE.md`, and/or start Phase 4 (QRIS commerce). See
+`PROGRESS.md` for details.

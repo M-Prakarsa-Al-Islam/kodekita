@@ -30,6 +30,13 @@ function isAuthPage(path: string): boolean {
   return AUTH_PAGES.some((p) => path === p || path.startsWith(p + "?") || path.startsWith(p + "/"));
 }
 
+// Only these paths need a Supabase session check in the middleware. Every other
+// page skips it, so the middleware can run for ALL paths (needed to send them to
+// the farewell page after the end date) without adding a Supabase call to each page.
+export function needsSession(pathname: string): boolean {
+  return isProtectedPath(pathname) || isAuthPage(pathname);
+}
+
 // Where to send the visitor instead of showing this page, or null to show it.
 //  - logged out on a protected page  -> /login?next=<page>
 //  - logged in on /login or /register -> where they were headed (?next=) or "/"

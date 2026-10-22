@@ -205,6 +205,8 @@ check("safeInternalPath uses the given fallback", G.safeInternalPath("//evil.com
 check("a backslash path WOULD leave the site if it were followed", new URL("/\\evil.com", "https://pymula.live").host, "evil.com");
 check("every accepted path stays on our own host", ["/akun", "/dashboard?x=1", "/kursus/python-dasar/a"].map((x) => new URL(G.safeInternalPath(x), "https://pymula.live").host), ["pymula.live", "pymula.live", "pymula.live"]);
 
+check("needsSession: protected pages and the login/register pages need the session check", ["/akun", "/dashboard", "/admin/purchases", "/kursus/python-dasar/1-pengenalan/L1", "/login", "/register"].map(G.needsSession), [true, true, true, true, true, true]);
+check("needsSession: everything else skips it (no Supabase call per page view)", ["/", "/tentang", "/proyek", "/kursus", "/kursus/python-dasar", "/lupa-password", "/reset-password", "/auth/callback", "/selesai"].map(G.needsSession), [false, false, false, false, false, false, false, false, false]);
 check("logged out on a protected page -> /login?next=<page>", G.guardRedirect("/akun", false, null), "/login?next=%2Fakun");
 check("logged out on a lesson -> /login with next", G.guardRedirect("/kursus/python-dasar/1-pengenalan", false, null), "/login?next=%2Fkursus%2Fpython-dasar%2F1-pengenalan");
 check("logged out on /admin -> login", G.guardRedirect("/admin/purchases", false, null), "/login?next=%2Fadmin%2Fpurchases");
@@ -239,7 +241,7 @@ check("the login page links to lupa password", /href="\/lupa-password"/.test(rea
 check("the account password form and delete form link to lupa password", [/href="\/lupa-password"/.test(read("components/account/PasswordForm.tsx")), /href="\/lupa-password"/.test(read("components/account/DeleteAccountForm.tsx"))], [true, true]);
 check("/reset-password and /lupa-password are NOT behind the login-only middleware", !/reset-password|lupa-password/.test(read("middleware.ts")), true);
 const mw = read("middleware.ts");
-check("middleware uses the tested guard and covers /login and /register", /guardRedirect\(/.test(mw) && /"\/login"/.test(mw) && /"\/register"/.test(mw), true);
+check("middleware uses the tested guard and the tested needsSession() filter", /guardRedirect\(/.test(mw) && /needsSession\(/.test(mw), true);
 check("the login page uses the safe-path helper (no hand-rolled next check)", /safeInternalPath\(/.test(read("app/login/page.tsx")) && !/startsWith\("\/\/"\)/.test(read("app/login/page.tsx")), true);
 check("the lupa-password page tells the form whether the visitor is signed in", /signedIn=\{/.test(read("app/lupa-password/page.tsx")), true);
 const resetPage = read("app/reset-password/page.tsx");

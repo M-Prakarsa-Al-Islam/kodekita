@@ -522,5 +522,67 @@ async function mountEl(el) { const c = w.document.createElement("div"); w.docume
     await pm.unmount();
   }
 
+  // ================= Pop-up pemberitahuan penutupan layanan =================
+  console.log("--- EndNoticeModal");
+  {
+    if (global.__realLocalStorageDescriptor) Object.defineProperty(w, "localStorage", global.__realLocalStorageDescriptor);
+    const siteConfig = load("lib/site-config.ts");
+    const Modal = load("components/site/EndNoticeModal.tsx", { "@/lib/site-config": siteConfig });
+    const NoticeModal = Modal.default;
+    const KEY = Modal.END_NOTICE_STORAGE_KEY;
+    const day1 = new Date(2027, 7, 20, 10, 0, 0); // 20 Aug 2027, local time
+    const day2 = new Date(2027, 7, 21, 10, 0, 0);
+    const click = async (el) => act(async () => { el.dispatchEvent(new w.MouseEvent("click", { bubbles: true })); await sleep(10); });
+    const dlg = (c) => c.querySelector('[role="dialog"]');
+    const ok = (c) => [...c.querySelectorAll("button")].find((b) => b.textContent.trim() === "Mengerti");
+    w.localStorage.clear();
+
+    check("notice: dayKey is the local calendar day", Modal.dayKey(day1) === "2027-08-20" && Modal.dayKey(new Date(2027, 0, 5)) === "2027-01-05");
+
+    let pm = await mountEl(React.createElement(NoticeModal, { endLabel: "1 Oktober 2027", daysLeft: 42, now: day1 }));
+    check("notice: it opens as an accessible modal dialog", !!dlg(pm.c) && dlg(pm.c).getAttribute("aria-modal") === "true" && !!pm.c.querySelector("#end-notice-title") && dlg(pm.c).getAttribute("aria-labelledby") === "end-notice-title");
+    check("notice: it states the end date and the days left", pm.c.textContent.includes("1 Oktober 2027") && pm.c.textContent.includes("42 hari lagi"));
+    check("notice: it says sales are closed and mentions the refund window", pm.c.textContent.includes("Penjualan chapter berbayar sudah ditutup") && pm.c.textContent.includes("45 hari terakhir"));
+    check("notice: it links to the About page section on closing", !!pm.c.querySelector('a[href="/tentang#penutupan"]'));
+    check("notice: it does not promise downloads that do not exist yet", !pm.c.textContent.includes("Unduh materi") && pm.c.textContent.includes("Selesaikan belajarmu"));
+    check("notice: keyboard focus goes to the close button", w.document.activeElement === ok(pm.c));
+    await click(ok(pm.c));
+    check("notice: 'Mengerti' closes it", !dlg(pm.c));
+    check("notice: dismissal is remembered for today", w.localStorage.getItem(KEY) === "2027-08-20");
+    await pm.unmount();
+
+    pm = await mountEl(React.createElement(NoticeModal, { endLabel: "1 Oktober 2027", daysLeft: 42, now: day1 }));
+    check("notice: reopening the site the same day does not show it again", !dlg(pm.c));
+    await pm.unmount();
+
+    pm = await mountEl(React.createElement(NoticeModal, { endLabel: "1 Oktober 2027", daysLeft: 41, now: day2 }));
+    check("notice: the next day it comes back", !!dlg(pm.c) && pm.c.textContent.includes("41 hari lagi"));
+    await pm.unmount();
+
+    w.localStorage.clear();
+    pm = await mountEl(React.createElement(NoticeModal, { endLabel: "1 Oktober 2027", daysLeft: 42, now: day1 }));
+    await act(async () => { w.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); await sleep(10); });
+    check("notice: Escape closes it", !dlg(pm.c));
+    await pm.unmount();
+
+    w.localStorage.clear();
+    pm = await mountEl(React.createElement(NoticeModal, { endLabel: "1 Oktober 2027", daysLeft: 42, now: day1 }));
+    await click(dlg(pm.c));
+    check("notice: clicking inside the dialog does not close it", !!dlg(pm.c));
+    await click(dlg(pm.c).parentElement);
+    check("notice: clicking the dimmed backdrop closes it", !dlg(pm.c));
+    await pm.unmount();
+
+    // storage blocked (private mode etc.): still shows, closing never throws
+    Object.defineProperty(w, "localStorage", { get() { throw new Error("SecurityError"); }, configurable: true });
+    pm = await mountEl(React.createElement(NoticeModal, { endLabel: "1 Oktober 2027", daysLeft: 42, now: day1 }));
+    check("notice: with storage blocked it still shows", !!dlg(pm.c));
+    let threw = false;
+    try { await click(ok(pm.c)); } catch (e) { threw = true; }
+    check("notice: with storage blocked, closing does not crash and does close", !threw && !dlg(pm.c));
+    await pm.unmount();
+    if (global.__realLocalStorageDescriptor) Object.defineProperty(w, "localStorage", global.__realLocalStorageDescriptor);
+  }
+
   console.log(fail ? `\n${fail} FAILED` : "\nAll UI behaviours verified."); process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error("SCRIPT ERROR", e); process.exit(2); });

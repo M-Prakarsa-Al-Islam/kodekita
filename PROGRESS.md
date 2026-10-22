@@ -1053,6 +1053,52 @@ Still to decide (proposed, see the chat): the refund window for recent buyers, t
 contact channel that outlives the domain, the exact end date (must be before the
 `pymula.live` expiry), and whether materials go to a free public GitHub repo.
 
+**2026-10-22 service life, About page + FAQ, purchase disclosure, end-notice pop-up, farewell page.**
+Owner decisions (see PROJECT_DESIGN.md "Service life"): may stop maintaining at any
+time, planned maximum **1 Oktober 2027 23:59 WIB** (domain expires 17 Oktober 2027);
+no permanent countdown banner; pop-up at least 30 days before the end (automatic
+from 45 days = **18 Agustus 2027**); after the end nothing paid is renewed; full
+refund for purchases in the last 45 days; contact by the pymula.live email and
+WhatsApp. *Built:* `lib/site-config.ts` (every number + the pure date/state
+functions + `configProblems()`); `components/site/EndNoticeModal.tsx` (accessible
+dialog, once per day, Esc/backdrop/button, works with blocked storage);
+`components/site/Farewell.tsx` + `app/selesai/page.tsx` (404 before the end);
+`app/layout.tsx` (dynamic, shows the pop-up in "notice" and ONLY the farewell page
+in "ended"); `middleware.ts` (after the end it REWRITES every request to `/selesai`
+before any page runs, then `needsSession()` lets pages that need no session through
+without a Supabase call; matcher now covers all pages except static files);
+`lib/route-guard.ts` (+`needsSession`); `/tentang` (full page: what it is, who runs
+it, status and service life, price, refund, data and privacy, closing timeline,
+contact, 17-question FAQ as `<details>`, optional `OWNER_NAME`); `/proyek`
+placeholder kept; footer with Tentang/Refund/WhatsApp/email; purchase page: the
+"Sekali bayar, akses selamanya" line is GONE, replaced by a "Baca dulu sebelum
+membayar" box, and the sale is closed (`salesOpen`) from 45 days before the end; the
+same wording under the price on the course page and the course list, and "Beli"
+buttons hidden when sales are closed (course page, dashboard); `SHUTDOWN.md` runbook.
+*Finding on the way:* just not drawing the page in the layout is not enough: Next.js
+still ran the page code on the server (its output showed up in the flight data), so
+the first version of "ended" would still have called the deleted Supabase; hence the
+middleware rewrite. *Tests:* `scripts/test-service.mjs` (43, in `npm test`: the
+committed settings, every state boundary, the 30-day promise, stopping early,
+Jakarta-calendar dates, no Supabase in the farewell page or the middleware's ended
+branch, no remaining "akses selamanya", every `/tentang#section` link resolves, the
+page uses config values, downloads only mentioned when they exist); +2 in
+`test-password-reset.mjs` (`needsSession`); 16 UI checks for the pop-up in
+`test-ui.cjs`. *Real-server proof (Next.js production build, temporary config edit,
+reverted):* ended: all 11 routes incl. /akun, /dashboard, /kursus/.../L1, /auth/callback
+return the farewell page, the real page's text is absent from the response (page code
+not run), static assets still served, no Supabase fetch errors; normal: / /login
+/tentang /kursus /proyek /lupa-password 200, /akun 307 to /login?next=%2Fakun,
+/selesai 404.
+*Before deploying (owner):* create `halo@pymula.live` (name.com -> Email Forwarding),
+or change `CONTACT_EMAIL`; decide whether to fill `OWNER_NAME`; reread the About page
+and the purchase box once, they state promises in your name (the refund rule, "bukti
+pembayaran dihapus setelah diverifikasi" which you do by hand, "kami berusaha menjaga
+satu halaman pemberitahuan di alamat gratis"). *Known limits:* the sales cut-off is a
+UI/page gate, not a database rule; the farewell page on the free Vercel address
+depends on Vercel's policy. *Not verified in a real browser/with real services:* the
+look on phones, the real email forwarding, the pop-up in a real browser.
+
 ### How to write the next batch (2-3 chapters)
 
 1. Fill in `content/AUTHORING_TEMPLATE.md`'s template for each chapter and

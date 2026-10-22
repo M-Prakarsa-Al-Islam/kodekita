@@ -6,6 +6,7 @@ import { getCoursePrice, PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
 import { summarizeProgress } from "@/lib/progress-summary";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { LinkButton } from "@/components/ui/Button";
+import { SERVICE_END_ISO, formatDateId, salesOpen } from "@/lib/site-config";
 
 export default async function PythonDasarPage() {
   const completed = await getCompletedLessonKeys();
@@ -13,6 +14,8 @@ export default async function PythonDasarPage() {
   const purchased = loggedIn && (await hasApprovedPurchase(PYTHON_DASAR_COURSE_SLUG));
   const price = getCoursePrice(PYTHON_DASAR_COURSE_SLUG);
   const summary = loggedIn ? summarizeProgress(getAllLessons(), completed, purchased) : null;
+  const canBuy = salesOpen(new Date());
+  const endLabel = formatDateId(SERVICE_END_ISO);
 
   return (
     <section className="mx-auto max-w-3xl px-6 py-16">
@@ -21,6 +24,12 @@ export default async function PythonDasarPage() {
       </h1>
       <p className="mt-2 text-ink-soft">
         Chapter 1–5 gratis. Chapter 6–13 dengan sekali bayar, Rp{price.toLocaleString("id-ID")}.
+      </p>
+      <p className="mt-1 text-xs text-ink-soft">
+        Akses berlaku selama PyMula berjalan, direncanakan paling lama sampai {endLabel}.{" "}
+        <Link href="/tentang#status" className="underline">
+          Selengkapnya
+        </Link>
       </p>
 
       {!loggedIn && (
@@ -37,13 +46,19 @@ export default async function PythonDasarPage() {
         </div>
       )}
 
-      {loggedIn && !purchased && (
+      {loggedIn && !purchased && canBuy && (
         <div className="mt-6 rounded-lg border border-sun bg-sun/10 px-5 py-4 text-sm text-ink">
           Selesaikan chapter gratis, lalu buka Chapter 6–13 dengan sekali bayar.{" "}
           <Link href="/kursus/python-dasar/beli" className="font-medium underline">
             Beli sekarang
           </Link>
           .
+        </div>
+      )}
+
+      {loggedIn && !purchased && !canBuy && (
+        <div className="mt-6 rounded-lg border border-sun bg-sun/10 px-5 py-4 text-sm text-ink">
+          Penjualan chapter berbayar sudah ditutup karena PyMula akan berhenti beroperasi pada {endLabel}.
         </div>
       )}
 
@@ -76,9 +91,11 @@ export default async function PythonDasarPage() {
               <p className="mt-4 text-sm text-code">
                 Semua chapter gratis sudah kamu selesaikan. Kerja bagus!
               </p>
-              <LinkButton href="/kursus/python-dasar/beli" className="mt-3">
-                Buka chapter berikutnya
-              </LinkButton>
+              {canBuy && (
+                <LinkButton href="/kursus/python-dasar/beli" className="mt-3">
+                  Buka chapter berikutnya
+                </LinkButton>
+              )}
             </>
           ) : (
             <p className="mt-4 text-sm text-code">

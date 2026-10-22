@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/site/Header";
 import Footer from "@/components/site/Footer";
+import Farewell from "@/components/site/Farewell";
+import EndNoticeModal from "@/components/site/EndNoticeModal";
+import { SERVICE_END_ISO, daysLeft, formatDateId, serviceState } from "@/lib/site-config";
 import { Analytics } from "@vercel/analytics/next";
+
+// The state of the service depends on the clock, so never bake it in at build time.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "PyMula, Belajar Coding. Praktik. Bangun Sesuatu.",
@@ -15,6 +21,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const now = new Date();
+  const state = serviceState(now);
+
   return (
     <html lang="id">
       <head>
@@ -30,9 +39,20 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <Header />
-        <main>{children}</main>
-        <Footer />
+        {state === "ended" ? (
+          // After the end date: only the farewell page, and no Supabase calls at all
+          // (Header, pages and middleware all talk to Supabase, so none of them run).
+          <Farewell />
+        ) : (
+          <>
+            <Header />
+            {state === "notice" && (
+              <EndNoticeModal endLabel={formatDateId(SERVICE_END_ISO)} daysLeft={daysLeft(now)} />
+            )}
+            <main>{children}</main>
+            <Footer />
+          </>
+        )}
         <Analytics />
       </body>
     </html>

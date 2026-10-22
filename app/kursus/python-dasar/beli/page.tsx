@@ -3,8 +3,13 @@ import { getCoursePrice, PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
 import { getLatestPurchase } from "@/lib/purchase-server";
 import PurchaseForm from "@/components/purchase/PurchaseForm";
 import { LinkButton } from "@/components/ui/Button";
-
-const WHATSAPP_URL = "https://wa.me/6285185203197";
+import {
+  REFUND_DAYS,
+  SERVICE_END_ISO,
+  WHATSAPP_URL,
+  formatDateId,
+  salesOpen,
+} from "@/lib/site-config";
 
 export default async function BeliPage() {
   const price = getCoursePrice(PYTHON_DASAR_COURSE_SLUG);
@@ -53,12 +58,53 @@ export default async function BeliPage() {
   }
 
   // status === "none" or "rejected"
+  // Paid chapters stop being sold when the end-of-service notice starts. A payment
+  // already submitted ("pending") is still handled above.
+  if (!salesOpen(new Date())) {
+    return (
+      <section className="mx-auto max-w-md px-6 py-16 text-center">
+        <h1 className="font-display text-2xl font-semibold text-ink">Penjualan sudah ditutup</h1>
+        <p className="mt-2 text-ink-soft">
+          Chapter berbayar tidak dijual lagi karena PyMula akan berhenti beroperasi pada{" "}
+          {formatDateId(SERVICE_END_ISO)}. Chapter 1–5 tetap bisa kamu pelajari sampai tanggal itu.
+        </p>
+        <p className="mt-4 text-sm text-ink-soft">
+          Sudah transfer sebelumnya dan belum ada kabar?{" "}
+          <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="font-medium underline">
+            Hubungi kami di WhatsApp
+          </a>
+          .
+        </p>
+        <LinkButton href="/kursus/python-dasar" className="mt-6">
+          Kembali ke daftar chapter
+        </LinkButton>
+      </section>
+    );
+  }
+
   return (
     <section className="mx-auto max-w-md px-6 py-16">
       <h1 className="font-display text-2xl font-semibold text-ink">Buka Chapter 6–13</h1>
-      <p className="mt-2 text-ink-soft">
-        Sekali bayar, tanpa biaya berlangganan. Rp{price.toLocaleString("id-ID")}.
-      </p>
+      <p className="mt-2 text-ink-soft">Sekali bayar, Rp{price.toLocaleString("id-ID")}.</p>
+
+      <div className="mt-4 rounded-lg border border-sun bg-sun/10 px-4 py-3 text-sm text-ink">
+        <p className="font-medium">Baca dulu sebelum membayar</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          <li>
+            Akses berlaku selama PyMula berjalan, direncanakan paling lama sampai{" "}
+            {formatDateId(SERVICE_END_ISO)}. Bukan akses selamanya.
+          </li>
+          <li>
+            PyMula dikelola sendiri dan bisa berhenti lebih awal. Kami memberi tahu minimal 30 hari sebelumnya.
+          </li>
+          <li>Pembelian dalam {REFUND_DAYS} hari terakhir sebelum penutupan bisa di-refund penuh.</li>
+        </ul>
+        <p className="mt-2">
+          <Link href="/tentang#status" className="font-medium underline">
+            Selengkapnya di halaman Tentang
+          </Link>
+        </p>
+      </div>
 
       {purchase.status === "rejected" && (
         <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

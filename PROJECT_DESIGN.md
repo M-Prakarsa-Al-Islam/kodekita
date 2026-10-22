@@ -422,6 +422,34 @@ with that in mind:
   (`/reset-password`, else `/`), so it cannot be an open redirect. Logic is in
   `lib/password-reset.ts` (tested). Needs the dashboard setup in the README.
 
+- **Service life, About page, FAQ, pop-up - DONE (2026-10-22).** Owner
+  decisions: the owner may stop maintaining the site at any time and plans at most
+  until October 2027; no permanent countdown banner; a pop-up at least 30 days
+  before the end; after the end the domain, Supabase and anything else paid are
+  NOT renewed; the domain `pymula.live` expires 17 Oktober 2027; full refund for
+  purchases in the last 45 days before the end; contact by the `pymula.live` email
+  and WhatsApp. Design: `lib/site-config.ts` holds every number and the pure
+  functions `serviceState / salesOpen / daysLeft / formatDateId`. The default end
+  is **1 Oktober 2027 23:59 WIB** (16 days before the domain expires; a test
+  enforces at least 14). States: `active` -> `notice` (from 45 days before:
+  pop-up once a day, paid chapters not sold, "Penjualan sudah ditutup" on the
+  purchase page) -> `ended` (after the end: the middleware REWRITES every request
+  to `/selesai` before the real page runs, because Next.js would otherwise still
+  execute pages and call the deleted Supabase; the layout draws `Farewell`, which
+  imports no Supabase code; static assets are excluded from the matcher). The
+  middleware matcher now covers all pages but returns immediately for pages that
+  do not need a session (`needsSession`), so there is no extra Supabase call per
+  page view. The notice appears automatically for the planned end date even if the
+  owner never touches the site; stopping earlier = edit `SERVICE_END_ISO` (at
+  least 30 days ahead), see `SHUTDOWN.md`. The old "Sekali bayar, akses
+  selamanya" wording was replaced by an upfront disclosure (what is bought, the
+  planned maximum end date, may end earlier, 30-day notice, refund rule) on the
+  purchase page, the course page and the course list, and a full `/tentang` page
+  (what it is, who runs it, status, price, refund, data and privacy, closing
+  timeline, contact, 17-question FAQ). Downloads are mentioned only when
+  `DOWNLOADS_AVAILABLE` is true (not built yet). Known limit: the sales cut-off
+  is enforced in the UI and the purchase page, not in the database.
+
 ### Editor manual test checklist (run before calling the editor done)
 
 Desktop (Chrome, Firefox, Safari):
