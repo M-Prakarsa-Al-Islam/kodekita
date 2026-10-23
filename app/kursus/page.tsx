@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { SERVICE_END_ISO, formatDateId } from "@/lib/site-config";
+
+export const metadata: Metadata = {
+  title: "Kursus",
+  description: "Kursus PyMula: Python Dasar dalam Bahasa Indonesia, 13 chapter dari nol dengan latihan kode langsung di browser. Chapter 1-5 gratis.",
+  alternates: { canonical: "/kursus" },
+};
 
 export default function KursusPage() {
   return (
@@ -19,6 +27,9 @@ export default function KursusPage() {
             1–5 gratis.
           </p>
           <p className="mt-4 font-mono text-sm text-ink">Rp20.000</p>
+          <p className="mt-1 text-xs text-ink-soft">
+            Akses berlaku selama PyMula berjalan, direncanakan paling lama sampai {formatDateId(SERVICE_END_ISO)}.
+          </p>
         </Link>
       </div>
     </section>

@@ -11,6 +11,8 @@ import {
   salesOpen,
 } from "@/lib/site-config";
 
+export const metadata = { title: "Beli Python Dasar", robots: { index: false } };
+
 export default async function BeliPage() {
   const price = getCoursePrice(PYTHON_DASAR_COURSE_SLUG);
   const purchase = await getLatestPurchase(PYTHON_DASAR_COURSE_SLUG);

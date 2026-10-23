@@ -1,4 +1,6 @@
-export const metadata = { title: "Proyek" };
+// noindex while this is only a placeholder; add it to INDEXABLE_PATHS (lib/seo.ts)
+// and remove the robots line once the real Proyek page exists.
+export const metadata = { title: "Proyek", robots: { index: false } };
 
 export default function ProyekPage() {
   return (

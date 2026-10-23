@@ -16,6 +16,11 @@
 
 export const SITE_NAME = "PyMula";
 
+// The ONE canonical address of the site. pymula.live redirects to www.pymula.live,
+// so every canonical link, sitemap entry and structured-data URL uses the www form.
+// (If you ever switch the redirect the other way, change only this line.)
+export const SITE_URL = "https://www.pymula.live";
+
 // After the end date the middleware sends every request here (see middleware.ts).
 export const ENDED_PATH = "/selesai";
 
@@ -96,6 +101,7 @@ export function configProblems(): string[] {
   if (NOTICE_DAYS < MIN_NOTICE_DAYS) problems.push("NOTICE_DAYS is shorter than the promised minimum notice");
   if (SALES_CLOSE_DAYS < REFUND_DAYS) problems.push("sales must close no later than the start of the refund window");
   if (SALES_CLOSE_DAYS > NOTICE_DAYS) problems.push("sales must not close before the notice starts");
+  if (!/^https:\/\/[^/\s]+$/.test(SITE_URL)) problems.push("SITE_URL must be https://host with no trailing slash or path");
   if (!/^\d{10,15}$/.test(WHATSAPP_NUMBER_INTL)) problems.push("WHATSAPP_NUMBER_INTL must be digits only, with country code");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(CONTACT_EMAIL)) problems.push("CONTACT_EMAIL is not an email address");
   return problems;

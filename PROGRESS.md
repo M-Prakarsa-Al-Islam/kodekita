@@ -1099,6 +1099,40 @@ UI/page gate, not a database rule; the farewell page on the free Vercel address
 depends on Vercel's policy. *Not verified in a real browser/with real services:* the
 look on phones, the real email forwarding, the pop-up in a real browser.
 
+**2026-10-23 Google (SEO): favicon/logo, robots, sitemap, canonical, noindex, structured data.**
+Question from the owner: the site does not show up when searching "pymula", how to get
+the logo into search results, and is the site ready to be indexed. *Findings (read from the
+repo and from fetching the live site):* there was NO favicon at all (so Google had no logo
+to show), no `robots.txt`, no sitemap, no canonical links, no Open Graph image, no
+structured data; and `pymula.live` redirects to `www.pymula.live`, so the canonical host is
+www. The home page itself was fine (server-rendered, titled, linked). *Built:*
+`public/icon.svg`, `favicon.ico` (16/32/48), `icon-96/192/512.png`, `apple-touch-icon.png`
+(192), `og-image.png` (1200x630), all drawn from the brand font Fraunces and colours
+(navy `#29235c` + amber `#f2ad3d`, a "P" on a navy rounded square), checked by eye at 16/32/48
+px; `app/robots.ts` (allows everything except `/admin` and `/auth/`, points to the
+sitemap); `app/sitemap.ts` (dynamic; home, /kursus, /kursus/python-dasar, /tentang; only
+the home page after the end date); `lib/seo.ts` (`INDEXABLE_PATHS`, `websiteJsonLd`);
+`SITE_URL = https://www.pymula.live` in `lib/site-config.ts`; layout metadata
+(`metadataBase`, title template "%s | PyMula", icons, Open Graph, Twitter card);
+canonical on the 4 public pages; WebSite + Organization (with logo) JSON-LD on the
+logged-out home page; `robots: { index: false }` on login, register, forgot/reset
+password, account, admin, purchase page, chapter/lesson routes, the placeholder /proyek
+and /selesai (they are deliberately NOT blocked in robots.txt, so Google can read the
+noindex). *Tests:* `scripts/test-seo.mjs` (32, in `npm test`): icon files exist at the
+declared sizes and each declared PNG is a multiple of 48 px, the ICO contains 48 px, the
+SVG is square, robots.txt does not block any icon, sitemap pages exist / are not noindex /
+have a canonical, every utility page is noindex, JSON-LD content and escaping, host is
+https + www; mutation-checked (removing a noindex or blocking an icon makes it fail).
+*Real-server proof* (production build): robots.txt and sitemap.xml correct; all 7 image
+files 200 with the right content-type; home `<head>` has the icons, canonical, Open Graph
+(incl. image 1200x630), twitter card and JSON-LD; subpage titles "Tentang & FAQ | PyMula"
+etc.; /login /register /lupa-password /proyek carry `noindex`, public pages do not. *Not
+verifiable from here:* what Google has actually indexed, the Search Console status, and
+when the favicon will appear (Google decides). *To do (owner), see README:* Search Console
+property + sitemap + "Request indexing" for https://www.pymula.live/.
+*Content note:* the home page still advertises "Proyek ... mulai Rp10.000" while /proyek
+says the class is still being prepared; consider "Segera hadir" there.
+
 ### How to write the next batch (2-3 chapters)
 
 1. Fill in `content/AUTHORING_TEMPLATE.md`'s template for each chapter and

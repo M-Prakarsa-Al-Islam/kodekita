@@ -21,6 +21,7 @@ import {
 export const metadata = {
   title: "Tentang & FAQ",
   description: "Tentang PyMula: siapa yang mengelola, masa layanan, harga, refund, privasi, dan pertanyaan umum.",
+  alternates: { canonical: "/tentang" },
 };
 
 const TOC = [
@@ -70,17 +71,11 @@ export default function TentangPage() {
 
       <nav aria-label="Isi halaman" className="mt-8 rounded-lg border border-line bg-white/60 p-5">
         <p className="text-sm font-medium text-ink">Isi halaman ini</p>
-        <ul className="mt-3 flex flex-col gap-1 text-sm">
-          {TOC.map((t, index) => (
+        <ul className="mt-2 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+          {TOC.map((t) => (
             <li key={t.id}>
-              <a
-                href={`#${t.id}`}
-                className="flex items-center gap-3 rounded-md px-3 py-2 text-ink transition-colors hover:bg-sun/10 hover:underline"
-              >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sun/20 text-xs font-medium">
-                  {index + 1}
-                </span>
-                <span>{t.label}</span>
+              <a href={`#${t.id}`} className="underline hover:text-ink">
+                {t.label}
               </a>
             </li>
           ))}
@@ -91,25 +86,23 @@ export default function TentangPage() {
         <p>
           {SITE_NAME} adalah platform belajar Python untuk pemula, sepenuhnya dalam Bahasa Indonesia. Setiap
           lesson berisi penjelasan singkat, contoh, lalu latihan berupa kuis atau soal kode yang diperiksa
-          otomatis. Kamu bisa menulis dan menjalankan kode Python langsung di browser tanpa perlu menginstal
-          Python di perangkatmu.
+          otomatis. Kamu menulis dan menjalankan kode Python langsung di browser, tanpa menginstal apa pun.
         </p>
         <p>
-          Saat ini tersedia satu kursus, <strong>Python Dasar</strong>, terdiri dari 13 chapter mulai dari, 
-          pengenalan Python hingga struktur data dasar. Chapter 1–5 gratis. Chapter 1–5 gratis, sedangkan Chapter 6–13 dapat diakses
-          dengan satu kali pembayaran.
+          Saat ini tersedia satu kursus, <strong>Python Dasar</strong>, terdiri dari 13 chapter dari nol sampai
+          struktur data dasar. Chapter 1–5 gratis. Chapter 6–13 dibuka dengan sekali bayar.
         </p>
         <p>
-          Kode yang kamu tulis dijalankan di browser pada perangkatmu. Draf kode disimpan di browser tersebut,
-          sedangkan progres belajar, termasuk pelajaran yang sudah kamu selesaikan, tersimpan di akunmu.
+          Kode yang kamu tulis dijalankan di browsermu sendiri. Draf kodemu disimpan di browser itu, dan yang
+          tersimpan di akunmu hanyalah lesson mana saja yang sudah kamu selesaikan.
         </p>
       </Section>
 
       <Section id="pengelola" title="Siapa yang mengelola">
         <p>
-           {SITE_NAME} dikembangkan sebagai proyek mahasiswa. Karena layanan ini dikelola dengan sumber daya yang
-          terbatas, kami berusaha menjelaskan batasan dan masa layanan secara terbuka. Sebelum membeli chapter
-          berbayar, silakan baca informasi masa layanan dan kebijakan pengembalian dana di bawah.
+          {SITE_NAME} dibuat dan dikelola sendirian sebagai proyek mahasiswa. Tidak ada tim besar atau
+          perusahaan di belakangnya. Karena itu kami terbuka soal batasannya, terutama tentang berapa lama
+          layanan ini akan berjalan. Bacalah bagian berikutnya sebelum membeli.
         </p>
         {OWNER_NAME && (
           <p>
@@ -130,22 +123,21 @@ export default function TentangPage() {
               Kami <strong>tidak menjanjikan “akses selamanya”</strong>. Akses berlaku selama layanan berjalan.
             </li>
             <li>
-              Penutupan diumumkan minimal {MIN_NOTICE_DAYS} hari sebelumnya. Pembelian dalam {REFUND_DAYS} hari
-              terakhir sebelum penutupan berhak mendapat pengembalian dana penuh.
+              Penutupan diumumkan minimal {MIN_NOTICE_DAYS} hari sebelumnya, dan pembelian dalam {REFUND_DAYS} hari
+              terakhir bisa di-refund penuh.
             </li>
           </ul>
         </div>
         <p>
-          Domain, basis data, dan hosting dibiayai pengelola sendiri. Setelah layanan ditutup, layanan pendukung tersebut tidak akan diperpanjang.
-          Tanggal {end} adalah batas
-          maksimal yang direncanakan, bukan jaminan bahwa layanan pasti tersedia sampai tanggal tersebut.
-          PyMula dapat ditutup lebih awal apabila layanan tidak lagi dapat dipertahankan.
+          Domain, basis data, dan hosting dibiayai pengelola sendiri. Setelah layanan ditutup, semuanya tidak
+          diperpanjang. Tanggal {end} adalah batas maksimal yang kami rencanakan, bukan jaminan: pengelola
+          sendirian dan tidak bisa memastikan masih sanggup memeliharanya sampai selama itu.
         </p>
         <p>Pemberitahuan penutupan dilakukan dengan cara berikut:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            Pop-up di situs direncanakan muncul {NOTICE_DAYS} hari sebelum tanggal akhir yang direncanakan. Ini
-            memberi cadangan waktu di atas pemberitahuan minimum {MIN_NOTICE_DAYS} hari.
+            Pop-up di situs yang muncul otomatis mulai {NOTICE_DAYS} hari sebelum tanggal akhir (janji kami
+            minimal {MIN_NOTICE_DAYS} hari, sisanya sebagai cadangan waktu).
           </li>
           <li>Email ke pengguna terdaftar.</li>
           <li>Penjualan chapter berbayar ditutup sejak pemberitahuan dimulai.</li>
@@ -164,16 +156,15 @@ export default function TentangPage() {
         <ul className="list-disc space-y-1 pl-5">
           <li>Chapter 1–5: gratis, cukup mendaftar.</li>
           <li>
-            Chapter 6–13: Rp{price}, sekali bayar. Akses berlaku selama layanan tersedia (lihat bagian status di
+            Chapter 6–13: Rp{price}, sekali bayar. Akses berlaku selama layanan berjalan (lihat bagian status di
             atas).
           </li>
-          <li>Pembayaran dilakukan melalui QRIS menggunakan e-wallet atau mobile banking yang mendukung QRIS.</li>
+          <li>Pembayaran lewat QRIS dari e-wallet atau m-banking apa pun yang mendukungnya.</li>
         </ul>
         <p>
-          Setelah membayar, unggah bukti pembayaran melalui halaman pembelian. Bukti tersebut akan diperiksa secara
-          manual oleh pengelola, dan chapter berbayar akan dibuka untuk akunmu setelah pembayaran terverifikasi. Proses verifikasi
-          dilakukan maksimal 1 × 24 jam sejak bukti pembayaran dikirim. Jika statusnya belum berubah setelah 24 jam,
-          hubungi kami melalui WhatsApp.
+          Setelah membayar, kamu mengunggah bukti pembayaran di halaman pembelian. Pengelola memeriksanya secara
+          manual, lalu membuka chapter berbayar untuk akunmu. Selama diperiksa, statusnya “menunggu verifikasi”.
+          Kalau terasa lama, hubungi kami lewat WhatsApp.
         </p>
         <p>Setelah pembayaran diverifikasi, kami menghapus bukti pembayaranmu dari sistem.</p>
       </Section>
@@ -181,19 +172,18 @@ export default function TentangPage() {
       <Section id="refund" title="Refund">
         <p>
           <strong>
-            Pembelian yang dilakukan dalam {REFUND_DAYS} hari terakhir sebelum tanggal penutupan layanan berhak
-            mendapatkan pengembalian dana penuh.
+            Pembelian dalam {REFUND_DAYS} hari terakhir sebelum tanggal penutupan layanan di-refund penuh.
           </strong>{" "}
           Caranya: hubungi kami lewat WhatsApp dengan bukti pembayaran dan waktu pembayarannya.
         </p>
         <p>
-          Penjualan chapter berbayar ditutup {SALES_CLOSE_DAYS} hari sebelum tanggal akhir yang direncanakan
-          ({end}). Karena itu, ketentuan refund ini terutama berlaku jika layanan berakhir lebih awal. Pengajuan
-          refund yang memenuhi ketentuan tetap dapat disampaikan melalui WhatsApp sampai {claimUntil}.
+          Pada tanggal akhir yang direncanakan ({end}), penjualan sudah ditutup {SALES_CLOSE_DAYS} hari
+          sebelumnya, jadi aturan ini terutama berlaku kalau layanan ditutup lebih awal dari rencana. Setelah
+          penutupan, permintaan refund tetap diterima lewat WhatsApp sampai {claimUntil}.
         </p>
         <p>
           Untuk kendala pembayaran lainnya, misalnya sudah membayar tetapi chapter belum terbuka, hubungi kami dan
-          akan kami bantu selesaikan.
+          kami bantu selesaikan.
         </p>
       </Section>
 
@@ -212,11 +202,11 @@ export default function TentangPage() {
         <p>
           Kamu bisa menghapus akunmu kapan saja di halaman <Link href="/akun" className="underline">Akun</Link>.
           Akun, nama, dan progres belajarmu dihapus. Catatan transaksi tetap disimpan tanpa identitas (kursus,
-          jumlah, status, tanggal) untuk pembukuan. Penghapusan akun tidak mengembalikan akses
-          chapter berbayar; jika kamu mendaftar lagi, kamu harus memulai progres dari awal.
+          jumlah, status, tanggal) untuk pembukuan. Menghapus akun tidak mengembalikan akses chapter berbayar:
+          kalau kamu mendaftar ulang, kamu mulai dari awal.
         </p>
         <p>
-          Layanan pihak ketiga yang digunakan PyMula meliputi Supabase (akun dan data), Vercel (hosting dan statistik
+          Layanan pihak ketiga yang kami pakai: Supabase (akun dan data), Vercel (hosting dan statistik
           kunjungan agregat), dan Brevo (pengiriman email seperti reset password).
         </p>
       </Section>
@@ -224,16 +214,17 @@ export default function TentangPage() {
       <Section id="penutupan" title="Jika layanan ditutup">
         <ol className="list-decimal space-y-2 pl-5">
           <li>
-            <strong>Pemberitahuan:</strong> pengguna akan diberi tahu setidaknya {MIN_NOTICE_DAYS} hari sebelumnya
-            melalui pop-up di situs. Penjualan chapter berbayar ditutup.
+            <strong>Pemberitahuan</strong> minimal {MIN_NOTICE_DAYS} hari sebelumnya lewat pop-up di situs dan
+            email. Penjualan chapter berbayar ditutup.
           </li>
           <li>
-            <strong>Pada tanggal penutupan</strong>, situs tidak lagi dapat digunakan. Seluruh akun dan data
-            pengguna dihapus. Catatan transaksi tanpa identitas disimpan untuk pembukuan.
+            <strong>Pada tanggal penutupan</strong>, situs tidak lagi bisa dipakai. Seluruh akun dan data
+            pengguna dihapus. Catatan transaksi tanpa identitas disimpan pengelola untuk pembukuan.
           </li>
           <li>
-            <strong>Domain pymula.live tidak diperpanjang.</strong> Alamat email dengan domain tersebut juga akan
-            berhenti berfungsi. Pengguna tetap bisa menghubungi pengelola lewat WhatsApp setelah penutupan.
+            <strong>Domain pymula.live tidak diperpanjang.</strong> Alamat email di domain itu ikut berhenti.
+            Kami berusaha menjaga satu halaman pemberitahuan sederhana tetap bisa dibuka di alamat cadangan
+            gratis dari penyedia hosting.
           </li>
           <li>
             <strong>Refund</strong> pembelian dalam {REFUND_DAYS} hari terakhir tetap bisa diajukan lewat
@@ -243,8 +234,7 @@ export default function TentangPage() {
       </Section>
 
       <Section id="kontak" title="Kontak">
-        <p>Karena PyMula dikelola dengan sumber daya yang terbatas, balasan mungkin tidak selalu langsung. Kami akan
-          berusaha membalas secepat mungkin.</p>
+        <p>Pengelola hanya satu orang, jadi balasan tidak selalu instan. Kami membalas secepat yang kami bisa.</p>
         <ul className="space-y-2">
           <li>
             WhatsApp:{" "}
@@ -260,7 +250,7 @@ export default function TentangPage() {
           </li>
         </ul>
         <p className="text-sm text-ink-soft">
-          Email dengan domain pymula.live akan berhenti berfungsi ketika domain tersebut tidak lagi aktif. WhatsApp tetap bisa dihubungi setelah
+          Email di domain pymula.live berhenti berfungsi bersama domainnya. WhatsApp tetap bisa dihubungi setelah
           penutupan.
         </p>
       </Section>
@@ -278,15 +268,14 @@ export default function TentangPage() {
           </Faq>
           <Faq q="Berapa lama akses chapter berbayar berlaku?">
             <p>
-              Akses berlaku selama PyMula tersedia, dengan tanggal akhir yang direncanakan paling lambat {end}.
-              Layanan dapat berakhir lebih awal dengan pemberitahuan setidaknya {MIN_NOTICE_DAYS} hari sebelumnya.
-              Akses tidak berlaku selamanya.
+              Selama PyMula berjalan, direncanakan paling lama sampai {end}. Layanan bisa berhenti lebih awal
+              dengan pemberitahuan minimal {MIN_NOTICE_DAYS} hari. Tidak ada akses selamanya.
             </p>
           </Faq>
           <Faq q="Apa yang terjadi kalau PyMula ditutup?">
             <p>
-              Pengguna akan diberi tahu setidaknya {MIN_NOTICE_DAYS} hari sebelumnya. Setelah tanggal penutupan,
-              situs tidak lagi dapat digunakan dan akun beserta data pengguna dihapus. Lihat bagian{" "}
+              Kamu diberi tahu minimal {MIN_NOTICE_DAYS} hari sebelumnya. Setelah tanggal penutupan situs tidak
+              bisa dipakai dan akun beserta datanya dihapus. Lihat bagian{" "}
               <a href="#penutupan" className="underline">
                 Jika layanan ditutup
               </a>
@@ -295,8 +284,8 @@ export default function TentangPage() {
           </Faq>
           <Faq q="Saya baru membeli, lalu layanan ditutup. Bagaimana?">
             <p>
-              Pembelian yang dilakukan dalam {REFUND_DAYS} hari terakhir sebelum penutupan berhak mendapat
-              pengembalian dana penuh sesuai ketentuan. Hubungi kami melalui WhatsApp dengan bukti pembayaran.
+              Pembelian dalam {REFUND_DAYS} hari terakhir sebelum penutupan di-refund penuh. Hubungi WhatsApp
+              dengan bukti pembayaranmu.
             </p>
           </Faq>
           <Faq q="Bagaimana cara membayar?">
@@ -307,23 +296,23 @@ export default function TentangPage() {
           </Faq>
           <Faq q="Pembayaran saya belum diverifikasi.">
             <p>
-              Verifikasi dilakukan secara manual dan diproses maksimal 1 × 24 jam sejak bukti pembayaran dikirim.
-              Jika status belum berubah setelah 24 jam, hubungi kami melalui WhatsApp dan sertakan email akunmu.
+              Verifikasi dilakukan manual oleh pengelola. Kalau sudah lama menunggu, hubungi kami lewat WhatsApp
+              dengan menyebut email akunmu.
             </p>
           </Faq>
           <Faq q="Bukti pembayaran saya ditolak.">
             <p>
-              Kamu bisa mengunggah ulang bukti yang lebih jelas melalui halaman pembelian. Jika kamu merasa bukti
-              sudah benar atau masih mengalami kendala, hubungi kami melalui WhatsApp.
+              Biasanya karena bukti kurang jelas. Kirim ulang bukti yang lebih jelas di halaman pembelian, atau
+              hubungi kami lewat WhatsApp.
             </p>
           </Faq>
           <Faq q="Bisakah saya mengunduh materinya?">
             {DOWNLOADS_AVAILABLE ? (
-              <p>Bisa. Materi dapat diunduh per chapter dari halaman chapter.</p>
+              <p>Bisa, per chapter, dari halaman chapter.</p>
             ) : (
               <p>
-                Belum tersedia. Fitur unduh materi per chapter masih direncanakan; informasi akan diperbarui di
-                situs jika fitur tersebut sudah tersedia.
+                Belum. Unduhan materi per chapter sedang direncanakan dan akan diumumkan di situs ini begitu
+                tersedia.
               </p>
             )}
           </Faq>
@@ -333,30 +322,29 @@ export default function TentangPage() {
               <a href="#data" className="underline">
                 Data & privasi
               </a>
-              . Singkatnya, kami menyimpan email, nama, progres belajar, dan catatan pembelian. Bukti pembayaran
-              dihapus setelah verifikasi, sedangkan akun dan data pengguna direncanakan dihapus saat layanan
-              ditutup. Catatan transaksi tanpa identitas tetap disimpan untuk pembukuan.
+              . Singkatnya: kami menyimpan email, nama, progres, dan catatan pembelian; bukti pembayaran dihapus
+              setelah diverifikasi; semua data pengguna dihapus saat penutupan.
             </p>
           </Faq>
           <Faq q="Bagaimana menghapus akun?">
             <p>
-              Buka halaman <Link href="/akun" className="underline">Akun</Link>, lalu pilih “Hapus akun” dan masukkan
-              password. Jika masih ada pembayaran yang menunggu verifikasi, akun baru dapat dihapus setelah
-              pembayaran tersebut diproses. Jika mendaftar lagi, akses chapter berbayar tidak akan dipulihkan.
+              Buka halaman <Link href="/akun" className="underline">Akun</Link>, lalu pilih “Hapus akun”. Kamu
+              perlu memasukkan password. Kalau masih ada pembayaran yang menunggu verifikasi, akun baru bisa
+              dihapus setelah pembayaran itu diproses. Akses chapter berbayar tidak ikut kembali kalau kamu
+              mendaftar lagi.
             </p>
           </Faq>
           <Faq q="Saya lupa password.">
             <p>
               Di halaman <Link href="/login" className="underline">masuk</Link>, pilih “Lupa password?”, lalu
-              masukkan emailmu. Kami akan mengirim tautan untuk membuat password baru. Buka tautan tersebut 
-              dan periksa folder spam jika email belum masuk.
+              masukkan emailmu. Kami mengirim link untuk membuat password baru. Buka link-nya di browser yang
+              sama dengan yang kamu pakai untuk memintanya, dan periksa folder spam kalau email belum terlihat.
             </p>
           </Faq>
           <Faq q="Kodeku hilang setelah saya menutup browser.">
             <p>
-              Draf kode disimpan di browser pada perangkat yang kamu gunakan. Jika data browser dihapus atau kamu
-              berganti perangkat, draf tersebut tidak ikut berpindah. Progres pelajaran yang sudah selesai tetap
-              tersimpan di akunmu.
+              Draf kodemu disimpan di browser pada perangkat itu. Kalau data browser dihapus atau kamu berganti
+              perangkat, draf tidak ikut. Lesson yang sudah selesai tetap tersimpan di akunmu.
             </p>
           </Faq>
           <Faq q="Program saya tidak berhenti-berhenti (loop tak berujung).">
@@ -367,9 +355,8 @@ export default function TentangPage() {
           </Faq>
           <Faq q="Browser dan perangkat apa yang didukung?">
             <p>
-              PyMula ditujukan untuk browser modern di desktop maupun handphone. Saat pertama kali membuka latihan
-              kode, browser perlu mengunduh komponen Python berukuran beberapa megabita, sehingga koneksi internet
-              diperlukan. Setelah komponen dimuat, akses berikutnya dapat terasa lebih cepat.
+              Browser modern di desktop maupun HP. Saat pertama kali membuka latihan kode, browser mengunduh
+              komponen Python berukuran beberapa megabita, jadi butuh koneksi internet; setelahnya lebih cepat.
             </p>
           </Faq>
           <Faq q="Bagaimana menghubungi pengelola?">

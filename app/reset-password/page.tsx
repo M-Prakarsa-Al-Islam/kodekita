@@ -11,7 +11,7 @@ import {
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 import ResetSuccess from "@/components/auth/ResetSuccess";
 
-export const metadata = { title: "Password baru" };
+export const metadata = { title: "Password baru", robots: { index: false } };
 
 export default async function ResetPasswordPage() {
   const jar = cookies();

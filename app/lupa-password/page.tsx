@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 
-export const metadata = { title: "Lupa password" };
+export const metadata = { title: "Lupa password", robots: { index: false } };
 
 export default async function LupaPasswordPage({ searchParams }: { searchParams: { error?: string } }) {
   // A signed-in visitor (e.g. coming from /akun) gets a way back to /akun

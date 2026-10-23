@@ -67,6 +67,32 @@ chapters. The database only tracks accounts and per-user lesson progress
   meneruskan ke tempat lain). Kalau memakai alamat lain, ubah `CONTACT_EMAIL`.
 - Opsional: isi `OWNER_NAME` (tampil di halaman Tentang) dan `LEGACY_URL`.
 
+## Google (SEO): apa yang sudah ada dan apa yang dilakukan di Search Console
+
+Sudah ada di kode: favicon (`public/favicon.ico`, `icon.svg`, `icon-96/192/512.png`,
+`apple-touch-icon.png`, semuanya sesuai aturan Google: kelipatan 48 px atau SVG
+persegi), `app/robots.ts`, `app/sitemap.ts` (daftar halaman publik ada di
+`lib/seo.ts`), canonical di halaman publik, `noindex` di halaman login/akun/admin/
+placeholder, data terstruktur WebSite + Organization di beranda, dan gambar pratinjau
+tautan `public/og-image.png`. Alamat kanonis adalah **https://www.pymula.live**
+(`SITE_URL` di `lib/site-config.ts`; `pymula.live` dialihkan ke www).
+
+Yang harus dilakukan sendiri di Google Search Console (tidak bisa dari kode):
+1. Pakai properti **Domain** (`pymula.live`, verifikasi lewat record TXT di DNS name.com)
+   supaya `www` dan tanpa `www` tercakup. Kalau memakai properti URL-prefix, daftarkan
+   `https://www.pymula.live/`.
+2. Sitemaps -> tambahkan `https://www.pymula.live/sitemap.xml`.
+3. URL Inspection -> periksa `https://www.pymula.live/` (bukan versi tanpa www) ->
+   Request indexing. Ulangi untuk `/tentang` dan `/kursus`.
+4. Cek hasil dengan mencari `site:www.pymula.live` di Google. Indeksasi situs baru bisa
+   butuh beberapa hari sampai beberapa minggu dan tidak dijamin.
+5. Favicon di hasil pencarian diperbarui saat Google meng-crawl beranda; bisa menyusul
+   beberapa hari setelah halaman terindeks.
+6. Tautkan situs ini dari tempat lain (profil GitHub/LinkedIn, situs portofolio) agar
+   lebih cepat ditemukan.
+Saat halaman `/proyek` sudah nyata: hapus `robots: { index: false }` dari
+`app/proyek/page.tsx` dan tambahkan `"/proyek"` ke `INDEXABLE_PATHS` di `lib/seo.ts`.
+
 ## Supabase Auth setup for "lupa password" (do this once, dashboard only)
 
 1. **Authentication -> URL Configuration:** set *Site URL* to the production

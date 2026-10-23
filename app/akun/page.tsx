@@ -6,7 +6,7 @@ import PasswordForm from "@/components/account/PasswordForm";
 import DeleteAccountForm from "@/components/account/DeleteAccountForm";
 import SignOutButton from "@/components/site/SignOutButton";
 
-export const metadata = { title: "Akun" };
+export const metadata = { title: "Akun", robots: { index: false } };
 
 export default async function AkunPage() {
   const supabase = createClient();

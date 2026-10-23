@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { chapters, getAllLessons } from "@/content/chapters";
 import { getCompletedLessonKeys, lessonKey } from "@/lib/progress-server";
@@ -7,6 +8,12 @@ import { summarizeProgress } from "@/lib/progress-summary";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { LinkButton } from "@/components/ui/Button";
 import { SERVICE_END_ISO, formatDateId, salesOpen } from "@/lib/site-config";
+
+export const metadata: Metadata = {
+  title: "Python Dasar",
+  description: "Python Dasar dalam Bahasa Indonesia: 13 chapter dari variabel sampai struktur data, dengan kuis dan latihan kode yang dijalankan langsung di browser. Chapter 1-5 gratis.",
+  alternates: { canonical: "/kursus/python-dasar" },
+};
 
 export default async function PythonDasarPage() {
   const completed = await getCompletedLessonKeys();

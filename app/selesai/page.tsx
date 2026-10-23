@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { serviceState } from "@/lib/site-config";
 
-export const metadata = { title: "Layanan berakhir" };
+export const metadata = { title: "Layanan berakhir", robots: { index: false } };
 
 // Only reachable after the end date: the middleware rewrites every request here
 // and the layout draws the farewell page, so this page itself renders nothing.
