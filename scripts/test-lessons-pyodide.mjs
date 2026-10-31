@@ -37,20 +37,34 @@ const problems = [];
 const fail = (where, msg) => { problems.push(`${where}: ${msg}`); console.log(`  FAIL ${where}: ${msg}`); };
 let counts = { chapters: 0, lessons: 0, code: 0, multi: 0, withInput: 0, quiz: 0, examples: 0, sectionPrograms: 0 };
 
-const dir = new URL("../content/chapters/", import.meta.url);
-const chapterFiles = fs.readdirSync(dir).filter((n) => /^chapter-\d+\.ts$/.test(n)).sort((a, b) => parseInt(a.slice(8)) - parseInt(b.slice(8)));
+// Python Dasar plus every project course (content/projects/<slug>/chapter-N.ts).
+// Project lessons are labelled "<slug>/chapter-N Lx" so they never collide with
+// the Python Dasar entries in STARTER_IS_THE_ANSWER.
+const sources = [{ rel: "content/chapters", label: "" }];
+const projectsDir = new URL("../content/projects/", import.meta.url);
+if (fs.existsSync(projectsDir)) {
+  for (const d of fs.readdirSync(projectsDir, { withFileTypes: true }).filter((e) => e.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
+    sources.push({ rel: `content/projects/${d.name}`, label: `${d.name}/` });
+  }
+}
+const allFiles = sources.flatMap((src) =>
+  fs.readdirSync(new URL(`../${src.rel}/`, import.meta.url))
+    .filter((n) => /^chapter-\d+\.ts$/.test(n))
+    .sort((a, b) => parseInt(a.slice(8)) - parseInt(b.slice(8)))
+    .map((f) => ({ src, f }))
+);
 
 async function runAndCheck(practice, files, entry, stdin) {
   const r = await runProjectWith(py, { files, entry, stdin });
   return { r, verdict: checkOutput(r.stdout, r.error, practice.checker, files) };
 }
 
-for (const f of chapterFiles) {
-  const chapter = Object.values(load(`content/chapters/${f}`)).find((v) => v && v.lessons);
+for (const { src, f } of allFiles) {
+  const chapter = Object.values(load(`${src.rel}/${f}`)).find((v) => v && v.lessons);
   counts.chapters++;
   for (const l of chapter.lessons) {
     counts.lessons++;
-    const where = `${f.replace(".ts", "")} ${l.id}`;
+    const where = `${src.label}${f.replace(".ts", "")} ${l.id}`;
     const p = l.practice;
 
     // ---- theory example ----

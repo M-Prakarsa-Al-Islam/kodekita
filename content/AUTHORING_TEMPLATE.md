@@ -129,6 +129,19 @@ it. You don't need any special syntax - just write like this:
   or an operator such as `%` can't be detected, so they stay normal text.
 - **Whole code samples** always go in the `code:` / `starter code:` blocks,
   never inline in a paragraph.
+- **Text where spaces matter (e.g. an exact output line) goes in a fenced
+  block.** Ordinary prose collapses runs of spaces when shown, so "ada 6 spasi
+  sebelum titik dua" can never be read off the page. Put such text between two
+  lines that contain only three backticks; it is shown monospace with every
+  space kept, and lines inside it are never treated as list items:
+  ````
+  Cetak baris persis seperti ini:
+  ```
+  Jumlah kata      : 93
+  ```
+  ````
+  This is the ONLY place backticks are allowed in lesson text. An unclosed fence
+  stays ordinary text.
 - **Nothing is ever dropped or reworded** by this styling (it is tested over
   every existing lesson), so a typo in the text is a typo on the page.
 

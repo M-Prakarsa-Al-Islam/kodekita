@@ -191,6 +191,23 @@ To hand me new chapter content, use the format in
       3. Content: Word Counter chapters + take-home chapter; extend
          `content/AUTHORING_TEMPLATE.md` for projects.
       4. Later: file upload, public share page, "Lewati".
+      **Plan 2026-10-28:** see `PROJECT_DESIGN.md` section 15. Word Counter:
+      10 chapters, Rp10.000, **Bab 1-2 free**, learner code is NOT carried
+      between lessons. Phase 1 (content for Bab 1-3) done and verified in
+      `content/projects/word-counter/`. **Phase 2 built and tested in the sandbox
+      (2026-10-28):** routes `/proyek/[project]/...`, purchase gate, Bab 1-3 as
+      generated `.ts`, `scripts/test-projects.mjs`; progress reuses
+      `lesson_progress` (no new SQL). Owner's manual test with the real Supabase
+      is still open: see `PROJECT_DESIGN.md` 15.5.
+      **Phase 3 batch 1 (2026-10-28):** Bab 4-6 written (10 lessons, 19 in
+      total with Bab 1-3) and verified in the real Pyodide; see
+      `PROJECT_DESIGN.md` 15.6. Next: batch 2 (Bab 7-9), which needs `stdin:`
+      support in `scripts/convert-project-md.mjs` first.
+      **Phase 3 batch 2 (2026-10-28):** Bab 7-9 written (11 lessons, 30 in total)
+      and verified in the real Pyodide; after Bab 9 the output equals the target
+      output exactly. `stdin:` is now supported by the converter. See
+      `PROJECT_DESIGN.md` 15.7. Next: batch 3 (Bab 10), which needs the zip
+      download and README generator on the platform.
 - [ ] Phase 6 - Polish & launch
 
 ## Chapter content status (Python Dasar, 13 chapters)
@@ -1182,9 +1199,7 @@ says the class is still being prepared; consider "Segera hadir" there.
 
 - Real QRIS image and business WhatsApp number - both currently
   placeholders (see "Next steps" above).
-- Word Counter outline: author writes it, or Claude drafts the 8-chapter
-  outline in `PROJECT_DESIGN.md` section 5 for review? Final project price
-  (target ~Rp10.000, configurable in `content/pricing.ts`).
+- ~~Word Counter outline and price~~ Decided 2026-10-28: 10 chapters, Rp10.000, Bab 1-2 free (`PROJECT_DESIGN.md` sections 5 and 15).
 - ~~Account deletion: what happens to `purchases` rows?~~ Decided 2026-10-21:
   keep anonymously, block while a payment is pending (see the session log).
 - Editor: decided (CodeMirror 6); waiting on the owner's manual test on real

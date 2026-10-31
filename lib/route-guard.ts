@@ -16,12 +16,14 @@ export const AUTH_PAGES = ["/login", "/register"];
 
 // The chapter LIST (/kursus/python-dasar) is public - logged-out visitors can
 // see what's there. Anything nested under it (a chapter or lesson) needs an
-// account.
+// account. Same for projects: /proyek (the catalog) and /proyek/<slug> (the
+// project page) are public; /proyek/<slug>/... (chapter, lesson, buy) is not.
 export function isProtectedPath(pathname: string): boolean {
   return (
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/akun") ||
     pathname.startsWith("/kursus/python-dasar/") ||
+    /^\/proyek\/[^/]+\/./.test(pathname) ||
     pathname.startsWith("/admin")
   );
 }

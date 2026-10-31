@@ -22,12 +22,19 @@ export default function LessonNav({
   lessonId,
   navChapters,
   completedKeys = [],
+  basePath = "/kursus/python-dasar",
+  keyPrefix = "",
 }: {
   chapterSlug: string;
   lessonId: string;
   navChapters: NavChapter[];
   // The signed-in learner's own finished lessons, as `${chapterSlug}:${lessonId}`.
   completedKeys?: string[];
+  // Where the chapter/lesson links point. Project courses pass "/proyek/<slug>".
+  basePath?: string;
+  // Prepended to a chapter slug to form its progress key. Project courses store
+  // progress under "<project>/<chapter>" (see lib/project-paths.ts), so they pass "<project>/".
+  keyPrefix?: string;
 }) {
   const [openMenu, setOpenMenu] = useState<"chapter" | "lesson" | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
@@ -81,12 +88,12 @@ export default function LessonNav({
                 );
               }
               const isCurrent = c.slug === chapterSlug;
-              const doneCount = c.lessons.filter((l) => done.has(lessonKey(c.slug, l.id))).length;
+              const doneCount = c.lessons.filter((l) => done.has(lessonKey(keyPrefix + c.slug, l.id))).length;
               const allDone = c.lessons.length > 0 && doneCount === c.lessons.length;
               return (
                 <Link
                   key={c.slug}
-                  href={`/kursus/python-dasar/${c.slug}`}
+                  href={`${basePath}/${c.slug}`}
                   onClick={() => setOpenMenu(null)}
                   className={`flex items-center justify-between gap-2 px-3 py-2 hover:bg-ink/5 ${
                     isCurrent ? "bg-code-bg font-medium text-ink" : "text-ink"
@@ -122,11 +129,11 @@ export default function LessonNav({
           <div className="absolute left-0 top-full z-10 mt-1 max-h-80 w-72 overflow-y-auto rounded-md border border-line bg-white py-1 shadow-lg">
             {chapter.lessons.map((l, i) => {
               const isCurrent = l.id === lessonId;
-              const isDone = done.has(lessonKey(chapter.slug, l.id));
+              const isDone = done.has(lessonKey(keyPrefix + chapter.slug, l.id));
               return (
                 <Link
                   key={l.id}
-                  href={`/kursus/python-dasar/${chapter.slug}/${l.id}`}
+                  href={`${basePath}/${chapter.slug}/${l.id}`}
                   onClick={() => setOpenMenu(null)}
                   className={`flex items-center justify-between gap-2 px-3 py-2 hover:bg-ink/5 ${
                     isCurrent ? "bg-code-bg font-medium text-ink" : "text-ink"

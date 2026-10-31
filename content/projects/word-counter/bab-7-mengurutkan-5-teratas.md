@@ -1,0 +1,955 @@
+CHAPTER: 7
+TITLE: Mengurutkan 5 Teratas
+FREE: no
+
+--- LESSON L1 ---
+
+LESSON TITLE: Mengurutkan dengan sorted()
+
+THEORY:
+Bu Rani bertanya, "Jadi, lima kata apa yang paling sering kupakai?" Untuk menjawabnya, hasil hitunganmu harus diurutkan dari yang terbanyak. Kita mulai dari bagian yang paling mudah: mengurutkan angka-angka hitungannya dulu.
+
+Python punya fungsi bernama sorted(). Kamu memberinya sebuah list, dan ia mengembalikan list baru yang isinya sama tetapi sudah berurutan. List yang lama tidak berubah, jadi hasilnya perlu disimpan di variabel.
+
+Urutan bawaannya naik: angka dari kecil ke besar, dan teks dari A ke Z. Kita justru butuh yang terbesar di depan. Untuk itu tambahkan reverse=True di dalam kurung sorted(), yang artinya: balikkan urutannya.
+
+Satu hal lagi. frekuensi adalah dictionary yang menyimpan kata beserta hitungannya. Metode .values() mengambil hitungannya saja, tanpa kata-katanya (kamu sudah mempelajarinya di Python Dasar Bab 10). Hasilnya bisa langsung diberikan ke sorted().
+
+EXAMPLE:
+description: Baris 1 urut naik, baris 2 urut turun karena reverse=True, dan baris 3 menunjukkan list aslinya tidak berubah.
+code:
+```
+angka = [7, 12, 3, 5]
+print(sorted(angka))
+print(sorted(angka, reverse=True))
+print(angka)
+# Output:
+# [3, 5, 7, 12]
+# [12, 7, 5, 3]
+# [7, 12, 3, 5]
+```
+
+PRACTICE: code
+instructions: Tujuan: mengetahui lima angka hitungan yang terbesar di artikel Bu Rani. Kita baru mengurutkan angkanya saja. Menemukan katanya dikerjakan di lesson-lesson berikutnya.
+
+Tugasmu:
+1. Hapus perulangan lama yang mencetak kata-kata berjumlah 3 atau lebih.
+2. Ambil semua hitungan dari frekuensi dengan .values(), urutkan dari yang terbesar dengan sorted(), lalu simpan di variabel jumlah_terurut.
+3. Cetak satu baris kosong, lalu satu baris yang menampilkan lima angka pertama dari jumlah_terurut.
+
+Hasilnya harus seperti ini. Artinya kata yang paling sering muncul dipakai 12 kali, yang kedua 7 kali, dan seterusnya. Baris ini hanya sementara:
+```
+Kata unik        : 59
+
+5 jumlah terbesar: [12, 7, 5, 4, 3]
+```
+files:
+file: main.py
+```
+from fungsi import daftar_kata, hitung_unik, hitung_frekuensi
+
+garis = "=" * 34
+print(garis)
+print("WORD COUNTER".center(34))
+print(garis)
+
+nama_file = "artikel-kopi.txt"
+print(f"Membaca file: {nama_file}")
+print()
+
+with open(nama_file) as file:
+    isi = file.read()
+
+kata_bersih = daftar_kata(isi)
+jumlah_kata = len(kata_bersih)
+
+print("--- Ringkasan ---")
+print(f"Jumlah kata      : {jumlah_kata}")
+
+jumlah_unik = hitung_unik(kata_bersih)
+print(f"Kata unik        : {jumlah_unik}")
+
+frekuensi = hitung_frekuensi(kata_bersih)
+
+# TODO 1: hapus perulangan di bawah ini
+# TODO 2: ambil semua hitungan dengan frekuensi.values(), urutkan dari yang terbesar, simpan di jumlah_terurut
+# TODO 3: cetak satu baris kosong, lalu satu baris yang menampilkan lima angka pertama dari jumlah_terurut
+print()
+print("Kata yang muncul 3 kali atau lebih:")
+for kata, jumlah in frekuensi.items():
+    if jumlah >= 3:
+        print(f"{kata}: {jumlah}")
+```
+file: fungsi.py
+```
+import string
+
+def bersihkan_kata(kata):
+    return kata.lower().strip(string.punctuation)
+
+def daftar_kata(teks):
+    hasil = []
+    for k in teks.split():
+        bersih = bersihkan_kata(k)
+        if bersih != "":
+            hasil.append(bersih)
+    return hasil
+
+
+def hitung_unik(daftar):
+    return len(set(daftar))
+
+
+def hitung_frekuensi(daftar):
+    frekuensi = {}
+    for kata in daftar:
+        if kata in frekuensi:
+            frekuensi[kata] = frekuensi[kata] + 1
+        else:
+            frekuensi[kata] = 1
+    return frekuensi
+```
+file: artikel-kopi.txt (read-only)
+```
+Kopi adalah minuman yang disukai banyak orang. Di pagi hari, kopi sering menjadi teman sarapan sehari-hari. Banyak orang minum kopi di rumah, di kantor, dan di kedai.
+
+Kopi yang enak berasal dari biji yang dipilih secara teliti. Biji kopi tumbuh di kebun yang sejuk dan subur. Setiap daerah punya rasa kopi yang berbeda. Petani merawat kopi dengan sabar, lalu menjemur biji kopi di bawah matahari.
+
+Sekarang banyak anak muda suka ngopi di kedai kopi. Kopi susu jadi pilihan banyak pelanggan. Orang tua juga menyukai kopi hitam. Rasa kopi hitam - pahit dan harum.
+```
+hints:
+1. Yang diurutkan adalah angka hitungannya saja, bukan kata-katanya. Dictionary punya metode yang mengeluarkan hanya nilainya.
+2. sorted() mengembalikan list baru. Simpan hasilnya di variabel, lalu tambahkan tulisan yang membalik urutannya agar yang terbesar berada di depan.
+3. Setelah list terurut, lima angka pertamanya diambil dengan slicing, sama seperti saat kamu mengambil lima kata pertama di Bab 3.
+answer files (spoiler):
+file: main.py
+```
+from fungsi import daftar_kata, hitung_unik, hitung_frekuensi
+
+garis = "=" * 34
+print(garis)
+print("WORD COUNTER".center(34))
+print(garis)
+
+nama_file = "artikel-kopi.txt"
+print(f"Membaca file: {nama_file}")
+print()
+
+with open(nama_file) as file:
+    isi = file.read()
+
+kata_bersih = daftar_kata(isi)
+jumlah_kata = len(kata_bersih)
+
+print("--- Ringkasan ---")
+print(f"Jumlah kata      : {jumlah_kata}")
+
+jumlah_unik = hitung_unik(kata_bersih)
+print(f"Kata unik        : {jumlah_unik}")
+
+frekuensi = hitung_frekuensi(kata_bersih)
+
+jumlah_terurut = sorted(frekuensi.values(), reverse=True)
+
+print()
+print(f"5 jumlah terbesar: {jumlah_terurut[:5]}")
+```
+expected output (exact):
+```
+==================================
+           WORD COUNTER
+==================================
+Membaca file: artikel-kopi.txt
+
+--- Ringkasan ---
+Jumlah kata      : 92
+Kata unik        : 59
+
+5 jumlah terbesar: [12, 7, 5, 4, 3]
+```
+source requirements:
+- main.py must contain: sorted\s*\(  -> message: Outputnya sudah benar, tapi pengurutan belum memakai sorted().
+- main.py must contain: reverse\s*=\s*True  -> message: Outputnya sudah benar, tapi urutannya belum dibalik dengan reverse=True.
+success message: Kamu sudah bisa mengurutkan! Lima angka terbesarnya 12, 7, 5, 4, dan 3. Tapi angka saja belum menjawab Bu Rani, karena ia ingin tahu katanya. Lesson berikutnya mengurutkan kata bersama angkanya.
+
+--- LESSON L2 ---
+
+LESSON TITLE: Pasangan Kata dan Jumlah
+
+THEORY:
+Angka saja belum menjawab Bu Rani, karena ia ingin tahu katanya. Kita perlu mengurutkan kata dan angkanya bersamaan, supaya kata ikut berpindah mengikuti angkanya.
+
+Untuk itu pakai frekuensi.items(). Metode ini memberikan setiap kata bersama hitungannya sebagai satu pasangan, ditulis dalam tanda kurung dengan kata di depan dan hitungan di belakang, misalnya ('kopi', 12). Pasangan seperti ini disebut tuple, dan kamu sudah mengenalnya di Python Dasar. Isinya diambil dengan indeks seperti pada list: indeks 0 untuk kata, indeks 1 untuk hitungan.
+
+Apa yang terjadi jika pasangan-pasangan itu langsung diberikan ke sorted() tanpa keterangan tambahan? Python membandingkan dua pasangan dengan melihat bagian pertamanya lebih dulu, yaitu katanya. Jadi hasilnya urut abjad menurut kata, dari A ke Z, bukan menurut hitungan. Itu bukan yang kita inginkan. Di lesson ini kamu melihatnya sendiri pada artikel Bu Rani, dan lesson berikutnya memperbaikinya.
+
+EXAMPLE:
+description: Baris 1 satu pasangan utuh, baris 2 hanya hitungannya (indeks 1), dan baris 3 pasangan terurut menurut katanya (d, k, y), bukan menurut angka.
+code:
+```
+pasangan = [("kopi", 12), ("di", 7), ("yang", 5)]
+print(pasangan[0])
+print(pasangan[0][1])
+print(sorted(pasangan))
+# Output:
+# ('kopi', 12)
+# 12
+# [('di', 7), ('kopi', 12), ('yang', 5)]
+```
+
+PRACTICE: code
+instructions: Tujuan: melihat sendiri bahwa sorted() yang diberi pasangan kata dan hitungan mengurutkannya menurut kata (A ke Z), bukan menurut hitungan. Dengan paham masalahnya, kita bisa memperbaikinya di lesson berikutnya.
+
+Tugasmu:
+1. Hapus baris yang mencetak lima angka terbesar dari lesson sebelumnya.
+2. Urutkan frekuensi.items() dengan sorted() saja, tanpa tambahan apa pun, dan simpan di variabel pasangan_terurut.
+3. Cetak satu baris kosong, lalu satu baris yang menampilkan tiga pasangan pertama dari pasangan_terurut.
+
+Hasilnya harus seperti ini. Setiap pasangan berisi kata dan hitungannya, dan kata-katanya berurutan dari A ke Z. Baris ini hanya sementara:
+```
+Kata unik        : 59
+
+Tiga pasangan pertama: [('adalah', 1), ('anak', 1), ('banyak', 4)]
+```
+files:
+file: main.py
+```
+from fungsi import daftar_kata, hitung_unik, hitung_frekuensi
+
+garis = "=" * 34
+print(garis)
+print("WORD COUNTER".center(34))
+print(garis)
+
+nama_file = "artikel-kopi.txt"
+print(f"Membaca file: {nama_file}")
+print()
+
+with open(nama_file) as file:
+    isi = file.read()
+
+kata_bersih = daftar_kata(isi)
+jumlah_kata = len(kata_bersih)
+
+print("--- Ringkasan ---")
+print(f"Jumlah kata      : {jumlah_kata}")
+
+jumlah_unik = hitung_unik(kata_bersih)
+print(f"Kata unik        : {jumlah_unik}")
+
+frekuensi = hitung_frekuensi(kata_bersih)
+
+# TODO: ganti dua bagian di bawah ini. Urutkan frekuensi.items() (pasangan kata dan hitungan), bukan hanya hitungannya
+jumlah_terurut = sorted(frekuensi.values(), reverse=True)
+
+print()
+print(f"5 jumlah terbesar: {jumlah_terurut[:5]}")
+```
+file: fungsi.py
+```
+import string
+
+def bersihkan_kata(kata):
+    return kata.lower().strip(string.punctuation)
+
+def daftar_kata(teks):
+    hasil = []
+    for k in teks.split():
+        bersih = bersihkan_kata(k)
+        if bersih != "":
+            hasil.append(bersih)
+    return hasil
+
+
+def hitung_unik(daftar):
+    return len(set(daftar))
+
+
+def hitung_frekuensi(daftar):
+    frekuensi = {}
+    for kata in daftar:
+        if kata in frekuensi:
+            frekuensi[kata] = frekuensi[kata] + 1
+        else:
+            frekuensi[kata] = 1
+    return frekuensi
+```
+file: artikel-kopi.txt (read-only)
+```
+Kopi adalah minuman yang disukai banyak orang. Di pagi hari, kopi sering menjadi teman sarapan sehari-hari. Banyak orang minum kopi di rumah, di kantor, dan di kedai.
+
+Kopi yang enak berasal dari biji yang dipilih secara teliti. Biji kopi tumbuh di kebun yang sejuk dan subur. Setiap daerah punya rasa kopi yang berbeda. Petani merawat kopi dengan sabar, lalu menjemur biji kopi di bawah matahari.
+
+Sekarang banyak anak muda suka ngopi di kedai kopi. Kopi susu jadi pilihan banyak pelanggan. Orang tua juga menyukai kopi hitam. Rasa kopi hitam - pahit dan harum.
+```
+hints:
+1. sorted() bisa langsung diberi frekuensi.items(), karena metode itu sudah menghasilkan kumpulan pasangan.
+2. Simpan hasil sorted() di variabel, lalu ambil tiga pasangan pertama dengan slicing.
+3. Saat memeriksa hasilnya, lihat kata di depan setiap pasangan: huruf awalnya berurutan dari A ke Z. Itulah tanda bahwa Python mengurutkan menurut kata.
+answer files (spoiler):
+file: main.py
+```
+from fungsi import daftar_kata, hitung_unik, hitung_frekuensi
+
+garis = "=" * 34
+print(garis)
+print("WORD COUNTER".center(34))
+print(garis)
+
+nama_file = "artikel-kopi.txt"
+print(f"Membaca file: {nama_file}")
+print()
+
+with open(nama_file) as file:
+    isi = file.read()
+
+kata_bersih = daftar_kata(isi)
+jumlah_kata = len(kata_bersih)
+
+print("--- Ringkasan ---")
+print(f"Jumlah kata      : {jumlah_kata}")
+
+jumlah_unik = hitung_unik(kata_bersih)
+print(f"Kata unik        : {jumlah_unik}")
+
+frekuensi = hitung_frekuensi(kata_bersih)
+
+pasangan_terurut = sorted(frekuensi.items())
+
+print()
+print(f"Tiga pasangan pertama: {pasangan_terurut[:3]}")
+```
+expected output (exact):
+```
+==================================
+           WORD COUNTER
+==================================
+Membaca file: artikel-kopi.txt
+
+--- Ringkasan ---
+Jumlah kata      : 92
+Kata unik        : 59
+
+Tiga pasangan pertama: [('adalah', 1), ('anak', 1), ('banyak', 4)]
+```
+source requirements:
+- main.py must contain: items\s*\(\s*\)  -> message: Outputnya sudah benar, tapi pasangan kata dan hitungan belum diambil dengan .items().
+- main.py must contain: sorted\s*\(  -> message: Outputnya sudah benar, tapi pasangan belum diurutkan dengan sorted().
+success message: Terlihat jelas: pasangannya urut abjad (adalah, anak, banyak), padahal kita ingin yang paling sering muncul di depan. Lesson berikutnya mengajari sorted() cara mengurutkan menurut hitungan.
+
+--- LESSON L3 ---
+
+LESSON TITLE: Mengurutkan Menurut Jumlah
+
+THEORY:
+Kita ingin pasangan diurutkan menurut hitungannya, bukan katanya. Caranya, beri tahu sorted() bagian mana dari setiap pasangan yang harus dijadikan patokan. Itu dilakukan dengan key.
+
+Cara kerjanya ada dua langkah. Pertama, kamu menulis fungsi kecil yang menerima satu pasangan dan mengembalikan bagian yang ingin dijadikan patokan. Untuk patokan hitungan, fungsinya mengembalikan indeks 1 dari pasangan itu. Kedua, kamu menyerahkan fungsi tersebut ke sorted() lewat key. sorted() lalu bertanya kepada fungsi itu untuk setiap pasangan, "Patokannya berapa?", dan mengurutkan semua pasangan menurut jawaban-jawabannya.
+
+Perhatikan penulisannya: key=ambil_jumlah, tanpa tanda kurung setelah nama fungsi. Kamu menyerahkan fungsinya supaya sorted() sendiri yang memanggilnya untuk setiap pasangan. Jika ditulis dengan kurung, fungsinya malah dipanggil saat itu juga, dan itu salah.
+
+Seperti di lesson pertama, urutan bawaannya naik. Tambahkan reverse=True agar hitungan terbesar berada di depan.
+
+EXAMPLE:
+description: ambil_jumlah mengembalikan hitungan sebuah pasangan (baris 1). sorted() memakainya sebagai patokan: baris 2 urut naik menurut hitungan, baris 3 urut turun.
+code:
+```
+def ambil_jumlah(pasangan):
+    return pasangan[1]
+
+data = [("di", 7), ("kopi", 12), ("yang", 5)]
+print(ambil_jumlah(("kopi", 12)))
+print(sorted(data, key=ambil_jumlah))
+print(sorted(data, key=ambil_jumlah, reverse=True))
+# Output:
+# 12
+# [('yang', 5), ('di', 7), ('kopi', 12)]
+# [('kopi', 12), ('di', 7), ('yang', 5)]
+```
+
+PRACTICE: code
+instructions: Tujuan: mendapatkan tiga kata yang paling sering muncul di artikel Bu Rani, lengkap dengan hitungannya, dari yang terbanyak.
+
+Tugasmu:
+1. Di fungsi.py, buat fungsi ambil_jumlah(pasangan) yang mengembalikan hitungan dari sebuah pasangan (indeks 1).
+2. Di main.py, impor ambil_jumlah. Urutkan frekuensi.items() dengan sorted(), memakai key=ambil_jumlah dan reverse=True. Simpan hasilnya di variabel urut.
+3. Ganti baris-baris lama dengan: satu baris kosong, judul Tiga kata teratas:, lalu tiga pasangan pertama dari urut. Cetak setiap pasangan dalam bentuk kata: jumlah, satu pasangan per baris, memakai perulangan.
+
+Hasilnya harus seperti ini. Sekarang kata yang paling sering muncul ada di paling atas, dan yang lain mengikuti dari yang terbanyak:
+```
+Kata unik        : 59
+
+Tiga kata teratas:
+kopi: 12
+di: 7
+yang: 5
+```
+files:
+file: main.py
+```
+from fungsi import daftar_kata, hitung_unik, hitung_frekuensi
+# TODO 1: impor juga ambil_jumlah dari fungsi.py setelah kamu membuatnya
+
+garis = "=" * 34
+print(garis)
+print("WORD COUNTER".center(34))
+print(garis)
+
+nama_file = "artikel-kopi.txt"
+print(f"Membaca file: {nama_file}")
+print()
+
+with open(nama_file) as file:
+    isi = file.read()
+
+kata_bersih = daftar_kata(isi)
+jumlah_kata = len(kata_bersih)
+
+print("--- Ringkasan ---")
+print(f"Jumlah kata      : {jumlah_kata}")
+
+jumlah_unik = hitung_unik(kata_bersih)
+print(f"Kata unik        : {jumlah_unik}")
+
+frekuensi = hitung_frekuensi(kata_bersih)
+
+# TODO 2: ganti dua bagian di bawah ini. Urutkan menurut hitungan dengan key dan reverse, dan cetak tiga kata teratas
+pasangan_terurut = sorted(frekuensi.items())
+
+print()
+print(f"Tiga pasangan pertama: {pasangan_terurut[:3]}")
+```
+file: fungsi.py
+```
+import string
+
+def bersihkan_kata(kata):
+    return kata.lower().strip(string.punctuation)
+
+def daftar_kata(teks):
+    hasil = []
+    for k in teks.split():
+        bersih = bersihkan_kata(k)
+        if bersih != "":
+            hasil.append(bersih)
+    return hasil
+
+
+def hitung_unik(daftar):
+    return len(set(daftar))
+
+
+def hitung_frekuensi(daftar):
+    frekuensi = {}
+    for kata in daftar:
+        if kata in frekuensi:
+            frekuensi[kata] = frekuensi[kata] + 1
+        else:
+            frekuensi[kata] = 1
+    return frekuensi
+
+
+# TODO 1: tambahkan fungsi ambil_jumlah(pasangan) di bawah ini
+```
+file: artikel-kopi.txt (read-only)
+```
+Kopi adalah minuman yang disukai banyak orang. Di pagi hari, kopi sering menjadi teman sarapan sehari-hari. Banyak orang minum kopi di rumah, di kantor, dan di kedai.
+
+Kopi yang enak berasal dari biji yang dipilih secara teliti. Biji kopi tumbuh di kebun yang sejuk dan subur. Setiap daerah punya rasa kopi yang berbeda. Petani merawat kopi dengan sabar, lalu menjemur biji kopi di bawah matahari.
+
+Sekarang banyak anak muda suka ngopi di kedai kopi. Kopi susu jadi pilihan banyak pelanggan. Orang tua juga menyukai kopi hitam. Rasa kopi hitam - pahit dan harum.
+```
+hints:
+1. Fungsi patokan menerima satu pasangan dan mengembalikan bagian yang dijadikan patokan. Bagian pertama pasangan ada di indeks 0, bagian keduanya di indeks 1.
+2. Pada sorted(), tulis key diikuti nama fungsimu, tanpa tanda kurung. Lalu tambahkan reverse agar yang terbesar berada di depan.
+3. Setelah terurut, ambil tiga pasangan pertama dengan slicing dan cetak tiap pasangan dengan perulangan, seperti yang kamu lakukan di Bab 6.
+answer files (spoiler):
+file: main.py
+```
+from fungsi import daftar_kata, hitung_unik, hitung_frekuensi, ambil_jumlah
+
+garis = "=" * 34
+print(garis)
+print("WORD COUNTER".center(34))
+print(garis)
+
+nama_file = "artikel-kopi.txt"
+print(f"Membaca file: {nama_file}")
+print()
+
+with open(nama_file) as file:
+    isi = file.read()
+
+kata_bersih = daftar_kata(isi)
+jumlah_kata = len(kata_bersih)
+
+print("--- Ringkasan ---")
+print(f"Jumlah kata      : {jumlah_kata}")
+
+jumlah_unik = hitung_unik(kata_bersih)
+print(f"Kata unik        : {jumlah_unik}")
+
+frekuensi = hitung_frekuensi(kata_bersih)
+
+urut = sorted(frekuensi.items(), key=ambil_jumlah, reverse=True)
+
+print()
+print("Tiga kata teratas:")
+for kata, jumlah in urut[:3]:
+    print(f"{kata}: {jumlah}")
+```
+file: fungsi.py
+```
+import string
+
+def bersihkan_kata(kata):
+    return kata.lower().strip(string.punctuation)
+
+def daftar_kata(teks):
+    hasil = []
+    for k in teks.split():
+        bersih = bersihkan_kata(k)
+        if bersih != "":
+            hasil.append(bersih)
+    return hasil
+
+
+def hitung_unik(daftar):
+    return len(set(daftar))
+
+
+def hitung_frekuensi(daftar):
+    frekuensi = {}
+    for kata in daftar:
+        if kata in frekuensi:
+            frekuensi[kata] = frekuensi[kata] + 1
+        else:
+            frekuensi[kata] = 1
+    return frekuensi
+
+
+def ambil_jumlah(pasangan):
+    return pasangan[1]
+```
+expected output (exact):
+```
+==================================
+           WORD COUNTER
+==================================
+Membaca file: artikel-kopi.txt
+
+--- Ringkasan ---
+Jumlah kata      : 92
+Kata unik        : 59
+
+Tiga kata teratas:
+kopi: 12
+di: 7
+yang: 5
+```
+source requirements:
+- fungsi.py must contain: def\s+ambil_jumlah\s*\(  -> message: Outputnya sudah benar, tapi fungsi ambil_jumlah() belum ada di fungsi.py.
+- main.py must contain: key\s*=  -> message: Outputnya sudah benar, tapi sorted() belum diberi patokan dengan key.
+- main.py must contain: reverse\s*=\s*True  -> message: Outputnya sudah benar, tapi urutannya belum dibalik menjadi dari besar ke kecil dengan reverse.
+success message: Berhasil! Urutannya sekarang mengikuti hitungan: kopi (12), di (7), yang (5). Satu pertanyaan tersisa: bagaimana jika ada dua kata dengan hitungan yang sama? Itu pembahasan lesson berikutnya.
+
+--- LESSON L4 ---
+
+LESSON TITLE: Aturan Seri
+
+THEORY:
+Bagaimana jika dua kata punya hitungan yang sama? Di artikel Bu Rani ada tiga kata yang masing-masing muncul 3 kali: orang, dan, dan biji. Kata mana yang tampil lebih dulu? Ini menentukan siapa yang masuk lima besar kalau ada seri di batas peringkat.
+
+Python punya jawaban yang pasti. sorted() bersifat stabil: jika dua pasangan punya patokan yang sama, urutan aslinya dipertahankan, termasuk saat memakai reverse=True. Dan urutan asli kita adalah urutan di dictionary frekuensi, yaitu urutan kata pertama kali muncul di artikel.
+
+Jadi aturan serinya: di antara kata yang hitungannya sama, yang lebih dulu muncul di artikel tampil lebih dulu. Tidak ada kode tambahan, karena Python sudah melakukannya. Yang perlu kamu lakukan hanyalah membuktikannya.
+
+Untuk membuktikannya, lihat peringkat 4 sampai 7. Ingat, indeks list mulai dari 0, jadi peringkat 1 ada di indeks 0 dan peringkat 4 ada di indeks 3. Slicing [awal:akhir] mengambil dari indeks awal sampai sebelum indeks akhir. Maka peringkat 4 sampai 7 adalah indeks 3 sampai 6, ditulis [3:7].
+
+EXAMPLE:
+description: b dan a sama-sama 2. Urutannya tetap b lalu a, sesuai urutan awal di list, bukan urut abjad.
+code:
+```
+def ambil_jumlah(pasangan):
+    return pasangan[1]
+
+data = [("b", 2), ("a", 2), ("c", 3)]
+print(sorted(data, key=ambil_jumlah, reverse=True))
+# Output: [('c', 3), ('b', 2), ('a', 2)]
+```
+
+PRACTICE: code
+instructions: Tujuan: membuktikan bahwa kata dengan hitungan sama diurutkan menurut kemunculan pertamanya di artikel, bukan menurut abjad.
+
+Tugasmu:
+1. Ubah bagian yang mencetak tiga kata teratas menjadi bagian yang mencetak peringkat 4 sampai 7 dari urut.
+2. Ambil peringkat itu dengan slicing, dan ganti judulnya menjadi Peringkat 4 sampai 7:.
+
+Hasilnya harus seperti ini. Perhatikan tiga kata yang hitungannya 3 (orang, dan, biji): urutannya bukan abjad, melainkan urutan kemunculannya di artikel. Baris ini hanya sementara:
+```
+Kata unik        : 59
+
+Peringkat 4 sampai 7:
+banyak: 4
+orang: 3
+dan: 3
+biji: 3
+```
+files:
+file: main.py
+```
+from fungsi import daftar_kata, hitung_unik, hitung_frekuensi, ambil_jumlah
+
+garis = "=" * 34
+print(garis)
+print("WORD COUNTER".center(34))
+print(garis)
+
+nama_file = "artikel-kopi.txt"
+print(f"Membaca file: {nama_file}")
+print()
+
+with open(nama_file) as file:
+    isi = file.read()
+
+kata_bersih = daftar_kata(isi)
+jumlah_kata = len(kata_bersih)
+
+print("--- Ringkasan ---")
+print(f"Jumlah kata      : {jumlah_kata}")
+
+jumlah_unik = hitung_unik(kata_bersih)
+print(f"Kata unik        : {jumlah_unik}")
+
+frekuensi = hitung_frekuensi(kata_bersih)
+
+urut = sorted(frekuensi.items(), key=ambil_jumlah, reverse=True)
+
+print()
+# TODO: ganti bagian di bawah ini agar mencetak peringkat 4 sampai 7 dengan slicing, dengan judul yang baru
+print("Tiga kata teratas:")
+for kata, jumlah in urut[:3]:
+    print(f"{kata}: {jumlah}")
+```
+file: fungsi.py
+```
+import string
+
+def bersihkan_kata(kata):
+    return kata.lower().strip(string.punctuation)
+
+def daftar_kata(teks):
+    hasil = []
+    for k in teks.split():
+        bersih = bersihkan_kata(k)
+        if bersih != "":
+            hasil.append(bersih)
+    return hasil
+
+
+def hitung_unik(daftar):
+    return len(set(daftar))
+
+
+def hitung_frekuensi(daftar):
+    frekuensi = {}
+    for kata in daftar:
+        if kata in frekuensi:
+            frekuensi[kata] = frekuensi[kata] + 1
+        else:
+            frekuensi[kata] = 1
+    return frekuensi
+
+
+def ambil_jumlah(pasangan):
+    return pasangan[1]
+```
+file: artikel-kopi.txt (read-only)
+```
+Kopi adalah minuman yang disukai banyak orang. Di pagi hari, kopi sering menjadi teman sarapan sehari-hari. Banyak orang minum kopi di rumah, di kantor, dan di kedai.
+
+Kopi yang enak berasal dari biji yang dipilih secara teliti. Biji kopi tumbuh di kebun yang sejuk dan subur. Setiap daerah punya rasa kopi yang berbeda. Petani merawat kopi dengan sabar, lalu menjemur biji kopi di bawah matahari.
+
+Sekarang banyak anak muda suka ngopi di kedai kopi. Kopi susu jadi pilihan banyak pelanggan. Orang tua juga menyukai kopi hitam. Rasa kopi hitam - pahit dan harum.
+```
+hints:
+1. Peringkat 1 berada di indeks 0. Peringkat 4 berada di indeks berapa? Dan peringkat 7?
+2. Slicing berhenti sebelum indeks akhirnya, jadi indeks akhir yang ditulis harus satu lebih besar dari indeks peringkat terakhir yang kamu butuhkan.
+3. Setelah mencetak, periksa urutan tiga kata berhitungan 3: itu bukan urutan abjad, melainkan urutan kemunculan pertama di artikel.
+answer files (spoiler):
+file: main.py
+```
+from fungsi import daftar_kata, hitung_unik, hitung_frekuensi, ambil_jumlah
+
+garis = "=" * 34
+print(garis)
+print("WORD COUNTER".center(34))
+print(garis)
+
+nama_file = "artikel-kopi.txt"
+print(f"Membaca file: {nama_file}")
+print()
+
+with open(nama_file) as file:
+    isi = file.read()
+
+kata_bersih = daftar_kata(isi)
+jumlah_kata = len(kata_bersih)
+
+print("--- Ringkasan ---")
+print(f"Jumlah kata      : {jumlah_kata}")
+
+jumlah_unik = hitung_unik(kata_bersih)
+print(f"Kata unik        : {jumlah_unik}")
+
+frekuensi = hitung_frekuensi(kata_bersih)
+
+urut = sorted(frekuensi.items(), key=ambil_jumlah, reverse=True)
+
+print()
+print("Peringkat 4 sampai 7:")
+for kata, jumlah in urut[3:7]:
+    print(f"{kata}: {jumlah}")
+```
+expected output (exact):
+```
+==================================
+           WORD COUNTER
+==================================
+Membaca file: artikel-kopi.txt
+
+--- Ringkasan ---
+Jumlah kata      : 92
+Kata unik        : 59
+
+Peringkat 4 sampai 7:
+banyak: 4
+orang: 3
+dan: 3
+biji: 3
+```
+source requirements:
+- main.py must contain: \[\s*3\s*:\s*7\s*\]  -> message: Outputnya sudah benar, tapi peringkat 4 sampai 7 belum diambil dengan slicing.
+success message: Terbukti: orang, dan, biji tampil sesuai urutan kemunculannya, bukan abjad. Karena itulah orang yang masuk lima besar. Berikutnya kita rapikan dan ambil lima teratas.
+
+--- LESSON L5 ---
+
+LESSON TITLE: 5 Teratas dalam Satu Fungsi
+
+THEORY:
+Sekarang kita punya semua bahan untuk menjawab Bu Rani, tinggal dirapikan. Pengurutan dijadikan fungsi bernama urutkan_frekuensi di fungsi.py, supaya main.py cukup memanggilnya. Setelah itu, lima kata teratas diambil dengan slicing.
+
+Hasil pengurutan sudah dimulai dari yang terbanyak, jadi lima kata teratas adalah lima pasangan pertama. Ditulis [:5], tanpa indeks awal karena mulai dari paling depan. Jika jumlahnya kurang dari lima, slicing tidak error: ia mengambil sebanyak yang ada.
+
+Coba lihat alurnya dari awal sampai akhir. Pertama, hitung_frekuensi mengubah daftar kata menjadi frekuensi. Kedua, urutkan_frekuensi mengurutkannya dari yang terbanyak. Ketiga, [:5] memotong lima yang pertama. Terakhir, perulangan mencetaknya satu per satu. Setiap langkah menerima hasil langkah sebelumnya, seperti rantai: hasil yang satu menjadi bahan untuk yang berikutnya.
+
+EXAMPLE:
+description: Fungsi terbesar mengurutkan list lalu mengambil n yang pertama; hasilnya dua angka terbesar.
+code:
+```
+def terbesar(daftar, n):
+    return sorted(daftar, reverse=True)[:n]
+
+print(terbesar([3, 9, 1, 7], 2))
+# Output: [9, 7]
+```
+
+PRACTICE: code
+instructions: Tujuan: mendapatkan jawaban untuk Bu Rani, yaitu lima kata yang paling sering muncul, dan merapikan kode pengurutannya dengan fungsi.
+
+Tugasmu:
+1. Di fungsi.py, buat fungsi urutkan_frekuensi(frekuensi) yang mengurutkan frekuensi.items() dari hitungan terbanyak (dengan key dan reverse seperti sebelumnya), lalu mengembalikan hasilnya.
+2. Di main.py, impor urutkan_frekuensi, panggil dengan frekuensi, dan ambil lima pasangan pertama dengan slicing. Simpan di variabel lima_teratas.
+3. Ganti bagian peringkat 4 sampai 7 dengan: satu baris kosong, judul 5 kata teratas:, lalu setiap pasangan di lima_teratas dalam bentuk kata: jumlah, satu per baris, memakai perulangan.
+
+Hasilnya harus seperti ini. Inilah jawaban untuk Bu Rani. Tampilannya masih sementara dan dirapikan menjadi tabel di bab berikutnya:
+```
+Kata unik        : 59
+
+5 kata teratas:
+kopi: 12
+di: 7
+yang: 5
+banyak: 4
+orang: 3
+```
+files:
+file: main.py
+```
+from fungsi import daftar_kata, hitung_unik, hitung_frekuensi, ambil_jumlah
+# TODO 3: impor urutkan_frekuensi, dan tampilkan 5 kata teratas (bukan peringkat 4 sampai 7)
+
+garis = "=" * 34
+print(garis)
+print("WORD COUNTER".center(34))
+print(garis)
+
+nama_file = "artikel-kopi.txt"
+print(f"Membaca file: {nama_file}")
+print()
+
+with open(nama_file) as file:
+    isi = file.read()
+
+kata_bersih = daftar_kata(isi)
+jumlah_kata = len(kata_bersih)
+
+print("--- Ringkasan ---")
+print(f"Jumlah kata      : {jumlah_kata}")
+
+jumlah_unik = hitung_unik(kata_bersih)
+print(f"Kata unik        : {jumlah_unik}")
+
+frekuensi = hitung_frekuensi(kata_bersih)
+
+# TODO 2: ganti dua baris pengurutan di bawah dengan urutkan_frekuensi(frekuensi), lalu ambil 5 teratas
+urut = sorted(frekuensi.items(), key=ambil_jumlah, reverse=True)
+
+print()
+print("Peringkat 4 sampai 7:")
+for kata, jumlah in urut[3:7]:
+    print(f"{kata}: {jumlah}")
+```
+file: fungsi.py
+```
+import string
+
+def bersihkan_kata(kata):
+    return kata.lower().strip(string.punctuation)
+
+def daftar_kata(teks):
+    hasil = []
+    for k in teks.split():
+        bersih = bersihkan_kata(k)
+        if bersih != "":
+            hasil.append(bersih)
+    return hasil
+
+
+def hitung_unik(daftar):
+    return len(set(daftar))
+
+
+def hitung_frekuensi(daftar):
+    frekuensi = {}
+    for kata in daftar:
+        if kata in frekuensi:
+            frekuensi[kata] = frekuensi[kata] + 1
+        else:
+            frekuensi[kata] = 1
+    return frekuensi
+
+
+def ambil_jumlah(pasangan):
+    return pasangan[1]
+
+
+# TODO 1: tambahkan fungsi urutkan_frekuensi(frekuensi) di bawah ini
+```
+file: artikel-kopi.txt (read-only)
+```
+Kopi adalah minuman yang disukai banyak orang. Di pagi hari, kopi sering menjadi teman sarapan sehari-hari. Banyak orang minum kopi di rumah, di kantor, dan di kedai.
+
+Kopi yang enak berasal dari biji yang dipilih secara teliti. Biji kopi tumbuh di kebun yang sejuk dan subur. Setiap daerah punya rasa kopi yang berbeda. Petani merawat kopi dengan sabar, lalu menjemur biji kopi di bawah matahari.
+
+Sekarang banyak anak muda suka ngopi di kedai kopi. Kopi susu jadi pilihan banyak pelanggan. Orang tua juga menyukai kopi hitam. Rasa kopi hitam - pahit dan harum.
+```
+hints:
+1. Isi fungsi adalah pengurutan yang sekarang ada di main.py, tetapi bahannya datang lewat parameter dan hasilnya dikirim kembali.
+2. Fungsi patokan ambil_jumlah sudah ada di fungsi.py, jadi fungsi baru tinggal memakainya.
+3. Slicing dari awal sampai sebelum indeks 5 mengambil lima elemen pertama.
+answer files (spoiler):
+file: main.py
+```
+from fungsi import daftar_kata, hitung_unik, hitung_frekuensi, urutkan_frekuensi
+
+garis = "=" * 34
+print(garis)
+print("WORD COUNTER".center(34))
+print(garis)
+
+nama_file = "artikel-kopi.txt"
+print(f"Membaca file: {nama_file}")
+print()
+
+with open(nama_file) as file:
+    isi = file.read()
+
+kata_bersih = daftar_kata(isi)
+jumlah_kata = len(kata_bersih)
+
+print("--- Ringkasan ---")
+print(f"Jumlah kata      : {jumlah_kata}")
+
+jumlah_unik = hitung_unik(kata_bersih)
+print(f"Kata unik        : {jumlah_unik}")
+
+frekuensi = hitung_frekuensi(kata_bersih)
+lima_teratas = urutkan_frekuensi(frekuensi)[:5]
+
+print()
+print("5 kata teratas:")
+for kata, jumlah in lima_teratas:
+    print(f"{kata}: {jumlah}")
+```
+file: fungsi.py
+```
+import string
+
+def bersihkan_kata(kata):
+    return kata.lower().strip(string.punctuation)
+
+def daftar_kata(teks):
+    hasil = []
+    for k in teks.split():
+        bersih = bersihkan_kata(k)
+        if bersih != "":
+            hasil.append(bersih)
+    return hasil
+
+
+def hitung_unik(daftar):
+    return len(set(daftar))
+
+
+def hitung_frekuensi(daftar):
+    frekuensi = {}
+    for kata in daftar:
+        if kata in frekuensi:
+            frekuensi[kata] = frekuensi[kata] + 1
+        else:
+            frekuensi[kata] = 1
+    return frekuensi
+
+
+def ambil_jumlah(pasangan):
+    return pasangan[1]
+
+
+def urutkan_frekuensi(frekuensi):
+    return sorted(frekuensi.items(), key=ambil_jumlah, reverse=True)
+```
+expected output (exact):
+```
+==================================
+           WORD COUNTER
+==================================
+Membaca file: artikel-kopi.txt
+
+--- Ringkasan ---
+Jumlah kata      : 92
+Kata unik        : 59
+
+5 kata teratas:
+kopi: 12
+di: 7
+yang: 5
+banyak: 4
+orang: 3
+```
+source requirements:
+- fungsi.py must contain: def\s+urutkan_frekuensi\s*\(  -> message: Outputnya sudah benar, tapi fungsi urutkan_frekuensi() belum ada di fungsi.py.
+- fungsi.py must contain: sorted\s*\(  -> message: Outputnya sudah benar, tapi fungsi urutkan_frekuensi() belum memakai sorted().
+- main.py must contain: urutkan_frekuensi\s*\(  -> message: Outputnya sudah benar, tapi main.py belum memanggil urutkan_frekuensi().
+- main.py must contain: \[\s*:\s*5\s*\]  -> message: Outputnya sudah benar, tapi lima teratas belum diambil dengan slicing.
+success message: Jawaban untuk Bu Rani sudah ada: kopi, di, yang, banyak, orang. Bab berikutnya merapikan tampilannya menjadi tabel yang enak dibaca.

@@ -27,9 +27,6 @@ export default function KursusPage() {
             1–5 gratis.
           </p>
           <p className="mt-4 font-mono text-sm text-ink">Rp20.000</p>
-          <p className="mt-1 text-xs text-ink-soft">
-            Akses berlaku selama PyMula berjalan, direncanakan paling lama sampai {formatDateId(SERVICE_END_ISO)}.
-          </p>
         </Link>
       </div>
     </section>

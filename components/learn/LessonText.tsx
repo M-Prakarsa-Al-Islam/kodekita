@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { parseLessonText, splitInline, splitLead } from "@/lib/lesson-text";
+import CodeBlock from "@/components/learn/CodeBlock";
 
 // Styled lesson prose. Colour is inherited, so callers can pass e.g.
 // `text-ink-soft`. See lib/lesson-text.ts for what is detected.
@@ -79,6 +80,9 @@ export default function LessonText({
                 ))}
               </ol>
             );
+          case "code":
+            // Fenced block: monospace, every space kept (prose would collapse them).
+            return <CodeBlock key={i} code={block.text} size={size === "sm" ? "sm" : "base"} className="mt-4" />;
           case "callout":
             return (
               <div

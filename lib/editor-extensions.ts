@@ -105,6 +105,10 @@ const theme = EditorView.theme(
     ".cm-scroller": {
       overflowX: "auto",
       fontFamily: 'var(--font-mono), "JetBrains Mono", ui-monospace, monospace',
+      // JetBrains Mono would draw "!=" as a not-equal sign, ">=" as one glyph...
+      // The learner must see what they type (see app/globals.css).
+      fontVariantLigatures: "none",
+      fontFeatureSettings: '"calt" 0, "liga" 0',
       lineHeight: "1.6",
       minHeight: "112px",
     },

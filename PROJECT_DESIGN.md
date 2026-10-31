@@ -49,7 +49,7 @@ challenge in section 5/9).
 | Supabase Free **pauses after 7 days idle** | A dead site for a paying customer is the real risk. Owner pings manually for now; scheduled ping or Pro ($25/mo) later. |
 | Desktop **and** mobile users | Editor and layout must work on a ~380px phone. See section 10. |
 | MVP exclusions (master prompt section 30) | No certificates, leaderboards, public profiles, etc. A public "share my project" page is *deferred*. |
-| Python Dasar does **not** teach file I/O (`open`, `with`, `.read()`), `import`, or `input()` (verified by grep over all 13 chapters) | The project must teach these three itself, each in its own chapter. Prerequisite copy should say "Python Dasar" but expect these to be new. |
+| **Corrected 2026-10-28.** Python Dasar Chapter 3 (L8-L15) **does** teach `input()`, `open()`/`.read()`, `with`, writing files, `import` and splitting code into modules (see "Gabungkan: Input, File, dan Modul"). It does **not** teach `.lower()`, `.strip()`, `sorted(key=, reverse=)`, f-string alignment (`:<10`, `:>4`), `"=" * 34` or `.center()` (verified by grep over chapters 1-13) | File/`import`/`input()` chapters of the project are **review**, kept short. The new teaching time goes to text cleaning, counting, sorting and formatting (section 5.4). |
 
 Hosting numbers (checked 2026-10-16, third-party summaries of vendor docs; re-check
 before launch): Supabase Free = 500 MB DB, 5 GB egress, 50,000 MAU, API request
@@ -59,11 +59,16 @@ does **not** use Vercel bandwidth.
 ## 3. Product definition (Word Counter)
 
 - **Title:** Build a Word Counter. **Prerequisite:** Python Dasar (or equivalent).
-- **Final program:** the user gives a text file name; the program reads it and
-  prints how many words it contains, with friendly handling of a missing file.
-- **Introduces:** project setup, files, reading text, strings, lists,
-  functions, user input, error handling, combining pieces into one program,
-  plus **two-file structure** (`main.py` + `fungsi.py`) and `import`.
+- **Final program:** the user gives a text file name; the program reads it,
+  cleans the words, and prints the word count, the number of unique words and
+  the 5 most frequent words, with friendly handling of a missing file. The
+  exact output is specified in section 5.1.
+- **Introduces (new):** text cleaning (`.lower()`, `.strip()`), counting
+  frequencies, `sorted` with `key=`/`reverse=`, f-string alignment, `"=" * n`
+  and `.center()`. **Reviews:** files, `import`, `input()`, `try/except`,
+  dict, set, slicing, two-file structure (`main.py` + `fungsi.py`).
+- **Price and access:** Rp10.000 (`word-counter` in `content/pricing.ts`).
+  **Chapters 1 and 2 are free**; Chapter 3 onward requires the purchase.
 - Add a **project catalog / detail page** (master prompt pages #4 and #5) and
   gate purchase exactly like the main course (`purchases` table, admin QRIS
   verification already exist).
@@ -75,10 +80,11 @@ does **not** use Vercel bandwidth.
 Same skeleton as the course: **story -> instructions -> code in the browser ->
 check**. Three deliberate differences from course lessons:
 
-1. **One program that grows (cumulative workspace).** In the course every
-   exercise stands alone. In a project, the learner's code from chapter N is the
-   starting point of chapter N+1, stored on their account. The end result is one
-   real set of files that they built.
+1. **One program that grows (authored cumulative starters).** In the course
+   every exercise stands alone. In a project, the starter of each lesson is the
+   previous lesson's *model* answer plus the new part, so the learner always
+   works on the same growing program. **The learner's own code is not carried
+   over between lessons** (decision 2026-10-28, see 15.2 and 15.3).
 2. **Looser instructions.** Course lessons give exact steps. Project chapters
    give a *goal and requirements*, plus progressive hints and an optional
    solution. The learner decides how to write it.
@@ -87,24 +93,116 @@ check**. Three deliberate differences from course lessons:
 Each chapter opens with a short **story** (e.g. "a client wants the word count
 of their article") so it feels like a project, not another drill.
 
-## 5. Word Counter outline (PROPOSED - author to confirm or rewrite)
+## 5. Word Counter specification (DECIDED 2026-10-28)
 
-Matches the chapter list in the master prompt. New-to-the-learner concepts are
-bold. Files: `main.py` (the program), `fungsi.py` (functions).
+### 5.1 Target output
 
-| # | Chapter | Learner does | New concept |
+For input `artikel-kopi.txt` (the seed file, section 5.3):
+
+```
+==================================
+           WORD COUNTER
+==================================
+Nama file: artikel-kopi.txt
+
+Membaca file: artikel-kopi.txt
+
+--- Ringkasan ---
+Jumlah kata      : 92
+Kata unik        : 59
+
+--- 5 kata yang paling sering muncul ---
+1. kopi        12
+2. di           7
+3. yang         5
+4. banyak       4
+5. orang        3
+```
+
+### 5.2 Rules (every lesson's expected output must follow these)
+
+- **Banner:** `"=" * 34`, then `"WORD COUNTER".center(34)`, then `"=" * 34`.
+  (The checker trims trailing spaces per line, so `.center` is safe.)
+- **Prompt:** `input("Nama file: ")`; the echoed line is part of the output.
+  A blank line follows it.
+- **Status line:** `Membaca file: <nama>` (one colon style, no space before
+  it), followed by a blank line. It is printed only after the file opened
+  successfully.
+- **Summary block:** `Jumlah kata      : N` and `Kata unik        : N`
+  (colons aligned), blank line after.
+- **Top-5 rows:** `f"{no}. {kata:<10}{jumlah:>4}"`. A word longer than 10
+  characters pushes the number right; that is accepted and documented in the
+  lesson.
+- **What counts as a word:** lowercase the text, split on whitespace, strip
+  punctuation from **both ends** of each piece (`string.punctuation`),
+  and discard pieces that become empty. Hyphenated words (`sehari-hari`) stay
+  one word. Numbers count as words.
+- **Tie rule:** equal counts keep **first appearance in the text**. This is
+  what a stable `sorted(..., reverse=True)` gives, so no `lambda` or tuple
+  key is needed.
+- **Missing file:** after the `Nama file:` line and a blank line print
+  `File '<nama>' tidak ditemukan. Periksa kembali nama file.` and stop (no
+  summary).
+- **Empty file:** `Jumlah kata      : 0`, `Kata unik        : 0`, and the top-5
+  section shows `(belum ada kata)`.
+- **Fewer than 5 unique words:** show as many rows as exist.
+
+### 5.3 Seed file `artikel-kopi.txt`
+
+Written and verified with Python on 2026-10-28 (file kept in this repo's
+content assets):
+
+| Measure | Value |
+|---|---|
+| Pieces from raw `.split()` | 93 (one is a stand-alone `-`) |
+| Words after cleaning | **92** |
+| Unique, raw pieces (with punctuation and capitals) | 70 |
+| Unique after cleaning | **59** |
+| Top 5 | kopi 12, di 7, yang 5, banyak 4, orang 3 |
+| Tie at count 3 | `orang`, `dan`, `biji` (first appearance picks `orang`; alphabetical order would pick `biji`) |
+
+The differences 93 vs 92 and 70 vs 59 are used on purpose in Chapters 3 and 4
+to show why cleaning is needed. Changing the article means re-verifying every
+number above and every lesson that prints them.
+
+### 5.4 Prerequisite audit (grep over Python Dasar chapters 1-13)
+
+| Needed by the project | Status |
+|---|---|
+| `.split(" ")` (explicit separator), `len()`, slicing of **lists**, list loops | Taught (Ch. 9) |
+| `.split()` with **no argument** (splits on spaces, double spaces and newlines) | **New nuance** (Bab 3 L1) |
+| `"\n"` as a character, `.split("\n")` | Known (`\n` from Ch. 3 writing files, separator form from Ch. 9) |
+| dict, `.items()` | Taught (Ch. 10) |
+| `set` | Taught (Ch. 11) |
+| `input()`, `open()`/`.read()`, `with`, `import`, modules, `main()` | Taught (Ch. 3) |
+| `try/except FileNotFoundError` | Taught (Ch. 3, Ch. 12) |
+| `.lower()`, `.strip()`, `string.punctuation` (a module, `import` is known) | **New** |
+| `sorted(..., key=, reverse=True)` | **New** (`sorted` only appears on sets) |
+| f-string alignment (`:<10`, `:>4`) | **New** |
+| Row numbering | A plain counter variable (`nomor = nomor + 1`); `enumerate` is not used, its tuple-in-tuple unpacking is too heavy for one lesson |
+| `"=" * 34`, `.center()` | **New** |
+
+### 5.5 Chapter outline
+
+Bab 1 and 2 are **free**; price of the rest is Rp10.000 for the whole project.
+Chapters may be added later (see `AUTHORING_TEMPLATE_PROYEK.md` for how
+to add one without breaking progress).
+
+| # | Chapter | Lessons | New concept |
 |---|---|---|---|
-| 1 | Set up the project | Tour of the workspace (two tabs), run `main.py` to print a banner | **running a script**, what a project/file is |
-| 2 | Read a file | Open the provided `contoh-artikel.txt`, read it, print the start | **`open()`, `with`, `.read()`** |
-| 3 | Count words | `.split()` + `len()` on the text | (strings/lists already known) |
-| 4 | Make it a function | Move logic into `hitung_kata(teks)` in `fungsi.py`, import it in `main.py` | **`import` / `from fungsi import ...`** |
-| 5 | Combine the pieces | `main.py` reads file -> calls function -> prints "Jumlah kata: N" | wiring modules together |
-| 6 | Add user input | Ask for the file name | **`input()`** |
-| 7 | Handle missing files | `try/except FileNotFoundError`, friendly message | (try/except already known, ch. 12) |
-| 8 | Finish and take it home | Clean up, README, download, run locally, upload to GitHub, extension challenge | see section 9 |
+| 1 (free) | Menyiapkan Proyek | 1 Apa yang Akan Kita Bangun - 2 Mengenal Workspace Proyek - 3 Membuat Banner Program | `*`, `.center()` |
+| 2 (free) | Membaca File Artikel | 1 Mengenal artikel-kopi.txt - 2 Membuka dan Membaca File - 3 Menampilkan Pesan "Membaca file" | review |
+| 3 | Memecah Teks Menjadi Kata | 1 Memecah dengan .split() - 2 Menghitung dengan len() - 3 Masalah: "Kopi" dan "kopi," | `.split()` without argument; motivation (93 vs 92, 70 vs 59) |
+| 4 | Membersihkan Kata | 1 Huruf Kecil dengan .lower() - 2 Menghapus Tanda Baca dengan .strip() - 3 Membuang Kata Kosong - 4 Fungsi bersihkan_kata() | `.lower()`, `.strip()` |
+| 5 | Fungsi dan Modul | 1 Satu Fungsi untuk Semua Kata - 2 Memindahkan Fungsi ke fungsi.py - 3 Kata Unik dengan Fungsi | review (titles changed while writing: the program never needed a separate `hitung_kata()`, `len()` is enough) |
+| 6 | Menghitung Frekuensi | 1 Dictionary Penghitung - 2 Fungsi hitung_frekuensi() - 3 Mengintip Isi dengan .items() | counting pattern |
+| 7 | Mengurutkan 5 Teratas | 1 sorted() pada Pasangan - 2 key dan reverse - 3 Aturan Seri - 4 Fungsi urutkan_frekuensi() dan 5 Teratas | `sorted(key=, reverse=)` with a named helper function, no `lambda`; stability gives the tie rule |
+| 8 | Merapikan Tampilan | 1 Rata Kiri dan Kanan di f-string - 2 Nomor Urut - 3 Merakit Laporan Lengkap | f-string format; counter variable |
+| 9 | Input dan File Hilang | 1 Menanyakan Nama File - 2 Membungkus Alur dalam main() - 3 Pesan Ramah dengan try/except - 4 File Kosong dan Kata Sedikit | review (`main()` moved here from Bab 10: `return` inside it is what stops the program on a missing file) |
+| 10 | Selesai dan Bawa Pulang | 1 Merapikan Kode dengan Komentar - 2 README dan Unduh Zip - 3 Menjalankan di Komputer Sendiri - 4 Unggah ke GitHub - 5 Tantangan Perluasan | take-home |
 
-The extension challenge (e.g. top-10 most frequent words, ignore punctuation)
-is **open-ended and not auto-checked**, so every learner's repo differs.
+The extension challenge (e.g. ignore stopwords such as "di" and "yang",
+top-10 instead of top-5) is **open-ended and not auto-checked**.
 
 ## 6. Workspace and data model
 
@@ -115,42 +213,50 @@ is **open-ended and not auto-checked**, so every learner's repo differs.
 - The set of files is **fixed by the project**. The learner cannot create,
   delete or rename files (no file manager).
 - Edits to each file are saved to `localStorage` as the learner types
-  (debounced), keyed by **user id + project slug + file name**.
+  (debounced), keyed by **user id + project slug + lesson id + file name**
+  (each lesson has its own draft; decision 2026-10-28, see 15.2).
 
 ### 6.2 Persistence rules
+
+> **Phase 2 (2026-10-28) - what is really built:** a project lesson's progress
+> is stored in the existing `lesson_progress` table under a namespaced
+> `chapter_slug` of the form `<project>/<chapter>` (for example
+> `word-counter/menyiapkan-proyek`). There is **no `project_progress` table and
+> no SQL to run**. The bullets below that mention that table are the original
+> draft; read them together with 15.5.
 
 - **No version history. UPDATE, not INSERT.** One row per (user, project).
   Never one row per lesson, never one row per save.
 - `localStorage` is a *draft cache*: written while typing. Supabase is written
   only when the learner **passes a lesson or presses "Lanjut"** (not on every
   failed "Cek Jawaban").
-- On load, use whichever of local draft / server copy has the **newer
-  timestamp**. Store a timestamp with each local draft.
+- **Superseded (15.2):** the MVP stores no learner code on the server, so
+  there is no server copy to compare. On load, use the local draft of that
+  lesson if it exists, otherwise the authored starter.
 - **Shared computers (warnet) are real:** key drafts by user id and clear them
   on logout.
 - Safari on iPhone can evict `localStorage` for sites not visited for about a
-  week, so the server copy written at each pass is the safety net. Show
-  "Draf tersimpan di perangkat ini".
-- When the learner enters the next lesson, load `files` from Supabase and put
-  them in the editor as the starter. If a lesson needs new scaffolding, see
-  6.4.
+  week. Accepted: the learner then gets the authored starter again, which
+  already contains the previous result. Show "Draf tersimpan di perangkat ini".
+- **No carry-over of the learner's code between lessons (decided
+  2026-10-28).** Entering a lesson loads that lesson's authored starter (plus
+  the learner's own draft for the same lesson, if any). See 15.2 and 15.3.
 - Progress is self-reported (checks run client-side, same as the course). Do
   not try to enforce it server-side. Access to paid content *is* enforced
   server-side via `purchases`, as for the course.
 
-### 6.3 Table (DRAFT - finalize in build step 2)
+### 6.3 Table (SUPERSEDED in Phase 2: not built, see 15.5; kept for reference)
 
 ```sql
 create table public.project_progress (
   user_id uuid not null references auth.users(id) on delete cascade,
   project_slug text not null,
-  files jsonb not null default '{}'::jsonb,        -- {"main.py": "...", "fungsi.py": "..."}
+  -- no `files` column in the MVP (decision 2026-10-28, see 15.2)
   current_lesson text,
   completed_lessons text[] not null default '{}',
   help_used jsonb not null default '{}'::jsonb,    -- {"L3": "spoiler"}
   updated_at timestamptz not null default now(),
   primary key (user_id, project_slug),
-  constraint project_files_size check (octet_length(files::text) < 100000),
   constraint project_help_size check (octet_length(help_used::text) < 5000)
 );
 ```
@@ -160,15 +266,14 @@ create table public.project_progress (
 - The size `CHECK`s stop anyone using the column as free storage.
 - Consider also requiring an approved purchase for `project_slug` on
   insert/update (look at how `purchases` identifies the product first).
-- Estimated cost: about 6 KB per row; 1,000 learners opening it 50 times a month
-  is roughly 300 MB egress (my estimate; limit is 5 GB).
+- Without the `files` column a row is only a few hundred bytes, so the earlier
+  egress estimate (about 6 KB per row) no longer applies.
 
-### 6.4 Lesson starter and scaffolding (TENTATIVE)
+### 6.4 Lesson starter (DECIDED 2026-10-28: full starters, no scaffold)
 
-Starter = the learner's saved files. A lesson that needs new scaffolding (e.g.
-an empty function stub) may define a `scaffold` that is **appended once** on
-first entry, marked with a comment such as `# --- Chapter 3 ---` so entering the
-lesson twice never duplicates it.
+Every lesson ships its **complete starter files**: the previous lesson's model
+answer plus the new `# TODO` part. There is no `scaffold` and no server-side
+copy of the learner's code. The learner is told about this (15.3).
 
 ### 6.5 Help: spoiler, copy, `help_used`
 
@@ -240,11 +345,11 @@ Required for projects:
   the old version. **Before every run, remove the learner's modules from
   `sys.modules` and invalidate import caches.**
 - **Trap 2 - the virtual disk persists between runs:** if learner code edits or
-  deletes `contoh-artikel.txt`, the next run (and our tests) would see the
+  deletes `artikel-kopi.txt`, the next run (and our tests) would see the
   changed file. **Before every run, rewrite all files from scratch**: the
   learner's files from the editor plus the seed files in their original state.
-- **Seed files:** each project declares files (like `contoh-artikel.txt`) that
-  are written into the working directory so `open("contoh-artikel.txt")` works.
+- **Seed files:** each project declares files (like `artikel-kopi.txt`) that
+  are written into the working directory so `open("artikel-kopi.txt")` works.
 - **`input()`:** add a small "Input program" box under the editor, one line per
   `input()` call, fed through Pyodide's stdin hook; tests use scripted input.
 - **Hangs - DONE (2026-10-21).** An infinite loop used to freeze the tab
@@ -273,13 +378,17 @@ Done in the browser, **no server cost**:
 
 - **Download** a zip built client-side (use `fflate` or JSZip, via Blob and an
   `<a download>`): `main.py`, `fungsi.py`, a generated `README.md` (what it does,
-  how to run it, what was learned) and `contoh-artikel.txt`.
+  how to run it, what was learned) and `artikel-kopi.txt`.
 - **Run it locally:** one lesson on installing Python and running
   `python main.py` on their own machine. This proves the program is theirs and
   covers the file/input parts that the browser only simulates.
 - **GitHub guide:** five steps using GitHub's web upload (no git needed). The
   repo link is what goes on a CV.
 - **Extension challenge** (open-ended, not auto-checked).
+- **Honesty note (15.2):** because the learner's code is not carried between
+  lessons, the zip holds the code of the last lesson, which started from the
+  authored model. The README and the page copy must say so and must not claim
+  the whole program was written from scratch by the learner.
 - On phones the zip downloads fine but Python cannot be run, so this chapter is
   **desktop-oriented and must never block finishing the coding chapters**.
 
@@ -502,6 +611,8 @@ Remembering code (desktop and phone):
 
 ## 12. Build order
 
+> Partly superseded by section 15 (phases and decisions of 2026-10-28).
+
 0. **Phase 5-pre** (section 11), owner-driven.
 1. **Runner:** multi-file filesystem, module-cache and file reset before every
    run, seed files, scripted `input()` + input box, `behavior_tests` harness.
@@ -512,7 +623,8 @@ Remembering code (desktop and phone):
    catalog/detail pages, purchase gate.
 3. **Content:** Word Counter chapters and the take-home chapter (zip, README).
    Extend `content/AUTHORING_TEMPLATE.md` for projects (story, per-lesson
-   `scaffold`, `solutionFiles`, tests, seed files, README template).
+   `starterFiles`, `solutionFiles`, tests, seed files, README template). The
+   extension is `content/AUTHORING_TEMPLATE_PROYEK.md` (written 2026-10-28).
 4. **Later:** optional file upload into the virtual FS,
    public share page, "Lewati" button if data supports it.
 
@@ -522,14 +634,14 @@ Remembering code (desktop and phone):
 type ProjectContent = {
   slug: string; title: string;
   files: string[];                           // fixed, e.g. ["main.py", "fungsi.py"]
-  seedFiles: Record<string, string>;         // e.g. "contoh-artikel.txt"
+  seedFiles: Record<string, string>;         // e.g. "artikel-kopi.txt"
   readmeTemplate: string;
   chapters: { id: string; title: string; lessons: ProjectLesson[] }[];
 };
 type ProjectLesson = {
   id: string; slug: string; title: string;
   story: string; instructions: string; hints: string[];
-  scaffold?: Record<string, string>;         // appended once, marker-commented
+  starterFiles: Record<string, string>;      // full authored starter per lesson (no scaffold in the MVP)
   solutionFiles: Record<string, string>;     // spoiler: read-only + Copy
   checker: { type: "behavior_tests"; tests: string } | { type: "stdout_exact"; expected: string };
   successFeedback: string;
@@ -538,9 +650,11 @@ type ProjectLesson = {
 
 ## 13. Decisions log
 
-**Decided:** hybrid format (browser coding + take-home); cumulative two-file
-workspace; one `project_progress` row per user per project, upsert on pass /
-"Lanjut"; localStorage draft cache; behavioral tests for function lessons;
+**Decided:** hybrid format (browser coding + take-home); two-file workspace
+with authored cumulative starters (the learner's code is not carried over, see
+15.2); one `project_progress` row per user per project, upsert on pass /
+"Lanjut"; localStorage draft cache; behavioral tests for function lessons
+(deferred, see 15.2);
 spoiler read-only + Copy (no overwrite, no "Lewati" in MVP); `help_used` for
 owner analytics; downloads generated in the browser; desktop + mobile support;
 editor = CodeMirror 6 lazy-loaded (section 11); build order in section 12.
@@ -548,15 +662,27 @@ editor = CodeMirror 6 lazy-loaded (section 11); build order in section 12.
 **Deferred:** Web Worker timeout, file upload, public share page, "Lewati"
 button, certificates (excluded by master prompt).
 
-**Open:** who writes the Word Counter outline (author, or Claude drafts for
-review); final price; README template wording; account-deletion policy for
-purchases.
+**Decided 2026-10-28:** Word Counter output and rules (section 5.1-5.2); seed
+file `artikel-kopi.txt` (section 5.3); 10-chapter outline (section 5.5); price
+Rp10.000; **Bab 1 and 2 free**; chapter slugs of project courses carry no
+number so chapters can be added later; files written in the course template
+format plus `AUTHORING_TEMPLATE_PROYEK.md`.
+
+**Decided 2026-10-28 (planning):** phases in 15.1; the learner's code is NOT
+carried between lessons (full authored starters, no `project_progress.files`);
+the learner is told in Bab 1 L2 and on the project pages (15.3); Bab 10
+non-gradable lessons end in a short quiz; `behavior_tests` deferred;
+Bab 1-2 free.
+
+**Open:** README template wording; revisit code carry-over after launch if
+learner data shows a need; account-deletion policy for purchases (see
+`PROGRESS.md`).
 
 ## 14. Verification checklist (before calling a step done)
 
 Step 1 (runner):
 - Edit `fungsi.py`, run twice: the second run uses the edited code.
-- Learner code deletes/edits `contoh-artikel.txt`: the next run sees the
+- Learner code deletes/edits `artikel-kopi.txt`: the next run sees the
   original again.
 - `from fungsi import hitung_kata` works from `main.py`; tracebacks name the
   right file.
@@ -580,3 +706,235 @@ Step 2 (workspace):
 Step 3 (content): every `solutionFiles` passes its own checker through the real
 runner; every starter fails; the full chain chapter 1 -> 8 works using only
 solutions copied from the spoiler.
+
+## 15. Work plan: phases and decisions (DECIDED 2026-10-28)
+
+### 15.1 Phases
+
+Not "all content first" and not "one chapter at a time": build a **vertical
+slice** first, then add chapters in batches of 2-3 (the same rhythm as Python
+Dasar).
+
+| Phase | Work | Done when | Status |
+|---|---|---|---|
+| 1. Slice content | Write Bab 1, 2, 3 in template format; fix the spec and seed file | Bab 1-3 verified with real Python (answers pass, starters fail) | **Done 2026-10-28** (owner review pending) |
+| 2. Minimal platform | Define `ProjectContent`; project routes under `/proyek/[project]/...`; purchase gate for `word-counter`; convert Bab 1-3 to `.ts`; extend the tests; confirm `npm test` runs in the sandbox | Learner can study Bab 1-3 on a real device and Bab 3 is locked until purchase | **Built and tested in the sandbox 2026-10-28.** Still needs the owner's manual test with the real Supabase and a phone (15.5) |
+| 3. Remaining chapters | Batches: Bab 4-6, Bab 7-9, Bab 10. Each batch: write, convert, test, fix. Bab 10 adds zip download and README generator | Each batch passes tests before the next starts | **Batch 1 (Bab 4-6) written and tested 2026-10-28.** **Batch 2 (Bab 7-9) written and tested 2026-10-28.** Batch 3 (Bab 10) not started |
+| 4. Polish and release | `/proyek` catalog page, SEO and robots, QRIS test, mobile test | Ready to take payment | Not started |
+
+### 15.2 Decisions
+
+1. **No carry-over of the learner's code between lessons.** Each lesson
+   loads its authored starter (previous model answer + new `# TODO`). The
+   learner's draft is kept only for the same lesson (localStorage, per lesson).
+   Consequences:
+   - `project_progress.files` and its size check are dropped (6.3); `scaffold`
+     is dropped (6.4).
+   - The take-home zip (Bab 10) contains the code of the last lesson, which
+     started from the authored model. It must be described honestly, not as
+     "the whole program you wrote yourself from scratch" (see section 1,
+     honest positioning).
+   - Revisit after launch if learner data shows a need.
+2. **Bab 10 lessons that cannot be auto-checked** (run it on your own
+   computer, upload to GitHub) end with a short comprehension quiz, because
+   every lesson must end in a quiz or code practice.
+3. **`behavior_tests` is deferred.** `stdout_exact` plus `source requirements`
+   are enough for Bab 1-9.
+4. **Features arrive with the chapter that needs them:**
+
+| Feature | Needed from | Status |
+|---|---|---|
+| Multi-file, read-only files, `stdin`, `source requirements` | Bab 1 | Exists |
+| Purchase gate + progress per project | Bab 3 | Phase 2 |
+| Zip download, README generator | Bab 10 | Phase 3 |
+| `behavior_tests` | not needed | Deferred |
+
+5. **Delivery format:** content is delivered as a zip whose paths mirror the
+   repo, so it can be extracted at the repo root.
+
+### 15.3 Telling the learner about decision 1
+
+The learner must not discover this by surprise. Required copy:
+
+- **Bab 1 L2** (done): a "Penting" box says each lesson has its own starter
+  and that the learner's earlier code is not carried over automatically.
+- **Project detail page** (Phase 2/4): one FAQ line saying the same.
+- **Workspace hint** (Phase 2): a small line near the editor, for example
+  "Kode awal setiap lesson sudah disiapkan. Kodemu dari lesson sebelumnya
+  tidak dibawa otomatis."
+- **Authoring rule:** never write "kodemu tersimpan" or "lanjutkan kodemu"
+  in lesson theory.
+
+### 15.4 Division of work
+
+Claude writes the content, converts it to `.ts`, builds the platform in a copy
+of the repo, and runs `npm test` (the test script uses the `pyodide` npm
+package, which should run in the sandbox; to be confirmed at the start of
+Phase 2). The owner runs the Supabase SQL, tests on a real phone, and commits.
+
+### 15.5 Phase 2: what was built, deviations, and what is still open
+
+**Built (2026-10-28).**
+
+- `ProjectContent` in `content/types.ts`. A project's chapters reuse
+  `ChapterContent`, so the existing lesson UI works unchanged: `Challenge`
+  (hints, spoiler, `answerFiles`), `QuizRunner`, multi-file `CodeRunner` with tabs
+  and read-only files, and `sourceRequirements` per file. The workspace did not
+  need to be built.
+- Content: `content/projects/word-counter/` (`bab-N-*.md` are the source,
+  `chapter-N.ts` are **generated**, `todo.ts` lists Bab 4-10, `index.ts`) and
+  the registry `content/projects/index.ts`.
+- Converter `scripts/convert-project-md.mjs <project>` (strict: unknown input is
+  an error). `--check` runs inside `npm test`, so a `.ts` that differs from its
+  `.md` fails the tests. Never edit `chapter-N.ts` by hand.
+- Routes: `/proyek` (catalog), `/proyek/[project]` (project page, public),
+  `/proyek/[project]/[slug]` (chapter entry), `.../[lessonId]` (lesson),
+  `/proyek/[project]/beli` (purchase). Everything below `/proyek/<slug>/` needs
+  an account (`lib/route-guard.ts`); free/paid is enforced on the server per chapter.
+- **Fenced code blocks in lesson text** (added after the first review found that
+  the UI collapsed the spaces of an exact output line): a block between two
+  lines holding only three backticks is rendered monospace with every space
+  kept (`lib/lesson-text.ts`, `LessonText.tsx`). Python Dasar lessons never used
+  backticks, so nothing there changes. The lossless text test now also runs over
+  project chapters.
+- **Authoring guards in `scripts/test-projects.mjs`:** no prose relies on runs of
+  spaces, no hint contains a copyable answer line, and every line shown in an
+  instructions code block is a line of the checked output. Hints are nudges, not
+  answers (template rule 5).
+- Existing code touched: `LessonNav` (optional `basePath` and `keyPrefix`
+  props, defaults unchanged), `route-guard.ts`, `pricing.ts`, `content/types.ts`,
+  `app/proyek/page.tsx` (placeholder replaced by the catalog), and the Pyodide
+  test script. Python Dasar pages are untouched.
+- Tests: `scripts/test-projects.mjs` (the number of checks grows with every batch) and the Pyodide test now runs the
+  project lessons too (answer passes, starter fails, examples run, in the real
+  Pyodide). `npm test` = all green, `tsc` clean, `next build` succeeds.
+
+**Deviations from the draft design (decided while building).**
+
+1. **No `project_progress` table, no new SQL.** Progress reuses `lesson_progress`
+   with the chapter slug `<project>/<chapter>`. Reason: with no code carry-over
+   (15.2) the only thing the table would hold is "which lessons are done", which
+   `lesson_progress` already stores. The namespace cannot collide with a
+   Python Dasar slug and the Python Dasar progress maths ignores project rows
+   (tested). Consequence: `help_used` (6.5) is **not recorded yet**. If you want
+   it, add a column or table later.
+2. **Purchases need no SQL either.** `purchases.course_slug` is free text; the
+   project's slug (`word-counter`) is the key, the price comes from `pricing.ts`.
+3. **Examples that are not Python** (program output, article text) are marked
+   `run: no` in the `.md` and are published as a plain code section, because the
+   test suite runs every `example` as Python.
+4. **Duplication on purpose:** `content/projects/index.ts` repeats a few helpers of
+   `content/chapters/index.ts` instead of refactoring them, to leave the working
+   Python Dasar code alone. Merge them later if it becomes a burden.
+
+**Not done yet (deliberately out of the slice).**
+
+- Pages are `noindex`; sitemap and `INDEXABLE_PATHS` come in Phase 4.
+- Dashboard (`DashboardHome`) and `/akun` still know only Python Dasar: no
+  "continue the project" card, and `/akun` shows only that purchase.
+- The admin purchases list was not checked for how it labels a non-Python-Dasar
+  `course_slug`.
+- `LessonNav` labels chapters "Ch3"; the project text says "Bab 3".
+- Bab 10's zip download (`DOWNLOADS_AVAILABLE` stays `false` until it exists).
+- **Sales window:** `site-config.ts` closes paid sales 45 days before
+  `SERVICE_END_ISO` (1 Oktober 2027). The project can therefore be sold for about
+  nine and a half months at most, and a buyer's access ends with the service.
+  The purchase page repeats the same warnings as Python Dasar.
+
+**Manual test checklist for the owner** (needs the real Supabase and a phone; none
+of this can be exercised in the sandbox). Run `npm run build && npm start`, or
+use the deployed preview.
+
+1. Logged out: `/proyek` and `/proyek/word-counter` open; a lesson URL redirects to
+   login and returns to the lesson after login.
+2. Logged in, not purchased: Bab 1 L1 (quiz) passes; after passing, the page shows
+   the tick and the progress bar moves (the page calls `router.refresh()`).
+3. Bab 1 L2 and L3 (code): the three tabs appear, `artikel-kopi.txt` is read-only,
+   "Cek Jawaban" passes with the answer, hints appear one by one, the spoiler
+   shows `main.py`.
+4. Type something in L3, leave, come back: the draft is still there. Open another
+   lesson: it starts from its own starter (by design).
+5. Reload the project page: progress persisted (`lesson_progress` has rows with
+   `chapter_slug = word-counter/...`).
+6. Bab 3 L1 URL while not purchased: redirected to `/proyek/word-counter/beli`.
+7. Purchase flow: upload a proof, status "Menunggu verifikasi"; approve it in
+   `/admin/purchases` (check how the project row is labelled); Bab 3 opens.
+8. Phone (Safari and Chrome): editor tabs usable, keyboard does not hide the
+   Run button, the project page is readable.
+9. Python Dasar still works end to end (progress, purchase page).
+
+### 15.6 Phase 3, batch 1 (Bab 4-6): what was written and what the next batch starts from
+
+**Numbers each lesson promises** (the tests recompute them independently from
+`artikel-kopi.txt`): raw 93 words / 70 unique -> lowercase 64 unique -> strip
+punctuation 60 unique (one empty "word" still counts) -> drop empty words 92 / 59.
+
+| Bab | Lessons | Where the code lives at the end |
+|---|---|---|
+| 4 Membersihkan Kata | `.lower()`, `.strip(string.punctuation)`, drop empty words, `bersihkan_kata()` | all in `main.py` |
+| 5 Fungsi dan Modul | `daftar_kata(teks)`, move `import string` and both functions to `fungsi.py`, `hitung_unik(daftar)` | `fungsi.py`: `bersihkan_kata`, `daftar_kata`, `hitung_unik`; `main.py`: banner, status line, summary |
+| 6 Menghitung Frekuensi | dict counter in `main.py`, `hitung_frekuensi(daftar)` in `fungsi.py`, `.items()` | adds `hitung_frekuensi` to `fungsi.py` |
+
+**Temporary output, to be replaced in Bab 7.** The end of Bab 6 prints, after the
+summary, a blank line, `Kata yang muncul 3 kali atau lebih:` and the words with
+3 or more occurrences in dict order (`kopi: 12`, `yang: 5`, `banyak: 4`,
+`orang: 3`, `di: 7`, `dan: 3`, `biji: 3`). Bab 7 replaces this with the sorted
+top-5 block of section 5.1. The dict order shown here is the first-appearance
+order that the tie rule relies on (`orang` before `dan` before `biji`).
+
+**Writing notes learned in this batch.**
+
+- Refactor lessons (output unchanged) can only fail their starter through
+  `source requirements`. Each one therefore requires the new `def`, a use of it,
+  and for module moves a check per file (`fungsi.py must contain: ...`).
+- A requirement must not forbid valid solutions: Bab 6 L1 only asks for an empty
+  dictionary (`{}`), because `.get()` or `in` are both fine.
+- The loop variable in the Bab 6 counter is called `kata`, which no longer clashes
+  with anything in `main.py` after Bab 5 removed the raw `kata` list.
+- Examples that show two files use `run: no` (Bab 5 L2).
+
+### 15.7 Phase 3, batch 2 (Bab 7-9): what was written and what Bab 10 starts from
+
+After Bab 9 the program prints **exactly** the target output of section 5.1. The
+test suite compares Bab 9 L1 against that text written out literally (not
+computed), and it also checks the missing-file and empty-file outputs.
+
+| Bab | Lessons | New in the code |
+|---|---|---|
+| 7 Mengurutkan 5 Teratas | `sorted()` on pairs (alphabetical by default), `key=ambil_jumlah` + `reverse=True`, the tie rule (ranks 4-7 show orang, dan, biji), `urutkan_frekuensi()` + `[:5]` | `fungsi.py` gains `ambil_jumlah` and `urutkan_frekuensi` |
+| 8 Merapikan Tampilan | `{kata:<10}{jumlah:>4}`, a counter variable for the row number, the exact section heading | formatting only, in `main.py` |
+| 9 Input dan File Hilang | `input("Nama file: ")`, whole flow wrapped in `main()`, `try/except FileNotFoundError` with `return`, empty file prints `(belum ada kata)` | `main.py` is now `def main(): ...` + `main()` |
+
+**Where the code stands at the end of Bab 9.**
+
+- `fungsi.py`: `import string`, `bersihkan_kata`, `daftar_kata`, `hitung_unik`,
+  `hitung_frekuensi`, `ambil_jumlah`, `urutkan_frekuensi`.
+- `main.py`: one import line, `def main():` (banner, `input`, `try/except` around
+  the read, summary, top-5 loop with a counter, the empty-list check), then `main()`.
+- The learner's last lesson (Bab 9 L4) therefore holds the finished program: this
+  is what Bab 10's README and zip must contain (see the honesty note in section 9).
+
+**Decisions made while writing.**
+
+- **`main()` moved from Bab 10 to Bab 9 L2.** A friendly error has to stop the
+  program before the summary, and `return` inside a function is the clean way.
+  Bab 10 L1 becomes "Merapikan Kode dengan Komentar".
+- **Row numbers use a counter variable, not `enumerate`** (see 5.4).
+- **Sorting uses a named helper (`ambil_jumlah`) instead of `lambda`**, and the tie
+  rule comes from the stability of `sorted()`; there is no tuple key.
+- **Converter:** `scripts/convert-project-md.mjs` now supports `stdin:` (one line
+  per `input()` call, between the files and `hints:`) and the tests check that
+  every stdin line is echoed like a terminal. Extra read-only data files are
+  allowed (`kosong.txt` in Bab 9 L4).
+- **Bab 9 L4 teaches two cases but practises one.** "Fewer than five words" needs
+  no code (slicing already copes), so it is explained and shown in the example;
+  only the empty file is practised, because that one needs an `if`.
+
+**Bab 10 (batch 3) must do:** README and zip are the platform work that was
+deferred: a client-side zip of the learner's `main.py` and `fungsi.py`, a README
+generator, and flipping `DOWNLOADS_AVAILABLE` in `lib/site-config.ts` to `true`
+only once the download really works. Lessons that cannot be auto-checked (running
+it on your own computer, uploading to GitHub) end with a short quiz (15.2). The copy
+must say that the zip holds the code of the last lesson, which started from the
+authored model (15.2). Plan the extension challenge (for example ignoring words
+such as "di" and "yang", or top 10) as open-ended and not auto-checked.

@@ -12,6 +12,30 @@ html {
   scroll-behavior: smooth;
 }
 
+/* No font ligatures, anywhere. JetBrains Mono (our code font) merges operator
+   pairs into single glyphs: "!=" is drawn as a not-equal sign, ">=" and "<=" as
+   one symbol, "->" as an arrow, "==" as one wide glyph. This is a Python course:
+   learners must see exactly the characters they have to type. These ligatures
+   live in the font's contextual "calt" feature, which browsers turn on by
+   default; "font-variant-ligatures: none" turns that off as well. The rule is on
+   html (inherited by everything, including the CodeMirror editor and the output
+   panel) and repeated on the code elements so no later style can bring it back.
+   scripts/test-fonts.mjs guards this. */
+html,
+body,
+code,
+pre,
+kbd,
+samp,
+textarea,
+input,
+.font-mono,
+.cm-editor,
+.cm-editor * {
+  font-variant-ligatures: none;
+  font-feature-settings: "calt" 0, "liga" 0;
+}
+
 body {
   background-color: #f3f5f5;
   color: #171b24;

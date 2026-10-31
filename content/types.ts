@@ -127,3 +127,15 @@ export type ChapterTodo = {
 };
 
 export type Chapter = ChapterContent | ChapterTodo;
+
+// A project course (e.g. "Build a Word Counter"): one product with its own
+// price and purchase, made of chapters that reuse the SAME lesson format as the
+// Python Dasar course (multi-file practices, answerFiles, sourceRequirements).
+// Chapters 1-2 of Word Counter are free; the rest need the purchase.
+export type ProjectContent = {
+  slug: string; // url segment AND the key used for purchases (course_slug) and price
+  title: string;
+  tagline: string; // one line, shown on the catalog card
+  description: string; // one short paragraph, shown on the project page
+  chapters: Chapter[];
+};

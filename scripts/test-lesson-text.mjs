@@ -23,8 +23,9 @@ function load(file, shims = {}) {
 
 const lib = load("lib/lesson-text.ts");
 const { parseLessonText, splitInline, splitLead } = lib;
-const LessonText = load("components/learn/LessonText.tsx", { "@/lib/lesson-text": lib });
-const CodeBlock = load("components/learn/CodeBlock.tsx").default;
+const CodeBlockMod = load("components/learn/CodeBlock.tsx");
+const CodeBlock = CodeBlockMod.default;
+const LessonText = load("components/learn/LessonText.tsx", { "@/lib/lesson-text": lib, "@/components/learn/CodeBlock": CodeBlockMod });
 
 let failures = 0, count = 0;
 function check(name, actual, expected) {
@@ -109,19 +110,51 @@ check("markup: text is HTML-escaped (no injection)", html({ text: "<script>alert
 check("code block: <pre> is keyboard-focusable", renderToStaticMarkup(React.createElement(CodeBlock, { code: "x = 1" })).includes('tabindex="0"'), true);
 check("code block: wrap option uses pre-wrap, default scrolls", [renderToStaticMarkup(React.createElement(CodeBlock, { code: "x", wrap: true })).includes("whitespace-pre-wrap"), renderToStaticMarkup(React.createElement(CodeBlock, { code: "x" })).includes("overflow-x-auto")], [true, true]);
 
+// ---------- fenced code blocks: spaces must survive (prose collapses them) ----------
+const FENCE = "```";
+const fenced = `Cetak seperti ini:\n${FENCE}\nJumlah kata      : 93\nKata unik        : 70\n${FENCE}\nLalu selesai.`;
+check("fence: a closed fence is ONE code block between two paragraphs", parseLessonText(fenced).map((b) => b.type), ["p", "code", "p"]);
+check("fence: the block keeps every space and line exactly", parseLessonText(fenced)[1].text, "Jumlah kata      : 93\nKata unik        : 70");
+const fh = html({ text: fenced });
+check("fence: rendered as <pre> with the spaces intact (6 and 8 spaces)", [fh.includes("<pre"), fh.includes("Jumlah kata      : 93"), fh.includes("Kata unik        : 70")], [true, true, true]);
+check("fence: the backticks themselves are not shown", fh.includes("```"), false);
+check("fence: leading spaces inside the block are kept", parseLessonText(`${FENCE}\n  menjorok\n${FENCE}`)[0].text, "  menjorok");
+check("fence: list items before and after a block are two separate lists", parseLessonText(`1. a\n2. b\n${FENCE}\nx\n${FENCE}\n3. c`).map((b) => b.type), ["ol", "code", "ol"]);
+check("fence: an UNCLOSED fence is kept as ordinary text (nothing dropped)", parseLessonText(`Awal\n${FENCE}\nisi tanpa penutup`), [{ type: "p", text: `Awal\n${FENCE}\nisi tanpa penutup` }]);
+check("fence: lines starting with '-' or '1.' inside a block are NOT lists", parseLessonText(`${FENCE}\n- a\n1. b\n${FENCE}`).map((b) => b.type), ["code"]);
+check("fence: code inside the block is not styled as inline code twice", (html({ text: `${FENCE}\nprint(x)\n${FENCE}` }).match(/<code/g) || []).length, 1);
+check("fence: numbered table rows inside a block stay exactly as written (not a list)", parseLessonText(`${FENCE}\n1. kopi        12\n2. di           7\n${FENCE}`)[0].text, "1. kopi        12\n2. di           7");
+check("fence: html in a block is escaped", html({ text: `${FENCE}\n<b>x</b>\n${FENCE}` }).includes("<b>x</b>"), false);
+check("text without any fence parses exactly as before", parseLessonText("a\n\n- b\n- c").map((b) => b.type), ["p", "ul"]);
+
 // ---------- every real lesson: nothing may be lost ----------
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 const squash = (s) => s.replace(/\s+/g, "");
-const stripMarkers = (s) => s.split(/\r?\n/).map((l) => l.replace(/^\s*-\s+/, "").replace(/^\s*\d+\.\s+/, "")).join("\n");
+// Fence lines are structure, not content, so they are removed. Inside a fenced block
+// NOTHING is stripped: a line such as "1. kopi        12" there is code text, not a
+// list item, and it is rendered exactly as written.
+const stripMarkers = (s) => {
+  let inFence = false;
+  const out = [];
+  for (const l of s.split(/\r?\n/)) {
+    if (/^\s*```\s*$/.test(l)) { inFence = !inFence; continue; }
+    out.push(inFence ? l : l.replace(/^\s*-\s+/, "").replace(/^\s*\d+\.\s+/, ""));
+  }
+  return out.join("\n");
+};
 const textOf = (markup) => decode(markup.replace(/<[^>]+>/g, ""));
 
 const texts = [];
-const dir = new URL("../content/chapters/", import.meta.url);
-for (const f of fs.readdirSync(dir).filter((n) => /^chapter-\d+\.ts$/.test(n))) {
-  const mod = load(`content/chapters/${f}`);
+// Python Dasar + every project course (content/projects/<slug>/chapter-N.ts).
+const sources = [{ rel: "content/chapters", label: "" }];
+const projectsDir = new URL("../content/projects/", import.meta.url);
+if (fs.existsSync(projectsDir)) for (const d of fs.readdirSync(projectsDir, { withFileTypes: true }).filter((e) => e.isDirectory())) sources.push({ rel: `content/projects/${d.name}`, label: `${d.name}/` });
+const chapterFiles = sources.flatMap((src) => fs.readdirSync(new URL(`../${src.rel}/`, import.meta.url)).filter((n) => /^chapter-\d+\.ts$/.test(n)).map((f) => ({ src, f })));
+for (const { src, f } of chapterFiles) {
+  const mod = load(`${src.rel}/${f}`);
   const chapter = Object.values(mod).find((v) => v && v.lessons);
   for (const l of chapter.lessons) {
-    const where = `${f.replace(".ts", "")} ${l.id}`;
+    const where = `${src.label}${f.replace(".ts", "")} ${l.id}`;
     const add = (kind, t) => t && texts.push({ where, kind, text: t });
     add("theory", l.theory.explanation);
     (l.theory.sections || []).forEach((s) => { add("section", s.text); });

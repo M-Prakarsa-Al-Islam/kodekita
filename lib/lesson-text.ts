@@ -5,7 +5,10 @@
 //
 // Lesson text is plain text on purpose (no markdown renderer, no backticks in
 // the content). So this module infers the structure from how the text is
-// written, conservatively. It must NEVER lose or change a character of the
+// written, conservatively. ONE exception: a block between two lines that hold
+// only three backticks is a CODE BLOCK, shown monospace with every space kept.
+// Use it for any text where spaces matter (e.g. the exact output format);
+// ordinary prose collapses runs of spaces when rendered. It must NEVER lose or change a character of the
 // text - scripts/test-lesson-text.mjs proves that over every real lesson.
 //
 // Pure (no React, no I/O) so it can be unit-tested in Node. No regex
@@ -16,6 +19,7 @@ export type Inline = { type: "text"; text: string } | { type: "code"; text: stri
 export type Block =
   | { type: "p"; text: string }
   | { type: "callout"; label: string; text: string }
+  | { type: "code"; text: string } // fenced block: whitespace kept exactly
   | { type: "ul"; items: string[] }
   | { type: "ol"; start: number; items: string[] };
 
@@ -74,6 +78,8 @@ export function splitLead(item: string): { lead: string; rest: string } | null {
 const UL = /^\s*-\s+(\S.*?)\s*$/;
 const OL = /^\s*(\d+)\.\s+(\S.*?)\s*$/;
 const CALLOUT = /^(Penting|Peringatan|Catatan(?: khusus untuk \S+)?):\s+([\s\S]+)$/;
+// A fence is a line with nothing but three backticks (spaces around are fine).
+const FENCE = /^\s*```\s*$/;
 
 function toParagraph(text: string): Block {
   const m = text.match(CALLOUT);
@@ -96,7 +102,21 @@ export function parseLessonText(input: string): Block[] {
     para = [];
   };
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (FENCE.test(line)) {
+      let end = i + 1;
+      while (end < lines.length && !FENCE.test(lines[end])) end++;
+      // Only a CLOSED fence makes a code block. An unclosed one is left as
+      // ordinary text so nothing the author wrote is ever dropped.
+      if (end < lines.length) {
+        flushPara();
+        blocks.push({ type: "code", text: lines.slice(i + 1, end).join("\n") });
+        prev = "blank";
+        i = end;
+        continue;
+      }
+    }
     if (!line.trim()) {
       flushPara();
       prev = "blank";
