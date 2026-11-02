@@ -53,9 +53,19 @@ function parseLesson(id, body, where) {
     example = { description: d[1].trim(), runnable: !d[2], code: fenced(exRaw.slice(exRaw.indexOf("code:\n") + 6).trim(), where + " example") };
   }
   const practiceRaw = body.slice(body.indexOf("\nPRACTICE:") + 1);
-  const kind = (practiceRaw.match(/^PRACTICE: (quiz|code)$/m) || die(where, "PRACTICE: quiz|code missing"))[1];
+  const kind = (practiceRaw.match(/^PRACTICE: (quiz|code|open)$/m) || die(where, "PRACTICE: quiz|code|open missing"))[1];
+  // Optional "DOWNLOAD: yes" line (before THEORY): the lesson page shows the project download box.
+  const takeHome = /^DOWNLOAD: yes$/m.test(body.slice(0, body.indexOf("THEORY:")));
   let practice;
-  if (kind === "quiz") {
+  if (kind === "open") {
+    const prompt = (section(practiceRaw, "prompt: ", ["\nideas:\n"]) ?? die(where, "prompt missing")).trim();
+    const ideaSec = section(practiceRaw, "\nideas:\n", ["\nsuccess message: "]) ?? die(where, "ideas missing");
+    const ideaLines = ideaSec.trim().split("\n");
+    const ideas = ideaLines.map((x) => (x.match(/^- (.+)$/) || die(where, `an idea must start with "- ": ${x}`))[1].trim());
+    if (ideas.length < 2 || ideas.length > 5) die(where, "an open task needs 2-5 ideas");
+    const success = (practiceRaw.match(/^success message: (.+)$/m) || die(where, "success message missing"))[1].trim();
+    practice = { kind: "open", prompt, ideas, successFeedback: success };
+  } else if (kind === "quiz") {
     const question = (practiceRaw.match(/^question: (.+)$/m) || die(where, "question missing"))[1].trim();
     const optSec = section(practiceRaw, "options:\n", ["\ncorrect:"]) ?? die(where, "options missing");
     const options = [...optSec.matchAll(/^\d+\. (.+)$/gm)].map((m) => m[1].trim());
@@ -87,7 +97,7 @@ function parseLesson(id, body, where) {
     for (const f of Object.keys(answerFiles)) if (!files.some((x) => x.name === f)) die(where, `answer file ${f} is not a lesson file`);
     practice = { kind: "code", instructions: ins.trim(), hints, answerFiles, files, ...(stdin ? { stdin } : {}), checker: { type: "stdout_exact", expected, ...(sourceRequirements.length ? { sourceRequirements } : {}) }, successFeedback: success };
   }
-  return { id, slug: kebab(title), title, explanation, example, practice };
+  return { id, slug: kebab(title), title, explanation, example, practice, takeHome };
 }
 
 function emitLesson(l) {
@@ -99,7 +109,9 @@ function emitLesson(l) {
       : `\n        sections: [{ text: ${tl(l.example.description)}, code: ${tl(l.example.code)} }],`;
   const p = l.practice;
   let pr;
-  if (p.kind === "quiz") {
+  if (p.kind === "open") {
+    pr = `      practice: {\n        kind: "open",\n        prompt: ${tl(p.prompt)},\n        ideas: [\n${p.ideas.map((x) => `          ${tl(x)},`).join("\n")}\n        ],\n        successFeedback: ${tl(p.successFeedback)},\n      },`;
+  } else if (p.kind === "quiz") {
     pr = `      practice: {\n        kind: "quiz",\n        question: ${tl(p.question)},\n        options: [${p.options.map(q).join(", ")}],\n        correctIndex: ${p.correctIndex},\n        explanation: ${tl(p.explanation)},\n      },`;
   } else {
     const files = p.files.map((f) => `          { name: ${q(f.name)}, content: ${tl(f.content)}${f.editable ? "" : ", editable: false"} },`).join("\n");
@@ -107,7 +119,7 @@ function emitLesson(l) {
     const reqs = p.checker.sourceRequirements ? `\n          sourceRequirements: [\n${p.checker.sourceRequirements.map((r) => `            { pattern: ${tl(r.pattern)}, message: ${tl(r.message)}, file: ${q(r.file)} },`).join("\n")}\n          ],` : "";
     pr = `      practice: {\n        kind: "code",\n        instructions: ${tl(p.instructions)},\n        hints: [\n${p.hints.map((h) => `          ${tl(h)},`).join("\n")}\n        ],\n        files: [\n${files}\n        ],\n        answerFiles: {\n${ans}\n        },${p.stdin ? `\n        stdin: ${JSON.stringify(p.stdin)},` : ""}\n        checker: {\n          type: "stdout_exact",\n          expected: ${tl(p.checker.expected)},${reqs}\n        },\n        successFeedback: ${tl(p.successFeedback)},\n      },`;
   }
-  return `    {\n      id: ${q(l.id)},\n      slug: ${q(l.slug)},\n      title: ${q(l.title)},\n      theory: {\n        explanation: ${tl(l.explanation)},${ex}\n      },\n${pr}\n    },`;
+  return `    {\n      id: ${q(l.id)},\n      slug: ${q(l.slug)},\n      title: ${q(l.title)},${l.takeHome ? "\n      takeHome: true," : ""}\n      theory: {\n        explanation: ${tl(l.explanation)},${ex}\n      },\n${pr}\n    },`;
 }
 
 let drift = 0, written = 0;

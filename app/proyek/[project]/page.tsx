@@ -6,15 +6,20 @@ import { getCompletedLessonKeys, lessonKey } from "@/lib/progress-server";
 import { hasApprovedPurchase } from "@/lib/purchase-server";
 import { getCoursePrice } from "@/content/pricing";
 import { summarizeProgress } from "@/lib/progress-summary";
-import { projectBase, projectBuyPath, projectChapterPath, projectLessonPath, projectProgressSlug } from "@/lib/project-paths";
+import { freeChaptersLabel, projectBase, projectBuyPath, projectChapterPath, projectLessonPath, projectMetaDescription, projectProgressSlug } from "@/lib/project-paths";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { LinkButton } from "@/components/ui/Button";
 import { SERVICE_END_ISO, formatDateId, salesOpen } from "@/lib/site-config";
 
-// noindex until Phase 4 (see app/proyek/page.tsx).
 export async function generateMetadata({ params }: { params: { project: string } }): Promise<Metadata> {
   const project = getProject(params.project);
-  return { title: project?.title ?? "Proyek", robots: { index: false } };
+  // An unknown project ends in notFound() (a 404, which Next.js already marks noindex).
+  if (!project) return { title: "Proyek" };
+  return {
+    title: project.title,
+    description: projectMetaDescription(project),
+    alternates: { canonical: projectBase(project.slug) },
+  };
 }
 
 export default async function ProjectPage({ params }: { params: { project: string } }) {
@@ -28,8 +33,8 @@ export default async function ProjectPage({ params }: { params: { project: strin
   const summary = loggedIn ? summarizeProgress(getProjectLessons(project), completed, purchased) : null;
   const canBuy = salesOpen(new Date());
   const endLabel = formatDateId(SERVICE_END_ISO);
-  const freeOrders = project.chapters.filter((c) => c.isFree).map((c) => c.order);
-  const freeText = freeOrders.length ? `Bab ${Math.min(...freeOrders)}–${Math.max(...freeOrders)} gratis. ` : "";
+  const freeLabel = freeChaptersLabel(project.chapters);
+  const freeText = freeLabel ? `${freeLabel}. ` : "";
   const base = projectBase(project.slug);
 
   return (
@@ -39,6 +44,11 @@ export default async function ProjectPage({ params }: { params: { project: strin
       </p>
       <h1 className="mt-1 font-display text-3xl font-semibold text-ink">{project.title}</h1>
       <p className="mt-2 text-ink-soft">{project.description}</p>
+      <p className="mt-3 text-ink-soft">
+        Sebaiknya kamu sudah menyelesaikan Python Dasar (fungsi, file, list, dictionary, set, dan penanganan error),
+        karena proyek ini memakai semuanya. Di akhir, kamu bisa mengunduh programmu sebagai file zip dan mengunggahnya
+        ke GitHub.
+      </p>
       <p className="mt-3 text-ink-soft">
         {freeText}Sisanya dengan sekali bayar, Rp{price.toLocaleString("id-ID")}.
       </p>

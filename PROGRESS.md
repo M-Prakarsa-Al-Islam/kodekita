@@ -208,6 +208,21 @@ To hand me new chapter content, use the format in
       output exactly. `stdin:` is now supported by the converter. See
       `PROJECT_DESIGN.md` 15.7. Next: batch 3 (Bab 10), which needs the zip
       download and README generator on the platform.
+      **Owner feedback 2026-10-28:** Bab 7 was not understandable and was rewritten
+      to a new written explanation standard (5 lessons now). The owner confirmed that
+      ONLY Bab 7 had the problem; the other chapters stand as written.
+      **Phase 3 batch 3 (2026-10-28):** Bab 10 written (6 lessons, 37 in total) and the
+      take-home download built: zip (unlocked only when every code lesson is done,
+      enforced on the server), the code-that-passed snapshot, the open ungraded challenge,
+      the README. `DOWNLOADS_AVAILABLE` was deliberately NOT turned on. See
+      `PROJECT_DESIGN.md` 15.9. Phase 3 content is complete; Phase 4 (polish and
+      release) is next, plus the owner's manual test checklist (15.5).
+      **Manual checklist done by the owner 2026-10-28: it worked.**
+      **Phase 4 code done (2026-10-28):** project pages in the sitemap and indexable,
+      progress card on the signed-in home, delete-account warnings now cover project purchases,
+      "Bab" labels, clickable home cards. Left for the owner: a real QRIS payment, a phone check,
+      Search Console, and a decision about mentioning the download on `/tentang`
+      (`PROJECT_DESIGN.md` 15.10).
 - [ ] Phase 6 - Polish & launch
 
 ## Chapter content status (Python Dasar, 13 chapters)

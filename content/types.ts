@@ -78,7 +78,17 @@ export type QuizPractice = {
   explanation: string; // shown after answering, right or wrong
 };
 
-export type Practice = CodePractice | QuizPractice;
+// An open-ended task. NOTHING is checked automatically: the learner tries it on
+// their own and taps "tandai selesai" (honour system). It must never be required
+// to unlock anything (for example the project download).
+export type OpenPractice = {
+  kind: "open";
+  prompt: string; // what the task is and why, plain lesson text
+  ideas: string[]; // 2-5 things they can try
+  successFeedback: string; // shown after they mark it done
+};
+
+export type Practice = CodePractice | QuizPractice | OpenPractice;
 
 // Optional extra blocks for long theory (e.g. a lesson that needs many
 // code snippets or a table). Rendered in order after `explanation` and
@@ -107,6 +117,9 @@ export type Lesson = {
   title: string;
   theory: Theory;
   practice: Practice;
+  // Project courses only: the lesson page also shows the project download box,
+  // which stays locked until every CODE lesson of the project is finished.
+  takeHome?: boolean;
 };
 
 export type ChapterContent = {

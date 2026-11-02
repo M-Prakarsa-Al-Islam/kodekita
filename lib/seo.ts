@@ -4,7 +4,8 @@ import { SITE_NAME, SITE_URL } from "./site-config";
 // The pages that are meant to appear in Google. Everything else is either behind a
 // login, a utility page (login, reset password, ...), or a placeholder, and carries
 // `robots: { index: false }` (scripts/test-seo.mjs keeps the two lists consistent).
-export const INDEXABLE_PATHS = ["/", "/kursus", "/kursus/python-dasar", "/tentang"];
+// Every project in content/projects must have its page here (scripts/test-projects.mjs checks it).
+export const INDEXABLE_PATHS = ["/", "/kursus", "/kursus/python-dasar", "/proyek", "/proyek/word-counter", "/tentang"];
 
 export function absoluteUrl(path: string): string {
   return `${SITE_URL}${path}`;

@@ -82,17 +82,34 @@ function noindexAt(routeDir) {
   }
   return false;
 }
-const pageExists = (route) => exists(path.join("app", ...route.split("/").filter(Boolean), "page.tsx"));
+// A concrete address such as /proyek/word-counter is served by the dynamic folder app/proyek/[project].
+// Returns the folder pattern ("/proyek/[project]"), or null when no page serves that address.
+function routePattern(route) {
+  let dir = "app", out = "";
+  for (const seg of route.split("/").filter(Boolean)) {
+    if (exists(path.join(dir, seg))) { dir = path.join(dir, seg); out += `/${seg}`; continue; }
+    const dyn = fs.readdirSync(path.join(root, dir), { withFileTypes: true }).find((e) => e.isDirectory() && /^\[[^\]]+\]$/.test(e.name));
+    if (!dyn) return null;
+    dir = path.join(dir, dyn.name); out += `/${dyn.name}`;
+  }
+  return out || "/";
+}
+const pageExists = (route) => { const p = routePattern(route); return !!p && exists(path.join("app", ...p.split("/").filter(Boolean), "page.tsx")); };
+const pageSource = (route) => read(path.join("app", ...routePattern(route).split("/").filter(Boolean), "page.tsx"));
 
-check("the sitemap lists exactly the intended public pages", S.INDEXABLE_PATHS, ["/", "/kursus", "/kursus/python-dasar", "/tentang"]);
+check("the sitemap lists exactly the intended public pages", S.INDEXABLE_PATHS, ["/", "/kursus", "/kursus/python-dasar", "/proyek", "/proyek/word-counter", "/tentang"]);
 check("every page in the sitemap exists", S.INDEXABLE_PATHS.filter((p) => !pageExists(p)), []);
-check("no page in the sitemap is marked noindex", S.INDEXABLE_PATHS.filter(noindexAt), []);
-check("every page in the sitemap has its own canonical link", S.INDEXABLE_PATHS.filter((p) => !new RegExp(`canonical: "${p.replace(/\//g, "\\/")}"`).test(read(path.join("app", ...p.split("/").filter(Boolean), "page.tsx")))), []);
+check("no page in the sitemap is marked noindex", S.INDEXABLE_PATHS.filter((p) => noindexAt(routePattern(p))), []);
+check("every page in the sitemap has its own canonical link (a dynamic page derives it from its own slug)", S.INDEXABLE_PATHS.filter((p) => {
+  const src = pageSource(p);
+  const dynamic = routePattern(p) !== p;
+  return !(dynamic ? /canonical:\s*projectBase\(project\.slug\)/.test(src) : new RegExp(`canonical: "${p.replace(/\//g, "\\/")}"`).test(src));
+}), []);
 check("all sitemap URLs are absolute https www URLs", S.INDEXABLE_PATHS.map(S.absoluteUrl).every((u) => /^https:\/\/www\.[^/]+(\/|$)/.test(u)), true);
 const sitemap = read("app/sitemap.ts");
 check("the sitemap is built from INDEXABLE_PATHS, is dynamic, and shrinks to the home page after the end date", /INDEXABLE_PATHS/.test(sitemap) && /force-dynamic/.test(sitemap) && /"ended" \? \["\/"\]/.test(sitemap), true);
 
-const UTILITY = ["/login", "/register", "/lupa-password", "/reset-password", "/akun", "/admin/purchases", "/proyek", "/selesai", "/kursus/python-dasar/beli", "/kursus/python-dasar/[slug]", "/kursus/python-dasar/[slug]/[lessonId]"];
+const UTILITY = ["/login", "/register", "/lupa-password", "/reset-password", "/akun", "/admin/purchases", "/selesai", "/kursus/python-dasar/beli", "/kursus/python-dasar/[slug]", "/kursus/python-dasar/[slug]/[lessonId]", "/proyek/[project]/beli", "/proyek/[project]/[slug]", "/proyek/[project]/[slug]/[lessonId]"];
 check("utility, login-only and placeholder pages are all marked noindex", UTILITY.filter((p) => !noindexAt(p)), []);
 
 // ---- structured data -----------------------------------------------------------------------------------------------

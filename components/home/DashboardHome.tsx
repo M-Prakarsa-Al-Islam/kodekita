@@ -2,6 +2,8 @@ import Link from "next/link";
 import { LinkButton } from "@/components/ui/Button";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { getAllLessons } from "@/content/chapters";
+import { projects } from "@/content/projects";
+import ProjectCard from "@/components/home/ProjectCard";
 import { PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
 import { getCompletedLessonKeys } from "@/lib/progress-server";
 import { summarizeProgress } from "@/lib/progress-summary";
@@ -65,6 +67,10 @@ export default async function DashboardHome({ name }: { name: string }) {
           </p>
         )}
       </div>
+
+      {projects.map((project) => (
+        <ProjectCard key={project.slug} project={project} completed={completed} />
+      ))}
 
       <div className="mt-6">
         <Link href="/kursus/python-dasar" className="text-sm underline">

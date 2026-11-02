@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getProject, getProjectChapter, getProjectLesson, getProjectAdjacent, getProjectNavChapters } from "@/content/projects";
+import { getProject, getProjectChapter, getProjectLesson, getProjectAdjacent, getProjectNavChapters, getTakeHome } from "@/content/projects";
+import TakeHomeDownload, { type TakeHomeProps } from "@/components/learn/TakeHomeDownload";
+import { editableFileNames, getLastCodeLesson, getTakeHomeState, modelCode } from "@/lib/take-home";
 import { hasApprovedPurchase } from "@/lib/purchase-server";
 import Practice from "@/components/learn/Practice";
 import LessonNav from "@/components/learn/LessonNav";
@@ -37,6 +39,42 @@ export default async function ProjectLessonPage({
   const completedIds = chapter.lessons.filter((l) => completed?.has(lessonKey(progressSlug, l.id))).map((l) => l.id);
   const base = projectBase(project.slug);
 
+  // The project download box. Unlocked only when EVERY code lesson is finished, and that is
+  // decided here, on the server: the model answer and the README are not sent to the
+  // browser until then.
+  let takeHome: TakeHomeProps | null = null;
+  if (lesson.takeHome) {
+    const state = getTakeHomeState(project, completed);
+    const info = getTakeHome(project);
+    const last = getLastCodeLesson(project);
+    if (!state.unlocked || !info || !last) {
+      const next = state.remaining[0];
+      takeHome = {
+        unlocked: false,
+        total: state.total,
+        remaining: state.remaining.length,
+        nextHref: next ? next.href : null,
+        nextLabel: next ? `Bab ${next.chapterOrder}, ${next.lessonTitle}` : null,
+      };
+    } else {
+      const editable = editableFileNames(last.practice);
+      const label = `Bab ${last.ref.chapterOrder}, lesson ${last.ref.lessonId.replace(/^L/, "")}: ${last.ref.lessonTitle}`;
+      takeHome = {
+        unlocked: true,
+        folder: info.folder,
+        lastProgressSlug: last.ref.progressSlug,
+        lastLessonId: last.ref.lessonId,
+        editableNames: editable,
+        modelCode: modelCode(last.practice),
+        seed: Object.fromEntries(
+          info.seedFiles.map((n) => [n, last.practice.files?.find((f) => f.name === n)?.content ?? ""])
+        ),
+        readmeOwn: info.buildReadme(true, label),
+        readmeModel: info.buildReadme(false, label),
+      };
+    }
+  }
+
   return (
     <section className="mx-auto max-w-2xl px-6 py-16">
       <LessonNav
@@ -46,6 +84,7 @@ export default async function ProjectLessonPage({
         completedKeys={completedKeys}
         basePath={base}
         keyPrefix={`${project.slug}/`}
+        chapterLabel="Bab "
       />
       <div className="mt-4">
         <ChapterProgress
@@ -79,9 +118,11 @@ export default async function ProjectLessonPage({
           )}
         </div>
 
+        {takeHome && <TakeHomeDownload {...takeHome} />}
+
         <div>
           <p className="font-mono text-xs font-medium uppercase tracking-widest text-code">
-            {lesson.practice.kind === "quiz" ? "Kuis" : "Latihan"}
+            {lesson.practice.kind === "quiz" ? "Kuis" : lesson.practice.kind === "open" ? "Tantangan" : "Latihan"}
           </p>
           {lesson.practice.kind === "code" && (
             <p className="mt-2 text-xs text-ink-soft">

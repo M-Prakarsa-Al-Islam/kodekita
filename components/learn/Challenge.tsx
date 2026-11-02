@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { CodePractice } from "@/content/types";
 import { checkOutput } from "@/lib/checker";
 import { markLessonComplete } from "@/lib/progress";
+import { rememberPassedFiles } from "@/lib/passed-code";
 import CodeRunner from "./CodeRunner";
 import { getEntry, getPracticeFiles } from "@/lib/lesson-files";
 import { Button } from "@/components/ui/Button";
@@ -34,6 +35,9 @@ export default function Challenge({
     const outcome = checkOutput(result.stdout, result.error, practice.checker, files);
     setFeedback(outcome);
     if (outcome.passed) {
+      // Remember the passing code on this device (multi-file lessons only), so the
+      // project download can contain code that really works. Best effort.
+      void rememberPassedFiles(chapterSlug, lessonId, files, (practice.files ?? []).filter((f) => f.editable !== false).map((f) => f.name));
       await markLessonComplete(chapterSlug, lessonId);
       // Re-render the server parts of the page so the progress bar, segments
       // and ticks update right away (client state, e.g. the code, is kept).

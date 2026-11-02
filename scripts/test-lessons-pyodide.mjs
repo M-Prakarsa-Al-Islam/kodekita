@@ -35,7 +35,7 @@ const STARTER_IS_THE_ANSWER = new Set(["chapter-1 L1"]);
 
 const problems = [];
 const fail = (where, msg) => { problems.push(`${where}: ${msg}`); console.log(`  FAIL ${where}: ${msg}`); };
-let counts = { chapters: 0, lessons: 0, code: 0, multi: 0, withInput: 0, quiz: 0, examples: 0, sectionPrograms: 0 };
+let counts = { chapters: 0, lessons: 0, code: 0, multi: 0, withInput: 0, quiz: 0, open: 0, examples: 0, sectionPrograms: 0 };
 
 // Python Dasar plus every project course (content/projects/<slug>/chapter-N.ts).
 // Project lessons are labelled "<slug>/chapter-N Lx" so they never collide with
@@ -101,6 +101,14 @@ for (const { src, f } of allFiles) {
       continue;
     }
 
+    // ---- open task: nothing to run or check, only its shape ----
+    if (p.kind === "open") {
+      counts.open++;
+      const ok = typeof p.prompt === "string" && p.prompt.trim() && Array.isArray(p.ideas) && p.ideas.length >= 2 && p.ideas.length <= 5 && p.ideas.every((x) => typeof x === "string" && x.trim()) && typeof p.successFeedback === "string" && p.successFeedback.trim();
+      if (!ok) fail(where, "an open task needs a prompt, 2-5 ideas and a success message");
+      continue;
+    }
+
     // ---- code lesson ----
     counts.code++;
     const entry = LF.getEntry(p);
@@ -151,6 +159,6 @@ for (const { src, f } of allFiles) {
   }
 }
 
-console.log(`\nChecked ${counts.chapters} chapters, ${counts.lessons} lessons: ${counts.code} code (${counts.multi} multi-file, ${counts.withInput} with input), ${counts.quiz} quiz, ${counts.examples} theory examples, ${counts.sectionPrograms} multi-file theory programs.`);
+console.log(`\nChecked ${counts.chapters} chapters, ${counts.lessons} lessons: ${counts.code} code (${counts.multi} multi-file, ${counts.withInput} with input), ${counts.quiz} quiz, ${counts.open} open, ${counts.examples} theory examples, ${counts.sectionPrograms} multi-file theory programs.`);
 console.log(problems.length ? `\n${problems.length} PROBLEM(S).` : "\nEvery lesson verified in the real Pyodide: answers pass, starters fail, examples run.");
 process.exit(problems.length ? 1 : 0);

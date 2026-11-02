@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getLatestPurchase } from "@/lib/purchase-server";
+import { PYTHON_DASAR_COURSE_SLUG } from "@/content/pricing";
+import { projects } from "@/content/projects";
+import { purchaseFlags } from "@/lib/purchase-flags";
 import ProfileForm from "@/components/account/ProfileForm";
 import PasswordForm from "@/components/account/PasswordForm";
 import DeleteAccountForm from "@/components/account/DeleteAccountForm";
@@ -17,7 +20,9 @@ export default async function AkunPage() {
   const { data: profile } = await supabase.from("profiles").select("name").eq("id", user.id).maybeSingle();
   const name: string = profile?.name ?? (user.user_metadata?.name as string | undefined) ?? "";
 
-  const purchase = await getLatestPurchase("python-dasar");
+  // Look at EVERY course and project: a learner who bought only a project must get the same warnings.
+  const slugs = [PYTHON_DASAR_COURSE_SLUG, ...projects.map((p) => p.slug)];
+  const { hasPaidAccess, hasPendingPurchase } = purchaseFlags(await Promise.all(slugs.map((s) => getLatestPurchase(s))));
 
   return (
     <section className="mx-auto max-w-xl px-6 py-16">
@@ -49,8 +54,8 @@ export default async function AkunPage() {
         <h2 className="font-display text-xl font-semibold text-red-700">Hapus akun</h2>
         <div className="mt-4">
           <DeleteAccountForm
-            hasPaidAccess={purchase?.status === "approved"}
-            hasPendingPurchase={purchase?.status === "pending"}
+            hasPaidAccess={hasPaidAccess}
+            hasPendingPurchase={hasPendingPurchase}
           />
         </div>
       </div>

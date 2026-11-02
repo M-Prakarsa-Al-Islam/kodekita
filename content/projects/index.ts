@@ -2,6 +2,7 @@ import type { Chapter, ChapterContent, Lesson, ProjectContent } from "@/content/
 import type { FlatLesson, NavChapter } from "@/content/chapters";
 import { projectProgressSlug } from "@/lib/project-paths";
 import { wordCounter } from "./word-counter";
+import { wordCounterTakeHome } from "./word-counter/take-home";
 
 // Registry of project courses + the same helpers content/chapters/index.ts has
 // for Python Dasar, scoped to ONE project. (Kept separate on purpose so the
@@ -68,4 +69,10 @@ export function getProjectNavChapters(project: ProjectContent): NavChapter[] {
     status: c.status,
     lessons: isPublished(c) ? c.lessons.map((l) => ({ id: l.id, title: l.title })) : [],
   }));
+}
+
+// What a project gives the learner to take home (server side only: the browser
+// gets just the README text and, once everything is finished, the files).
+export function getTakeHome(project: ProjectContent) {
+  return project.slug === wordCounter.slug ? wordCounterTakeHome : undefined;
 }

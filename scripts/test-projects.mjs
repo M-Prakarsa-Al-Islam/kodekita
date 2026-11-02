@@ -89,7 +89,9 @@ for (const p of projects) for (const c of p.chapters) {
     const pr = l.practice;
     const prose = pr.kind === "code"
       ? { instructions: pr.instructions, success: pr.successFeedback, ...Object.fromEntries(pr.hints.map((h, i) => [`hint ${i + 1}`, h])) }
-      : { question: pr.question, explanation: pr.explanation, ...Object.fromEntries(pr.options.map((o, i) => [`option ${i + 1}`, o])) };
+      : pr.kind === "open"
+        ? { prompt: pr.prompt, success: pr.successFeedback, ...Object.fromEntries(pr.ideas.map((x, i) => [`idea ${i + 1}`, x])) }
+        : { question: pr.question, explanation: pr.explanation, ...Object.fromEntries(pr.options.map((o, i) => [`option ${i + 1}`, o])) };
     prose.theory = l.theory.explanation;
     const where = `${p.slug} Bab ${c.order} ${l.id}`;
     const spaced = Object.entries(prose).filter(([, t]) => t && /\S {2,}\S/.test(outsideFences(t))).map(([k]) => k);
@@ -108,12 +110,12 @@ for (const p of projects) for (const c of p.chapters) {
 // A chapter is listed here once it has been (re)written to the standard. Other chapters are
 // still to be reviewed; add a chapter's slug when it is. The vague phrases below are what made
 // the first Bab 7 impossible to follow: they name an idea without ever showing it.
-const STANDARD_CHAPTERS = new Set(["mengurutkan-5-teratas"]);
+const STANDARD_CHAPTERS = new Set(["mengurutkan-5-teratas", "selesai-dan-bawa-pulang"]);
 const VAGUE = ["sekumpulan data", "isi pertama", "isi kedua", "isi keduanya", "kita perlu melihatnya dulu"];
 for (const c of wc.chapters.filter((x) => STANDARD_CHAPTERS.has(x.slug))) {
   for (const l of c.lessons) {
     const where = `word-counter ${c.slug} ${l.id}`;
-    const all = [l.theory.explanation, ...(l.theory.sections ?? []).map((x) => x.text ?? ""), l.theory.example?.description ?? "", l.practice.kind === "code" ? l.practice.instructions : l.practice.question].join("\n").toLowerCase();
+    const all = [l.theory.explanation, ...(l.theory.sections ?? []).map((x) => x.text ?? ""), l.theory.example?.description ?? "", l.practice.kind === "code" ? l.practice.instructions : l.practice.kind === "open" ? l.practice.prompt : l.practice.question].join("\n").toLowerCase();
     check(`${where}: no vague, unexplained wording`, VAGUE.filter((v) => all.includes(v)), []);
     check(`${where}: theory explains in at least 3 paragraphs and shows an example`, [l.theory.explanation.split(/\n\s*\n/).length >= 3, !!(l.theory.example || l.theory.sections?.length)], [true, true]);
     if (l.practice.kind !== "code") continue;
@@ -215,16 +217,16 @@ check("every lesson's read-only article is identical to artikel-kopi.txt", copie
 check("progress slug is <project>/<chapter>", paths.projectProgressSlug("word-counter", "menyiapkan-proyek"), "word-counter/menyiapkan-proyek");
 check("a project progress slug can never equal a Python Dasar chapter slug", dasar.chapters.some((c) => c.slug.includes("/")), false);
 const flat = getProjectLessons(wc);
-check("project lessons: published chapters only (31 lessons in Bab 1-9), keyed by the progress slug", [flat.length, flat[0].chapterSlug, flat[0].chapterUrlSlug], [31, "word-counter/menyiapkan-proyek", "menyiapkan-proyek"]);
-check("lessons per published chapter", wc.chapters.filter((c) => c.status === "published").map((c) => c.lessons.length), [3, 3, 3, 4, 3, 3, 5, 3, 4]);
+check("project lessons: published chapters only (37 lessons in Bab 1-10), keyed by the progress slug", [flat.length, flat[0].chapterSlug, flat[0].chapterUrlSlug], [37, "word-counter/menyiapkan-proyek", "menyiapkan-proyek"]);
+check("lessons per published chapter", wc.chapters.filter((c) => c.status === "published").map((c) => c.lessons.length), [3, 3, 3, 4, 3, 3, 5, 3, 4, 6]);
 const done = (ls) => new Set(ls.map((l) => lessonKey(l.chapterSlug, l.lessonId)));
 const free = flat.filter((l) => l.chapterIsFree);
 const s0 = summarizeProgress(flat, new Set(), false);
-check("not purchased: scope is the 6 free lessons, next is Bab 1 L1", [s0.totalAll, s0.scopeTotal, s0.next.lessonId, s0.next.chapterUrlSlug, s0.percent], [31, 6, "L1", "menyiapkan-proyek", 0]);
+check("not purchased: scope is the 6 free lessons, next is Bab 1 L1", [s0.totalAll, s0.scopeTotal, s0.next.lessonId, s0.next.chapterUrlSlug, s0.percent], [37, 6, "L1", "menyiapkan-proyek", 0]);
 const s1 = summarizeProgress(flat, done(free), false);
 check("not purchased, free lessons done: no next, locked next is Bab 3 L1, 100%", [s1.next, s1.lockedNext.chapterUrlSlug, s1.lockedNext.lessonId, s1.percent], [null, "memecah-teks-menjadi-kata", "L1", 100]);
 const s2 = summarizeProgress(flat, done(free), true);
-check("purchased: scope is all 31, next is Bab 3 L1", [s2.scopeTotal, s2.next.chapterUrlSlug, s2.next.lessonId], [31, "memecah-teks-menjadi-kata", "L1"]);
+check("purchased: scope is all 37, next is Bab 3 L1", [s2.scopeTotal, s2.next.chapterUrlSlug, s2.next.lessonId], [37, "memecah-teks-menjadi-kata", "L1"]);
 const dasarAll = dasar.getAllLessons();
 const onlyDasar = new Set([lessonKey(dasarAll[0].chapterSlug, dasarAll[0].lessonId)]);
 const withProject = new Set([...onlyDasar, ...done(flat)]);
@@ -236,11 +238,12 @@ check("adjacent: first lesson has no prev; Bab 1 L3 -> Bab 2 L1; Bab 3 L3 -> Bab
   getProjectAdjacent(wc, "menyiapkan-proyek", "L3").next.chapterUrlSlug + "/" + getProjectAdjacent(wc, "menyiapkan-proyek", "L3").next.lessonId,
   getProjectAdjacent(wc, "memecah-teks-menjadi-kata", "L3").next.chapterUrlSlug + "/" + getProjectAdjacent(wc, "memecah-teks-menjadi-kata", "L3").next.lessonId,
   getProjectAdjacent(wc, "menghitung-frekuensi", "L3").next.chapterUrlSlug + "/" + getProjectAdjacent(wc, "menghitung-frekuensi", "L3").next.lessonId,
-  getProjectAdjacent(wc, "input-dan-file-hilang", "L4").next,
-], [null, "membaca-file-artikel/L1", "membersihkan-kata/L1", "mengurutkan-5-teratas/L1", null]);
-check("getProjectLesson: found / not found", [getProjectLesson(wc, "menyiapkan-proyek", "L2")?.title, getProjectLesson(wc, "menyiapkan-proyek", "L9"), getProjectLesson(wc, "selesai-dan-bawa-pulang", "L1")], ["Mengenal Workspace Proyek", undefined, undefined]);
+  getProjectAdjacent(wc, "input-dan-file-hilang", "L4").next.chapterUrlSlug + "/" + getProjectAdjacent(wc, "input-dan-file-hilang", "L4").next.lessonId,
+  getProjectAdjacent(wc, "selesai-dan-bawa-pulang", "L6").next,
+], [null, "membaca-file-artikel/L1", "membersihkan-kata/L1", "mengurutkan-5-teratas/L1", "selesai-dan-bawa-pulang/L1", null]);
+check("getProjectLesson: found / not found", [getProjectLesson(wc, "menyiapkan-proyek", "L2")?.title, getProjectLesson(wc, "menyiapkan-proyek", "L9"), getProjectLesson(wc, "bab-yang-tidak-ada", "L1")], ["Mengenal Workspace Proyek", undefined, undefined]);
 const nav = getProjectNavChapters(wc);
-check("nav list: all 10 chapters, planned ones with no lessons", [nav.length, nav.filter((c) => c.lessons.length === 0).length], [10, 1]);
+check("nav list: all 10 chapters, planned ones with no lessons", [nav.length, nav.filter((c) => c.lessons.length === 0).length], [10, 0]);
 check("nav list sent to the browser holds no theory, answers or expected output", /answerFiles|expected|explanation|successFeedback/.test(JSON.stringify(nav)), false);
 check("paths", [paths.projectBase("word-counter"), paths.projectChapterPath("word-counter", "a"), paths.projectLessonPath("word-counter", "a", "L1"), paths.projectBuyPath("word-counter")], ["/proyek/word-counter", "/proyek/word-counter/a", "/proyek/word-counter/a/L1", "/proyek/word-counter/beli"]);
 
@@ -266,6 +269,34 @@ const proyekFiles = [];
 (function walk(d) { for (const e of fs.readdirSync(path.join(root, d), { withFileTypes: true })) e.isDirectory() ? walk(path.join(d, e.name)) : proyekFiles.push(path.join(d, e.name)); })("app/proyek");
 check("no project page hardcodes python-dasar", proyekFiles.filter((f) => /python-dasar/.test(read(f))), []);
 check("middleware matcher still covers project pages (guard is applied to all paths)", /needsSession|isProtectedPath|guardRedirect/.test(read("middleware.ts")), true);
+
+// ---------- Phase 4: findability, the signed-in home, the account page ----------
+const SEO = loadTs("lib/seo.ts");
+const { purchaseFlags } = loadTs("lib/purchase-flags.ts");
+check("the sitemap lists the project catalog and EVERY project in the registry", [SEO.INDEXABLE_PATHS.includes("/proyek"), projects.filter((p) => !SEO.INDEXABLE_PATHS.includes(`/proyek/${p.slug}`)).map((p) => p.slug)], [true, []]);
+check("only the public project pages are in the sitemap (never a chapter, lesson or buy page)", SEO.INDEXABLE_PATHS.filter((x) => x.startsWith("/proyek/")).every((x) => x.split("/").length === 3), true);
+const desc = paths.projectMetaDescription(wc);
+check("meta description names the project, the number of chapters and the free chapters, and fits a search snippet", [desc.includes(wc.title), desc.includes("10 bab"), desc.includes("Bab 1–2 gratis"), desc.length <= 170], [true, true, true, true]);
+check("free chapters label: none, one, a range", [paths.freeChaptersLabel([{ order: 1, isFree: false }]), paths.freeChaptersLabel([{ order: 2, isFree: true }, { order: 3, isFree: false }]), paths.freeChaptersLabel([{ order: 1, isFree: true }, { order: 2, isFree: true }])], [null, "Bab 2 gratis", "Bab 1–2 gratis"]);
+const projectPage = read("app/proyek/[project]/page.tsx");
+check("the project page is indexable with its own canonical link, and states the prerequisite and the take-home", [/canonical: projectBase\(project\.slug\)/.test(projectPage), /robots/.test(projectPage), /Python Dasar/.test(projectPage), /GitHub/.test(projectPage)], [true, false, true, true]);
+check("the catalog page is indexable with a canonical link and a description", [/canonical: "\/proyek"/.test(read("app/proyek/page.tsx")), /description:/.test(read("app/proyek/page.tsx")), /robots/.test(read("app/proyek/page.tsx"))], [true, true, false]);
+
+check("purchaseFlags: nothing bought", purchaseFlags([null, undefined]), { hasPaidAccess: false, hasPendingPurchase: false });
+check("purchaseFlags: bought ONLY the project (the case the account page used to miss)", purchaseFlags([null, { status: "approved" }]), { hasPaidAccess: true, hasPendingPurchase: false });
+check("purchaseFlags: a pending payment on any course", purchaseFlags([{ status: "approved" }, { status: "pending" }]), { hasPaidAccess: true, hasPendingPurchase: true });
+check("purchaseFlags: rejected purchases give no access", purchaseFlags([{ status: "rejected" }, { status: "none" }]), { hasPaidAccess: false, hasPendingPurchase: false });
+const akun = read("app/akun/page.tsx");
+check("the account page looks at Python Dasar AND every project when warning about deletion", [/projects\.map\(\(p\) => p\.slug\)/.test(akun), /purchaseFlags\(/.test(akun), /getLatestPurchase\("python-dasar"\)/.test(akun)], [true, true, false]);
+const dash = read("components/home/DashboardHome.tsx");
+const card = read("components/home/ProjectCard.tsx");
+check("the signed-in home shows a progress card for every project", [/projects\.map\(\(project\) =>/.test(dash), /<ProjectCard/.test(dash)], [true, true]);
+check("the project card uses THIS project's purchase and lessons, and links with project paths", [/hasApprovedPurchase\(project\.slug\)/.test(card), /getProjectLessons\(project\)/.test(card), /projectLessonPath\(/.test(card), /python-dasar/.test(card)], [true, true, true, false]);
+const navSrc = read("components/learn/LessonNav.tsx");
+check("lesson navigation says 'Ch' for the course and 'Bab ' for a project, with no hard-coded 'Ch' left in the markup", [/chapterLabel = "Ch"/.test(navSrc), /chapterLabel="Bab "/.test(lessonPage), /[^a-zA-Z]Ch\{/.test(navSrc)], [true, true, false]);
+const mk = read("components/home/MarketingHome.tsx");
+check("the home page product cards link to the course and to the projects", [/href="\/kursus\/python-dasar"/.test(mk), /href="\/proyek"/.test(mk)], [true, true]);
+check("the header has a Proyek link", /href: "\/proyek"/.test(read("components/site/Header.tsx")), true);
 
 // ---------- generated .ts matches its .md ----------
 let converterOk = true, converterMsg = "";

@@ -196,10 +196,10 @@ to add one without breaking progress).
 | 4 | Membersihkan Kata | 1 Huruf Kecil dengan .lower() - 2 Menghapus Tanda Baca dengan .strip() - 3 Membuang Kata Kosong - 4 Fungsi bersihkan_kata() | `.lower()`, `.strip()` |
 | 5 | Fungsi dan Modul | 1 Satu Fungsi untuk Semua Kata - 2 Memindahkan Fungsi ke fungsi.py - 3 Kata Unik dengan Fungsi | review (titles changed while writing: the program never needed a separate `hitung_kata()`, `len()` is enough) |
 | 6 | Menghitung Frekuensi | 1 Dictionary Penghitung - 2 Fungsi hitung_frekuensi() - 3 Mengintip Isi dengan .items() | counting pattern |
-| 7 | Mengurutkan 5 Teratas | 1 sorted() pada Pasangan - 2 key dan reverse - 3 Aturan Seri - 4 Fungsi urutkan_frekuensi() dan 5 Teratas | `sorted(key=, reverse=)` with a named helper function, no `lambda`; stability gives the tie rule |
+| 7 | Mengurutkan 5 Teratas | 1 Mengurutkan dengan sorted() - 2 Pasangan Kata dan Jumlah - 3 Mengurutkan Menurut Jumlah - 4 Aturan Seri - 5 5 Teratas dalam Satu Fungsi | `sorted()`, `reverse=True`, `key=` with a named helper function (no `lambda`); stability gives the tie rule. Rewritten after owner feedback (15.8) |
 | 8 | Merapikan Tampilan | 1 Rata Kiri dan Kanan di f-string - 2 Nomor Urut - 3 Merakit Laporan Lengkap | f-string format; counter variable |
 | 9 | Input dan File Hilang | 1 Menanyakan Nama File - 2 Membungkus Alur dalam main() - 3 Pesan Ramah dengan try/except - 4 File Kosong dan Kata Sedikit | review (`main()` moved here from Bab 10: `return` inside it is what stops the program on a missing file) |
-| 10 | Selesai dan Bawa Pulang | 1 Merapikan Kode dengan Komentar - 2 README dan Unduh Zip - 3 Menjalankan di Komputer Sendiri - 4 Unggah ke GitHub - 5 Tantangan Perluasan | take-home |
+| 10 | Selesai dan Bawa Pulang | 1 Apa yang Sudah Kamu Bangun - 2 README dan Unduh Zip - 3 Menjalankan di Komputer Sendiri - 4 Apa Itu GitHub dan Mengapa Mengunggah ke Sana - 5 Mengunggah Projekmu ke GitHub - 6 Tantangan Perluasan | take-home: five comprehension quizzes, the download box (locked until every code lesson is done) and one open, ungraded challenge (15.9) |
 
 The extension challenge (e.g. ignore stopwords such as "di" and "yang",
 top-10 instead of top-5) is **open-ended and not auto-checked**.
@@ -719,8 +719,8 @@ Dasar).
 |---|---|---|---|
 | 1. Slice content | Write Bab 1, 2, 3 in template format; fix the spec and seed file | Bab 1-3 verified with real Python (answers pass, starters fail) | **Done 2026-10-28** (owner review pending) |
 | 2. Minimal platform | Define `ProjectContent`; project routes under `/proyek/[project]/...`; purchase gate for `word-counter`; convert Bab 1-3 to `.ts`; extend the tests; confirm `npm test` runs in the sandbox | Learner can study Bab 1-3 on a real device and Bab 3 is locked until purchase | **Built and tested in the sandbox 2026-10-28.** Still needs the owner's manual test with the real Supabase and a phone (15.5) |
-| 3. Remaining chapters | Batches: Bab 4-6, Bab 7-9, Bab 10. Each batch: write, convert, test, fix. Bab 10 adds zip download and README generator | Each batch passes tests before the next starts | **Batch 1 (Bab 4-6) written and tested 2026-10-28.** **Batch 2 (Bab 7-9) written and tested 2026-10-28.** Batch 3 (Bab 10) not started |
-| 4. Polish and release | `/proyek` catalog page, SEO and robots, QRIS test, mobile test | Ready to take payment | Not started |
+| 3. Remaining chapters | Batches: Bab 4-6, Bab 7-9, Bab 10. Each batch: write, convert, test, fix. Bab 10 adds zip download and README generator | Each batch passes tests before the next starts | **Batch 1 (Bab 4-6) written and tested 2026-10-28.** **Batch 2 (Bab 7-9) written and tested 2026-10-28.** **Batch 3 (Bab 10) written and tested 2026-10-28**, with the download feature. All planned chapters now exist |
+| 4. Polish and release | `/proyek` catalog page, SEO and robots, QRIS test, mobile test | Ready to take payment | **Code done 2026-10-28** (15.10). The QRIS payment test and the phone test are the owner's to do |
 
 ### 15.2 Decisions
 
@@ -829,13 +829,11 @@ Phase 2). The owner runs the Supabase SQL, tests on a real phone, and commits.
 
 **Not done yet (deliberately out of the slice).**
 
-- Pages are `noindex`; sitemap and `INDEXABLE_PATHS` come in Phase 4.
-- Dashboard (`DashboardHome`) and `/akun` still know only Python Dasar: no
-  "continue the project" card, and `/akun` shows only that purchase.
-- The admin purchases list was not checked for how it labels a non-Python-Dasar
-  `course_slug`.
-- `LessonNav` labels chapters "Ch3"; the project text says "Bab 3".
-- Bab 10's zip download (`DOWNLOADS_AVAILABLE` stays `false` until it exists).
+- ~~Pages are `noindex`~~, ~~the dashboard and `/akun` know only Python Dasar~~ and
+  ~~`LessonNav` says "Ch3"~~: all done in Phase 4 (15.10).
+- The admin purchases list shows the raw `course_slug` (for example `word-counter`) with
+  the amount. That is readable, so it was left as it is.
+- The project zip now exists (15.9). `DOWNLOADS_AVAILABLE` is deliberately left `false`: it promises something else (see 15.9).
 - **Sales window:** `site-config.ts` closes paid sales 45 days before
   `SERVICE_END_ISO` (1 Oktober 2027). The project can therefore be sold for about
   nine and a half months at most, and a buyer's access ends with the service.
@@ -901,7 +899,7 @@ computed), and it also checks the missing-file and empty-file outputs.
 
 | Bab | Lessons | New in the code |
 |---|---|---|
-| 7 Mengurutkan 5 Teratas | `sorted()` on pairs (alphabetical by default), `key=ambil_jumlah` + `reverse=True`, the tie rule (ranks 4-7 show orang, dan, biji), `urutkan_frekuensi()` + `[:5]` | `fungsi.py` gains `ambil_jumlah` and `urutkan_frekuensi` |
+| 7 Mengurutkan 5 Teratas (5 lessons) | `sorted()` + `reverse=True` on the counts, the shape of `.items()` pairs and why default sorting is alphabetical, `key=ambil_jumlah`, the tie rule (ranks 4-7 show orang, dan, biji), `urutkan_frekuensi()` + `[:5]` | `fungsi.py` gains `ambil_jumlah` and `urutkan_frekuensi` |
 | 8 Merapikan Tampilan | `{kata:<10}{jumlah:>4}`, a counter variable for the row number, the exact section heading | formatting only, in `main.py` |
 | 9 Input dan File Hilang | `input("Nama file: ")`, whole flow wrapped in `main()`, `try/except FileNotFoundError` with `return`, empty file prints `(belum ada kata)` | `main.py` is now `def main(): ...` + `main()` |
 
@@ -930,11 +928,131 @@ computed), and it also checks the missing-file and empty-file outputs.
   no code (slicing already copes), so it is explained and shown in the example;
   only the empty file is practised, because that one needs an `if`.
 
-**Bab 10 (batch 3) must do:** README and zip are the platform work that was
-deferred: a client-side zip of the learner's `main.py` and `fungsi.py`, a README
-generator, and flipping `DOWNLOADS_AVAILABLE` in `lib/site-config.ts` to `true`
-only once the download really works. Lessons that cannot be auto-checked (running
-it on your own computer, uploading to GitHub) end with a short quiz (15.2). The copy
-must say that the zip holds the code of the last lesson, which started from the
-authored model (15.2). Plan the extension challenge (for example ignoring words
-such as "di" and "yang", or top 10) as open-ended and not auto-checked.
+### 15.8 Explanation standard and review status (2026-10-28)
+
+**What happened.** The owner read Bab 7 L1 and could not follow its wording, purpose
+or what was being asked, and said the explanations in other lessons were also too
+thin. The diagnosis of the first Bab 7 L1: the goal was never stated (it asked to
+print an alphabetical list, which is *not* what Bu Rani needs, "because we must see
+it first"), abstract words ("sekumpulan data", "isi pertama") were used without ever
+showing what a pair looks like, and three ideas were packed into one lesson.
+
+**What changed.**
+
+- A written standard (`AUTHORING_TEMPLATE_PROYEK.md`, section 3b): one new idea per
+  lesson, theory starts from the problem, show a term before using it, examples
+  explained line by line, instructions always `Tujuan:` / `Tugasmu:` / `Hasilnya harus
+  seperti ini`, a success message that looks ahead, exactly 3 graded hints.
+- Bab 7 rewritten from scratch as 5 lessons (counts first, then the shape of a pair,
+  then `key`, then ties, then the function), with the same final code state as before,
+  so Bab 8 and 9 are unchanged.
+- Two new automatic guards in `scripts/test-projects.mjs`: the standard (for chapters
+  listed in `STANDARD_CHAPTERS`) and **starter continuity** (each starter equals the
+  previous answer, comments aside). Continuity passes for the whole project.
+
+**Review status.** The owner confirmed afterwards (2026-10-28) that **only Bab 7** had
+the problem and that the other chapters are fine as written. So Bab 7 stays the only
+rewritten chapter, and Bab 10 (written after the standard existed) is registered in
+`STANDARD_CHAPTERS` as well. The standard applies to chapters written or rewritten from
+now on. The machine checks only structure; whether an explanation is clear remains a
+human judgement.
+
+### 15.9 Phase 3, batch 3 (Bab 10): the take-home chapter (2026-10-28)
+
+**Owner decisions for this batch.** (1) The learner can download the project zip only
+after finishing ALL the code. (2) The extension challenge is an open text task, with no
+automatic check. (3) A short explanation of what GitHub is and why to upload the project.
+
+**Lessons.** L1 Apa yang Sudah Kamu Bangun (recap, quiz) - L2 README dan Unduh Zip (quiz
+plus the download box) - L3 Menjalankan di Komputer Sendiri (quiz) - L4 Apa Itu GitHub
+dan Mengapa Mengunggah ke Sana (quiz) - L5 Mengunggah Projekmu ke GitHub (quiz) -
+L6 Tantangan Perluasan (open challenge). 37 lessons in the project, 29 of them with code.
+
+**What was built.**
+
+- **Open practice** (`kind: "open"` in `content/types.ts`): a prompt, 2-5 ideas, and a
+  button "Saya sudah mencoba, tandai selesai". Nothing is checked, it is honour-based, and
+  it never blocks or unlocks anything. Converter: `PRACTICE: open`. Component: `OpenChallenge`.
+- **Download lesson flag** (`takeHome` on a lesson, `DOWNLOAD: yes` in the `.md`): the lesson
+  page shows the download box between the theory and the quiz.
+- **`lib/zip.ts`**: a small store-only ZIP writer (no new dependency). The tests read the
+  result back with Python's `zipfile` (valid archive, CRC, UTF-8 names, 70 KB binary).
+- **`lib/take-home.ts`**: the unlock rule and the model answer. **Unlocked when every
+  lesson that has code is finished** (all 29, including the Bab 1 L2 scratch lesson).
+  Quizzes and the open challenge never count, either way.
+- **Enforced on the server.** `app/proyek/.../[lessonId]/page.tsx` decides from the learner's
+  progress. The model answer and the README are not sent to the browser until the box
+  is unlocked (a test checks the order in the page source). The learner can always copy
+  their own code from the editor; the zip is a convenience, not copy protection.
+- **Which code goes in the zip.** When a code lesson passes, `Challenge` saves the learner's
+  editable files on this device (`lib/passed-code.ts`, key `pymula:passed:v1:<user>:...`).
+  The zip uses that code of the last lesson (Bab 9 L4); if it is not on this device, it
+  falls back to the model answer. The README says which one it is (honesty note, 15.2).
+  The saved code is removed on sign-out and account deletion together with the drafts.
+- **README** (`content/projects/word-counter/take-home.ts`): what the program does, sample
+  output (a test checks it equals the real output), how to run it with Python, the files, what
+  was used, the honest "where the code comes from" paragraph, and ideas to extend.
+- **GitHub steps** were checked against GitHub Docs: `+` then New repository, the Add README
+  toggle, Add file then Upload files, then Commit changes. The docs do not say whether the
+  zip's README replaces the default one, so the lesson also gives the verified fallback
+  (edit README.md with the pencil icon), and says that GitHub's screens can change.
+
+**Found by the tests while building.** `answerFiles` of a lesson lists only the files that
+change in it. In Bab 9 L4 `fungsi.py` is unchanged, so a plain `answerFiles` lookup gave an
+**empty `fungsi.py`** in the fallback zip. `modelCode()` now falls back to the starter content,
+and a test runs the extracted program end to end.
+
+**`DOWNLOADS_AVAILABLE` was NOT turned on, and the earlier plan to do so (15.7) is
+withdrawn.** That flag makes `/tentang` and the closing notice promise "unduh materi per
+chapter dari halaman chapter", a different feature (downloading course material) that does
+not exist. The Word Counter zip has its own box in Bab 10 L2. If the owner wants the About
+page or the closing notice to mention the project download, that needs a separate, accurate
+sentence: an owner decision.
+
+**Not verified here.** The click that creates the download (Blob and an anchor) in a real
+browser and on phones; that `localStorage` keeps the passed code across sessions on
+Safari. Add both to the manual checklist (15.5): finish all code lessons, open Bab 10 L2,
+download, unzip, run `python main.py`.
+
+### 15.10 Phase 4: polish and release (2026-10-28)
+
+The owner ran the manual checklist (15.5) on the real site and it worked. This phase fixed
+what still treated Python Dasar as the only product, and made the project findable.
+
+**Findability (SEO).**
+
+- `/proyek` and every project page (`/proyek/word-counter`) are now in `INDEXABLE_PATHS`
+  and therefore in `sitemap.xml`. Each has a description and its own canonical link (the project
+  page derives it from its slug). Chapter, lesson and buy pages stay `noindex` and out of
+  the sitemap. Checked on the production HTML.
+- A project's description comes from `projectMetaDescription()` in `lib/project-paths.ts`
+  (title, tagline, number of chapters, free chapters), so adding a project needs no
+  extra copy. **Adding a project means adding its path to `INDEXABLE_PATHS`**: a test fails
+  until it is there.
+- `scripts/test-seo.mjs` now understands dynamic routes (`/proyek/[project]`).
+- The home page's two product cards now link to the course and to `/proyek`. The project
+  page states the prerequisite (Python Dasar) and the take-home (zip and GitHub).
+
+**Signed-in learners.**
+
+- The signed-in home shows a progress card for every project (`components/home/ProjectCard.tsx`),
+  with "Mulai/Lanjutkan" or, once the free chapters are done, the buy link while sales are open.
+  The "you have finished N lessons" line still counts Python Dasar only.
+- **A real gap fixed on the account page.** The delete-account warnings looked only at the
+  Python Dasar purchase, so someone who bought only the project was told nothing about losing
+  paid access. They now look at every course and project (`lib/purchase-flags.ts`). The server
+  already refused deletion for any pending payment, so only the on-screen warnings were wrong.
+  The warning text now says "chapter atau bab".
+- Lesson navigation says "Bab 3" for a project and "Ch3" for the course.
+
+**Still the owner's, before taking real payments.**
+
+1. Pay a real QRIS amount for the project once, approve it in the admin page, and confirm Bab 3
+   opens (the purchase flow itself worked in the manual test; this is the real-money run).
+2. Look at the project pages on an actual phone (Safari and Chrome): the editor tabs, the
+   download button, the long lesson text.
+3. After the deploy, ask Google Search Console to read the new `sitemap.xml`.
+4. **Decide whether `/tentang` and the closing notice should mention the project download**
+   (15.9: the existing flag is about course material, so it stays off). A sentence like
+   "Setelah menyelesaikan semua kode di proyek Word Counter, kamu bisa mengunduh programmu
+   sebagai file zip" would be accurate today.

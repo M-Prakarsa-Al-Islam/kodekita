@@ -24,6 +24,7 @@ export default function LessonNav({
   completedKeys = [],
   basePath = "/kursus/python-dasar",
   keyPrefix = "",
+  chapterLabel = "Ch",
 }: {
   chapterSlug: string;
   lessonId: string;
@@ -35,6 +36,8 @@ export default function LessonNav({
   // Prepended to a chapter slug to form its progress key. Project courses store
   // progress under "<project>/<chapter>" (see lib/project-paths.ts), so they pass "<project>/".
   keyPrefix?: string;
+  // Written before each chapter number: "Ch" gives "Ch3", project courses pass "Bab " for "Bab 3".
+  chapterLabel?: string;
 }) {
   const [openMenu, setOpenMenu] = useState<"chapter" | "lesson" | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
@@ -67,7 +70,7 @@ export default function LessonNav({
           className="flex items-center gap-1 rounded-md border border-line bg-white px-3 py-1.5 text-ink hover:bg-ink/5"
         >
           <span className="font-medium">
-            Ch{chapter.order}: {chapter.title}
+            {chapterLabel}{chapter.order}: {chapter.title}
           </span>
           <span className="text-ink-soft">▾</span>
         </button>
@@ -81,7 +84,7 @@ export default function LessonNav({
                     className="flex cursor-not-allowed items-center justify-between gap-2 px-3 py-2 text-ink-soft/70"
                   >
                     <span>
-                      Ch{c.order}: {c.title}
+                      {chapterLabel}{c.order}: {c.title}
                     </span>
                     <span className="shrink-0 text-xs">Segera hadir</span>
                   </div>
@@ -100,7 +103,7 @@ export default function LessonNav({
                   }`}
                 >
                   <span>
-                    Ch{c.order}: {c.title}
+                    {chapterLabel}{c.order}: {c.title}
                   </span>
                   <span className={`shrink-0 text-xs ${allDone ? "text-code" : "text-ink-soft"}`}>
                     {allDone ? "✓" : `${doneCount}/${c.lessons.length}`}

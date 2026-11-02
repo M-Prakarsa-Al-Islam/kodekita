@@ -378,7 +378,7 @@ async function mountEl(el) { const c = w.document.createElement("div"); w.docume
     pm = await mountEl(React.createElement(DeleteAccountForm, { hasPaidAccess: true, hasPendingPurchase: false }));
     check("akun: delete starts collapsed (no password field yet)", !pm.c.querySelector("#hapus-password") && !!btn(pm.c, "Hapus akun..."));
     await click(btn(pm.c, "Hapus akun..."));
-    check("akun: it explains that paid access is lost for good", pm.c.textContent.includes("Akses chapter berbayarmu hilang permanen"));
+    check("akun: it explains that paid access is lost for good", pm.c.textContent.includes("Akses chapter atau bab berbayarmu hilang permanen"));
     check("akun: it explains re-registering starts from scratch", pm.c.textContent.includes("mulai dari awal"));
     const delBtn = () => btn(pm.c, "Hapus akun saya permanen");
     check("akun: the delete button is disabled at first", delBtn().disabled === true);
@@ -400,7 +400,7 @@ async function mountEl(el) { const c = w.document.createElement("div"); w.docume
 
     pm = await mountEl(React.createElement(DeleteAccountForm, { hasPaidAccess: false, hasPendingPurchase: true }));
     await click(btn(pm.c, "Hapus akun..."));
-    check("akun: without paid access the 'paid access lost' line is absent", !pm.c.textContent.includes("Akses chapter berbayarmu"));
+    check("akun: without paid access the 'paid access lost' line is absent", !pm.c.textContent.includes("Akses chapter atau bab berbayarmu"));
     check("akun: a pending payment shows the warning up front", pm.c.textContent.includes("menunggu verifikasi"));
     await click(btn(pm.c, "Batal"));
     check("akun: Batal collapses the form again", !pm.c.querySelector("#hapus-password"));

@@ -161,6 +161,7 @@ for (const { src, f } of chapterFiles) {
     add("caption", l.theory.example?.description);
     const p = l.practice;
     if (p.kind === "code") { add("instructions", p.instructions); p.hints.forEach((x) => add("hint", x)); add("success", p.successFeedback); }
+    else if (p.kind === "open") { add("prompt", p.prompt); p.ideas.forEach((x) => add("idea", x)); add("success", p.successFeedback); }
     else { add("question", p.question); p.options.forEach((x) => add("option", x)); add("explanation", p.explanation); }
   }
 }

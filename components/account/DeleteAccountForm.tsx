@@ -77,7 +77,7 @@ export default function DeleteAccountForm({
               </li>
               {hasPaidAccess && (
                 <li className="font-medium text-red-700">
-                  Akses chapter berbayarmu hilang permanen. Mendaftar ulang tidak mengembalikannya; kamu harus
+                  Akses chapter atau bab berbayarmu hilang permanen. Mendaftar ulang tidak mengembalikannya; kamu harus
                   membeli lagi.
                 </li>
               )}

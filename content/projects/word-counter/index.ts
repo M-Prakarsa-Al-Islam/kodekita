@@ -9,10 +9,11 @@ import { chapter6 } from "./chapter-6";
 import { chapter7 } from "./chapter-7";
 import { chapter8 } from "./chapter-8";
 import { chapter9 } from "./chapter-9";
+import { chapter10 } from "./chapter-10";
 import { todoChapters } from "./todo";
 
 // Chapters 1-2 are free (isFree comes from each bab-N-*.md header).
-const chapters: Chapter[] = [chapter1, chapter2, chapter3, chapter4, chapter5, chapter6, chapter7, chapter8, chapter9, ...todoChapters].sort(
+const chapters: Chapter[] = [chapter1, chapter2, chapter3, chapter4, chapter5, chapter6, chapter7, chapter8, chapter9, chapter10, ...todoChapters].sort(
   (a, b) => a.order - b.order
 );
 

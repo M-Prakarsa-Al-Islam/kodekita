@@ -110,22 +110,22 @@ print(f"Umur kamu {umur} tahun.")
             Mulai dari mana saja
           </h2>
           <div className="mt-8 grid gap-6 md:grid-cols-2">
-            <div className="rounded-lg border border-line bg-white/60 p-6">
+            <Link href="/kursus/python-dasar" className="block rounded-lg border border-line bg-white/60 p-6 hover:bg-white">
               <p className="font-display text-lg font-semibold text-ink">Python Dasar</p>
               <p className="mt-2 text-sm text-ink-soft">
                 13 chapter dari nol sampai paham struktur data dasar. Chapter 1–5
                 gratis, chapter 6–13 dengan sekali bayar.
               </p>
               <p className="mt-4 font-mono text-sm text-ink">Rp20.000</p>
-            </div>
-            <div className="rounded-lg border border-line bg-white/60 p-6">
+            </Link>
+            <Link href="/proyek" className="block rounded-lg border border-line bg-white/60 p-6 hover:bg-white">
               <p className="font-display text-lg font-semibold text-ink">Proyek</p>
               <p className="mt-2 text-sm text-ink-soft">
                 Sudah paham dasar? Bangun program kecil yang nyata, dengan hint
-                bertahap, bukan copy-paste solusi.
+                bertahap, bukan copy-paste solusi. Dua bab pertama gratis.
               </p>
               <p className="mt-4 font-mono text-sm text-ink">mulai Rp10.000</p>
-            </div>
+            </Link>
           </div>
         </div>
       </section>

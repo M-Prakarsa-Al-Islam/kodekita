@@ -19,6 +19,24 @@ export function projectChapterPath(projectSlug: string, chapterSlug: string): st
 export function projectLessonPath(projectSlug: string, chapterSlug: string, lessonId: string): string {
   return `${projectChapterPath(projectSlug, chapterSlug)}/${lessonId}`;
 }
+// "Bab 1–2 gratis" for the chapters flagged free (null when there are none).
+export function freeChaptersLabel(chapters: { order: number; isFree: boolean }[]): string | null {
+  const free = chapters.filter((c) => c.isFree).map((c) => c.order);
+  if (!free.length) return null;
+  const lo = Math.min(...free), hi = Math.max(...free);
+  return lo === hi ? `Bab ${lo} gratis` : `Bab ${lo}–${hi} gratis`;
+}
+
+// The sentence Google may show under the project's title (kept under about 160 characters).
+export function projectMetaDescription(project: {
+  title: string;
+  tagline: string;
+  chapters: { order: number; isFree: boolean }[];
+}): string {
+  const free = freeChaptersLabel(project.chapters);
+  return `${project.title}: ${project.tagline} Latihan kode langsung di browser, ${project.chapters.length} bab.${free ? ` ${free}.` : ""}`;
+}
+
 export function projectBuyPath(projectSlug: string): string {
   return `${projectBase(projectSlug)}/beli`;
 }

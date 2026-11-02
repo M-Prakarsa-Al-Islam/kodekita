@@ -14,6 +14,10 @@
 //   is unavailable the editor simply behaves as it did before.
 
 export const DRAFT_PREFIX = "pymula:draft:v1:";
+// The code a learner had when a lesson PASSED (not the draft, which they may have
+// changed since). Used to build the project download from code that really works.
+// Stored per user like drafts, and removed together with them on sign-out.
+export const PASSED_PREFIX = "pymula:passed:v1:";
 export const MAX_DRAFT_CHARS = 100_000;
 
 export type DraftStorage = {
@@ -113,14 +117,44 @@ export function resolveInitialCode(
   return { code: saved.code, restored: true };
 }
 
-// Removes only OUR draft keys (never other site data such as auth tokens).
-// Returns how many were removed.
+export function passedKey(userId: string, chapterSlug: string, lessonId: string): string {
+  return `${PASSED_PREFIX}${userId}:${chapterSlug}:${lessonId}`;
+}
+
+// Only plain { fileName: text } maps are saved/loaded; anything else is ignored.
+export function savePassed(storage: DraftStorage, key: string, files: Record<string, string>): "saved" | "skipped" | "failed" {
+  try {
+    const total = Object.values(files).reduce((n, c) => n + c.length, 0);
+    if (!Object.keys(files).length || total > MAX_DRAFT_CHARS * 2) return "skipped";
+    storage.setItem(key, JSON.stringify({ files, savedAt: Date.now() }));
+    return "saved";
+  } catch {
+    return "failed"; // storage full or blocked: the download will use the model answer instead
+  }
+}
+
+export function loadPassed(storage: DraftStorage, key: string): Record<string, string> | null {
+  try {
+    const raw = storage.getItem(key);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    const files = data && typeof data === "object" ? data.files : null;
+    if (!files || typeof files !== "object" || Array.isArray(files)) return null;
+    for (const v of Object.values(files)) if (typeof v !== "string") return null;
+    return files as Record<string, string>;
+  } catch {
+    return null;
+  }
+}
+
+// Removes only OUR draft and passed-code keys (never other site data such as
+// auth tokens). Returns how many were removed.
 export function clearAllDrafts(storage: DraftStorage): number {
   try {
     const keys: string[] = [];
     for (let i = 0; i < storage.length; i++) {
       const k = storage.key(i);
-      if (k && k.startsWith(DRAFT_PREFIX)) keys.push(k);
+      if (k && (k.startsWith(DRAFT_PREFIX) || k.startsWith(PASSED_PREFIX))) keys.push(k);
     }
     keys.forEach((k) => storage.removeItem(k));
     return keys.length;

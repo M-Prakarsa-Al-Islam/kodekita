@@ -1,6 +1,7 @@
 import type { Practice as PracticeType } from "@/content/types";
 import Challenge from "./Challenge";
 import QuizRunner from "./QuizRunner";
+import OpenChallenge from "./OpenChallenge";
 
 export default function Practice({
   practice,
@@ -13,6 +14,9 @@ export default function Practice({
 }) {
   if (practice.kind === "code") {
     return <Challenge practice={practice} chapterSlug={chapterSlug} lessonId={lessonId} />;
+  }
+  if (practice.kind === "open") {
+    return <OpenChallenge practice={practice} chapterSlug={chapterSlug} lessonId={lessonId} />;
   }
   return <QuizRunner practice={practice} chapterSlug={chapterSlug} lessonId={lessonId} />;
 }
