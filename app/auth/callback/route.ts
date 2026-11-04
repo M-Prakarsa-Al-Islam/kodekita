@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
       tokenHash: url.searchParams.get("token_hash"),
       type: url.searchParams.get("type"),
       next: url.searchParams.get("next"),
+      error: url.searchParams.get("error"),
     },
     {
       exchangeCode: async (code) => !(await supabase.auth.exchangeCodeForSession(code)).error,

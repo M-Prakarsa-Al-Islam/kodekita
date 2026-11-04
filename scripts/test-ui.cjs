@@ -522,6 +522,215 @@ async function mountEl(el) { const c = w.document.createElement("div"); w.docume
     await pm.unmount();
   }
 
+  // ================= Pendaftaran, login, dan pop-up spoiler =================
+  console.log("--- Pendaftaran / Login / pop-up spoiler");
+  {
+    const calls = { signUp: [], signIn: [], resend: [], push: [], refresh: 0 };
+    let signUpResult = { data: { session: null, user: { id: "u1" } }, error: null };
+    let signInResult = { error: null };
+    let resendResult = { error: null };
+    let query = "";
+    const Btn = ({ children, variant, ...rest }) => React.createElement("button", { ...rest, "data-variant": variant }, children);
+    const LinkBtn = ({ children, href }) => React.createElement("a", { href }, children);
+    const account2 = load("lib/account.ts");
+    const reset2 = load("lib/password-reset.ts", { "./account": account2 });
+    const authMsg = load("lib/auth-messages.ts", { "@/lib/password-reset": reset2 });
+    const routeGuard = load("lib/route-guard.ts");
+    const PasswordInput = load("components/ui/PasswordInput.tsx").default;
+    const base = {
+      "@/components/ui/Button": { Button: Btn, LinkButton: LinkBtn },
+      "@/components/ui/PasswordInput": { default: PasswordInput },
+      "@/lib/password-reset": reset2, "@/lib/auth-messages": authMsg, "@/lib/route-guard": routeGuard,
+      "@/lib/site-config": { WHATSAPP_URL: "https://wa.me/test" },
+      "next/navigation": {
+        useRouter: () => ({ push: (u) => calls.push.push(u), replace: (u) => calls.push.push(u), refresh: () => { calls.refresh++; } }),
+        useSearchParams: () => new URLSearchParams(query),
+      },
+      "@/lib/supabase/client": { createClient: () => ({ auth: {
+        signUp: async (a) => { calls.signUp.push(a); return signUpResult; },
+        signInWithPassword: async (a) => { calls.signIn.push(a); return signInResult; },
+        resend: async (a) => { calls.resend.push(a); return resendResult; },
+      } }) },
+    };
+    const Resend = load("components/auth/ResendConfirmation.tsx", base).default;
+    const Notice = load("components/auth/CheckEmailNotice.tsx", { ...base, "@/components/auth/ResendConfirmation": { default: Resend } }).default;
+    const Register = load("components/auth/RegisterForm.tsx", { ...base, "@/components/auth/CheckEmailNotice": { default: Notice } }).default;
+    const Login = load("components/auth/LoginForm.tsx", { ...base, "@/components/auth/ResendConfirmation": { default: Resend } }).default;
+    const setVal = async (el, v) => act(async () => { Object.getOwnPropertyDescriptor(w.HTMLInputElement.prototype, "value").set.call(el, v); el.dispatchEvent(new w.Event("input", { bubbles: true })); });
+    const submit = async (form) => act(async () => { form.dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true })); await sleep(20); });
+    const click = async (el) => act(async () => { el.dispatchEvent(new w.MouseEvent("click", { bubbles: true })); await sleep(20); });
+    const btnByText = (root, text) => [...root.querySelectorAll("button")].find((b) => b.textContent.includes(text));
+    const CALLBACK = "https://pymula.test/auth/callback?next=%2F%3Fconfirmed%3D1";
+
+    // ---------- Pendaftaran ----------
+    let pm = await mountEl(React.createElement(Register, { cooldownSeconds: 1 }));
+    check("daftar: the form still looks the same, with a hint that the email must be one they can open now", pm.c.textContent.includes("Buat akun") && pm.c.textContent.includes("Pakai email yang bisa kamu buka sekarang"));
+    await setVal(pm.c.querySelector("#name"), "Siti");
+    await setVal(pm.c.querySelector("#email"), " siti@mail.id ");
+    await setVal(pm.c.querySelector("#password"), "rahasia1");
+    await submit(pm.c.querySelector("form"));
+    check("daftar: signUp gets the trimmed email, the name, and a confirmation link that returns through the allowed callback", calls.signUp.length === 1 && calls.signUp[0].email === "siti@mail.id" && calls.signUp[0].options.data.name === "Siti" && calls.signUp[0].options.emailRedirectTo === CALLBACK, JSON.stringify(calls.signUp[0]));
+    const t = pm.c.textContent;
+    check("daftar: instead of a silent redirect, the page says registration worked and tells them to check their email", t.includes("Pendaftaran berhasil") && t.includes("cek email kamu") && calls.push.length === 0);
+    check("daftar: it names the address the email went to and that it comes from PyMula", t.includes("siti@mail.id") && t.includes("email konfirmasi dari PyMula"));
+    check("daftar: it explains that the account is not active until the link is clicked, with numbered steps", t.includes("baru aktif setelah kamu mengklik tautan") && pm.c.querySelectorAll("ol li").length === 3);
+    check("daftar: it lists the usual reasons an email does not arrive (wait, spam, wrong address, already registered)", t.includes("Tunggu beberapa menit") && t.includes("Spam") && t.includes("Salah ketik") && t.includes("Pernah mendaftar"));
+    check("daftar: it offers WhatsApp help and a Masuk link", pm.c.querySelector('a[href="https://wa.me/test"]') !== null && pm.c.querySelector('a[href="/login"]') !== null);
+    check("daftar: the form and the password are gone from the page", pm.c.querySelector("#password") === null && pm.c.querySelector("form") === null);
+    const resendBtn = () => btnByText(pm.c, "Kirim ulang email");
+    check("daftar: 'send again' is paused right after signing up (an email was just sent), with a countdown", resendBtn().disabled === true && /\(\d+ dtk\)/.test(resendBtn().textContent));
+    await act(async () => { await sleep(1300); });
+    check("daftar: after the pause it can be pressed", resendBtn().disabled === false && resendBtn().textContent === "Kirim ulang email konfirmasi");
+    await click(resendBtn());
+    check("daftar: sending again uses the same email and link, and confirms it", calls.resend.length === 1 && calls.resend[0].type === "signup" && calls.resend[0].email === "siti@mail.id" && calls.resend[0].options.emailRedirectTo === CALLBACK && pm.c.textContent.includes("dikirim ulang"));
+    check("daftar: ... and pauses again", resendBtn().disabled === true);
+    await act(async () => { await sleep(1300); });
+    resendResult = { error: { code: "over_email_send_rate_limit", status: 429, message: "email rate limit exceeded" } };
+    await click(resendBtn());
+    check("daftar: a rate-limit from Supabase is shown in Indonesian and makes them wait again", pm.c.textContent.includes("Terlalu banyak permintaan") && !pm.c.textContent.includes("rate limit exceeded") && resendBtn().disabled === true);
+    resendResult = { error: null };
+    await click(btnByText(pm.c, "Ganti email"));
+    check("daftar: 'Ganti email' returns to the form with the name and email kept, the password empty", pm.c.querySelector("form") !== null && pm.c.querySelector("#name").value === "Siti" && pm.c.querySelector("#email").value === "siti@mail.id" && pm.c.querySelector("#password").value === "");   // type=email trims the spaces itself
+    await pm.unmount();
+
+    signUpResult = { data: { session: null, user: null }, error: { code: "weak_password", message: "Password should be at least 6 characters" } };
+    pm = await mountEl(React.createElement(Register, { cooldownSeconds: 1 }));
+    await setVal(pm.c.querySelector("#name"), "Budi"); await setVal(pm.c.querySelector("#email"), "budi@mail.id"); await setVal(pm.c.querySelector("#password"), "123456");
+    await submit(pm.c.querySelector("form"));
+    check("daftar: a sign-up error is shown in Indonesian, and no 'check your email' page appears", pm.c.textContent.includes("Password terlalu pendek") && !pm.c.textContent.includes("Pendaftaran berhasil") && !pm.c.textContent.includes("at least 6 characters"));
+    await pm.unmount();
+
+    signUpResult = { data: { session: { access_token: "x" }, user: { id: "u2" } }, error: null };
+    calls.push.length = 0; calls.refresh = 0;
+    pm = await mountEl(React.createElement(Register, { cooldownSeconds: 1 }));
+    await setVal(pm.c.querySelector("#name"), "Ani"); await setVal(pm.c.querySelector("#email"), "ani@mail.id"); await setVal(pm.c.querySelector("#password"), "rahasia1");
+    await submit(pm.c.querySelector("form"));
+    check("daftar: when no confirmation is needed (a session exists) they go straight to the dashboard", calls.push[0] === "/dashboard" && calls.refresh === 1 && !pm.c.textContent.includes("Pendaftaran berhasil"));
+    await pm.unmount();
+
+    // ---------- Login ----------
+    query = ""; calls.push.length = 0; calls.resend.length = 0; calls.refresh = 0;
+    pm = await mountEl(React.createElement(Login, { cooldownSeconds: 1 }));
+    check("login: no notices by default, and no resend button", !pm.c.textContent.includes("terkonfirmasi") && !pm.c.textContent.includes("Pendaftaran berhasil") && btnByText(pm.c, "Kirim ulang") === undefined);
+    await pm.unmount();
+    query = "confirmed=1";
+    pm = await mountEl(React.createElement(Login, { cooldownSeconds: 1 }));
+    check("login: after the email link (opened elsewhere) it says the email is confirmed and to sign in", pm.c.textContent.includes("Email kamu sudah terkonfirmasi. Silakan masuk"));
+    await pm.unmount();
+    query = "registered=1";
+    pm = await mountEl(React.createElement(Login, { cooldownSeconds: 1 }));
+    check("login: an old ?registered=1 link says to check the email from PyMula", pm.c.textContent.includes("Cek email dari PyMula"));
+    await pm.unmount();
+    query = "confirm_error=1";
+    pm = await mountEl(React.createElement(Login, { cooldownSeconds: 1 }));
+    check("login: an invalid or expired confirmation link says so and offers a new email", pm.c.textContent.includes("kedaluwarsa") && btnByText(pm.c, "Kirim ulang email konfirmasi") !== undefined);
+    check("login: the resend button waits for an email address", btnByText(pm.c, "Kirim ulang email konfirmasi").disabled === true);
+    await setVal(pm.c.querySelector("#email"), " ayu@mail.id ");
+    await click(btnByText(pm.c, "Kirim ulang email konfirmasi"));
+    check("login: with an email typed, a new confirmation email is requested for that address", calls.resend.length === 1 && calls.resend[0].email === "ayu@mail.id" && calls.resend[0].options.emailRedirectTo === CALLBACK);
+    await pm.unmount();
+
+    query = "";
+    signInResult = { error: { code: "invalid_credentials", message: "Invalid login credentials", status: 400 } };
+    pm = await mountEl(React.createElement(Login, { cooldownSeconds: 1 }));
+    await setVal(pm.c.querySelector("#email"), "ayu@mail.id"); await setVal(pm.c.querySelector("#password"), "salah");
+    await submit(pm.c.querySelector("form"));
+    check("login: a wrong password is explained in Indonesian (and hints at the confirmation link for new people)", pm.c.textContent.includes("Email atau password salah") && pm.c.textContent.includes("email konfirmasi") && !pm.c.textContent.includes("Invalid login credentials"));
+    check("login: ... without a resend button, since that is not the problem", btnByText(pm.c, "Kirim ulang") === undefined);
+    signInResult = { error: { code: "email_not_confirmed", message: "Email not confirmed", status: 400 } };
+    await submit(pm.c.querySelector("form"));
+    check("login: an unconfirmed email is explained in Indonesian and a resend button appears", pm.c.textContent.includes("belum dikonfirmasi") && !pm.c.textContent.includes("Email not confirmed") && btnByText(pm.c, "Kirim ulang email konfirmasi") !== undefined);
+    await click(btnByText(pm.c, "Kirim ulang email konfirmasi"));
+    check("login: resending asks for a new sign-up email for the typed address", calls.resend.length === 2 && calls.resend[1].email === "ayu@mail.id");
+    signInResult = { error: null };
+    await submit(pm.c.querySelector("form"));
+    check("login: success goes to the dashboard with the trimmed email", calls.push.at(-1) === "/dashboard" && calls.signIn.at(-1).email === "ayu@mail.id" && calls.refresh >= 1);
+    await pm.unmount();
+    query = "next=/kursus/python-dasar/1-pengenalan";
+    pm = await mountEl(React.createElement(Login, { cooldownSeconds: 1 }));
+    await setVal(pm.c.querySelector("#email"), "a@b.id"); await setVal(pm.c.querySelector("#password"), "x");
+    await submit(pm.c.querySelector("form"));
+    check("login: a safe ?next= is followed", calls.push.at(-1) === "/kursus/python-dasar/1-pengenalan");
+    await pm.unmount();
+    query = "next=//evil.example.com";
+    pm = await mountEl(React.createElement(Login, { cooldownSeconds: 1 }));
+    await setVal(pm.c.querySelector("#email"), "a@b.id"); await setVal(pm.c.querySelector("#password"), "x");
+    await submit(pm.c.querySelector("form"));
+    check("login: an off-site ?next= is ignored", calls.push.at(-1) === "/dashboard");
+    await pm.unmount();
+
+    // ---------- Pop-up spoiler (Challenge + ConfirmDialog) ----------
+    const ConfirmDialog = load("components/ui/ConfirmDialog.tsx", { "@/components/ui/Button": { Button: Btn } }).default;
+    const Challenge = load("components/learn/Challenge.tsx", {
+      "next/navigation": { useRouter: () => ({ refresh() {} }) },
+      "@/lib/checker": { checkOutput: () => ({ passed: false, message: "belum" }) },
+      "@/lib/progress": { markLessonComplete: async () => {} },
+      "@/lib/passed-code": { rememberPassedFiles: async () => {} },
+      "@/components/ui/ConfirmDialog": { default: ConfirmDialog },
+      "./CodeRunner": { default: () => React.createElement("div", { "data-testid": "runner" }) },
+      "@/lib/lesson-files": { getEntry: () => "main.py", getPracticeFiles: () => [] },
+      "@/components/ui/Button": { Button: Btn },
+      "@/components/learn/CodeBlock": { default: ({ code }) => React.createElement("pre", { "data-testid": "answer" }, code) },
+      "@/components/learn/LessonText": { default: ({ text }) => React.createElement("div", null, text), InlineText: ({ text }) => React.createElement("span", null, text) },
+    }).default;
+    const practice = (hints) => ({ kind: "code", instructions: "Tugas", starterCode: "# kode awal", hints, answerHint: "print('JAWABAN RAHASIA')", checker: { type: "stdout_exact", expected: "x" }, successFeedback: "ok" });
+    const dialog = () => w.document.querySelector('[role="dialog"]');
+    const spoilerBtn = (root) => btnByText(root, "Lihat Jawaban Lengkap");
+    const answerShown = (root) => root.querySelector('[data-testid="answer"]') !== null && root.textContent.includes("JAWABAN RAHASIA");
+
+    let cm = await mountEl(React.createElement(Challenge, { practice: practice(["h1", "h2", "h3"]), chapterSlug: "c", lessonId: "L1" }));
+    check("spoiler: before anything is pressed there is no pop-up and the answer is hidden", dialog() === null && !answerShown(cm.c) && spoilerBtn(cm.c) !== undefined);
+    spoilerBtn(cm.c).focus();
+    await click(spoilerBtn(cm.c));
+    check("spoiler: pressing it opens a pop-up INSTEAD of showing the answer", dialog() !== null && !answerShown(cm.c) && !w.document.body.textContent.includes("JAWABAN RAHASIA"));
+    const d = dialog();
+    check("spoiler: the pop-up is an accessible modal dialog with a title and a description", d.getAttribute("aria-modal") === "true" && !!w.document.getElementById(d.getAttribute("aria-labelledby")) && w.document.getElementById(d.getAttribute("aria-labelledby")).textContent === "Lihat jawaban lengkap?" && !!w.document.getElementById(d.getAttribute("aria-describedby")));
+    check("spoiler: it tells how many hints are still unused", d.textContent.includes("3 hint yang belum dibuka"));
+    check("spoiler: the safe button has the focus, so a reflex Enter cannot reveal the answer", w.document.activeElement.textContent === "Batal, coba lagi sendiri");
+    check("spoiler: the page behind does not scroll while it is open", w.document.body.style.overflow === "hidden");
+    check("spoiler: the buttons say clearly which one reveals", [...d.querySelectorAll("button")].map((b) => b.textContent).sort().join("|") === "Batal, coba lagi sendiri|Ya, tampilkan jawaban");
+    // Tab stays inside
+    btnByText(d, "Ya, tampilkan jawaban").focus();
+    await act(async () => { w.document.activeElement.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true })); });
+    check("spoiler: Tab from the last button wraps to the first (focus cannot leave the pop-up)", w.document.activeElement.textContent === "Batal, coba lagi sendiri");
+    await act(async () => { w.document.activeElement.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true })); });
+    check("spoiler: Shift+Tab from the first button wraps to the last", w.document.activeElement.textContent === "Ya, tampilkan jawaban");
+    // cancel by button
+    await click(btnByText(dialog(), "Batal, coba lagi sendiri"));
+    check("spoiler: Batal closes the pop-up, the answer stays hidden, the button is still there", dialog() === null && !answerShown(cm.c) && spoilerBtn(cm.c) !== undefined);
+    check("spoiler: scrolling is back and the focus returns to the spoiler button", w.document.body.style.overflow === "" && w.document.activeElement === spoilerBtn(cm.c));
+    // cancel by Escape
+    await click(spoilerBtn(cm.c));
+    await act(async () => { dialog().dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+    check("spoiler: Escape cancels", dialog() === null && !answerShown(cm.c));
+    // cancel by tapping outside
+    await click(spoilerBtn(cm.c));
+    await act(async () => { dialog().dispatchEvent(new w.MouseEvent("mousedown", { bubbles: true })); });
+    check("spoiler: a tap inside the box does NOT cancel", dialog() !== null);
+    await act(async () => { w.document.querySelector('[data-testid="confirm-backdrop"]').dispatchEvent(new w.MouseEvent("mousedown", { bubbles: true })); });
+    check("spoiler: a tap on the dark area cancels", dialog() === null && !answerShown(cm.c));
+    // hints change the message
+    await click(btnByText(cm.c, "Tampilkan hint 1"));
+    await click(spoilerBtn(cm.c));
+    check("spoiler: after opening one hint, the pop-up says 2 are left", dialog().textContent.includes("2 hint yang belum dibuka"));
+    await click(btnByText(dialog(), "Batal, coba lagi sendiri"));
+    await click(btnByText(cm.c, "Tampilkan hint 2")); await click(btnByText(cm.c, "Tampilkan hint 3"));
+    await click(spoilerBtn(cm.c));
+    check("spoiler: with every hint used, it no longer talks about hints", !dialog().textContent.includes("hint yang belum dibuka"));
+    // confirm
+    await click(btnByText(dialog(), "Ya, tampilkan jawaban"));
+    check("spoiler: only 'Ya, tampilkan jawaban' reveals the answer, and the pop-up closes", dialog() === null && answerShown(cm.c) && w.document.body.style.overflow === "");
+    check("spoiler: once revealed, the spoiler button is gone", spoilerBtn(cm.c) === undefined);
+    await cm.unmount();
+
+    cm = await mountEl(React.createElement(Challenge, { practice: practice([]), chapterSlug: "c", lessonId: "L2" }));
+    await click(spoilerBtn(cm.c));
+    check("spoiler: a lesson without hints still asks, and says nothing about hints", dialog() !== null && !dialog().textContent.includes("hint") && !answerShown(cm.c));
+    await act(async () => { dialog().dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+    await cm.unmount();
+    check("spoiler: nothing is left in the page after unmounting", w.document.querySelector('[role="dialog"]') === null);
+  }
+
   // ================= Pop-up pemberitahuan penutupan layanan =================
   console.log("--- EndNoticeModal");
   {

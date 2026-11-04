@@ -6,13 +6,14 @@ import { jsonLdString, websiteJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams?: { confirmed?: string } }) {
   const supabase = createClient();
   const { data } = await supabase.auth.getUser();
 
   if (data.user) {
     const name = data.user.user_metadata?.name ?? data.user.email ?? "kamu";
-    return <DashboardHome name={name} />;
+    // The sign-up confirmation link lands here (lib/password-reset.ts, SIGNUP_DONE_PATH).
+    return <DashboardHome name={name} justConfirmed={searchParams?.confirmed === "1"} />;
   }
 
   return (

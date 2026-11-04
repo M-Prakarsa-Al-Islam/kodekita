@@ -10,7 +10,7 @@ import { summarizeProgress } from "@/lib/progress-summary";
 import { hasApprovedPurchase } from "@/lib/purchase-server";
 import { salesOpen } from "@/lib/site-config";
 
-export default async function DashboardHome({ name }: { name: string }) {
+export default async function DashboardHome({ name, justConfirmed = false }: { name: string; justConfirmed?: boolean }) {
   const completed = (await getCompletedLessonKeys()) ?? new Set<string>();
   const purchased = await hasApprovedPurchase(PYTHON_DASAR_COURSE_SLUG);
   const summary = summarizeProgress(getAllLessons(), completed, purchased);
@@ -19,6 +19,12 @@ export default async function DashboardHome({ name }: { name: string }) {
 
   return (
     <section className="mx-auto max-w-3xl px-6 py-16">
+      {justConfirmed && (
+        <p role="status" className="mb-6 rounded-lg border border-sun bg-sun/10 px-5 py-4 text-sm text-ink">
+          <strong>Email kamu sudah terkonfirmasi dan kamu sudah masuk. Selamat datang di PyMula!</strong> Mulai dari
+          Chapter 1, yang gratis.
+        </p>
+      )}
       <h1 className="font-display text-2xl font-semibold text-ink">Halo, {name}</h1>
       <p className="mt-2 text-sm text-ink-soft">
         {hasStarted

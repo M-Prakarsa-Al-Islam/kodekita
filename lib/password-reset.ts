@@ -33,9 +33,26 @@ export function buildResetRedirect(origin: string): string {
   return `${origin.replace(/\/+$/, "")}${CALLBACK_PATH}?next=${encodeURIComponent(RESET_PAGE_PATH)}`;
 }
 
+// ---- sign-up confirmation (the email a NEW learner gets after registering) ----
+// The confirmation link uses the SAME callback that is already in Supabase's Redirect URLs
+// (see README), so no dashboard change is needed.
+//  - opened in the same browser: the code is exchanged, the learner is signed in and lands on
+//    SIGNUP_DONE_PATH with a welcome notice;
+//  - opened elsewhere (typical: registered on a laptop, read the mail on a phone): Supabase has
+//    ALREADY confirmed the email, only the sign-in could not be completed, so we send the learner
+//    to the login page saying the email is confirmed (SIGNUP_FALLBACK_PATH);
+//  - the link was expired or invalid (Supabase sends an error instead of a code):
+//    SIGNUP_ERROR_PATH, whose notice offers to send a new email.
+export const SIGNUP_DONE_PATH = "/?confirmed=1";
+export const SIGNUP_FALLBACK_PATH = "/login?confirmed=1";
+export const SIGNUP_ERROR_PATH = "/login?confirm_error=1";
+export function buildSignupRedirect(origin: string): string {
+  return `${origin.replace(/\/+$/, "")}${CALLBACK_PATH}?next=${encodeURIComponent(SIGNUP_DONE_PATH)}`;
+}
+
 // Only these in-site paths can be the target after the callback. Anything
 // else (absolute URLs, //evil.com, backslash tricks) falls back to "/".
-const ALLOWED_NEXT = new Set([RESET_PAGE_PATH]);
+const ALLOWED_NEXT = new Set([RESET_PAGE_PATH, SIGNUP_DONE_PATH]);
 export function safeNext(next: string | null | undefined): string {
   return next && ALLOWED_NEXT.has(next) ? next : "/";
 }
@@ -59,6 +76,7 @@ export type CallbackParams = {
   tokenHash?: string | null;
   type?: string | null;
   next?: string | null;
+  error?: string | null; // Supabase adds ?error=... when the link is expired or invalid
 };
 export type CallbackDeps = {
   exchangeCode(code: string): Promise<boolean>;
@@ -68,7 +86,9 @@ export type CallbackDeps = {
 
 // Returns the in-site path to redirect to. Never throws.
 export async function resolveCallback(params: CallbackParams, deps: CallbackDeps): Promise<string> {
+  const isSignup = params.next === SIGNUP_DONE_PATH;
   try {
+    if (isSignup && params.error) return SIGNUP_ERROR_PATH;
     if (params.tokenHash) {
       // Cross-device friendly link (needs the email template change in README).
       if (params.type !== "recovery") return LINK_ERROR_PATH;
@@ -77,7 +97,9 @@ export async function resolveCallback(params: CallbackParams, deps: CallbackDeps
       return RESET_PAGE_PATH;
     }
     if (params.code) {
-      if (!(await deps.exchangeCode(params.code))) return LINK_ERROR_PATH;
+      // A code only exists when Supabase has already confirmed the email, so a failed exchange
+      // on a sign-up link means "confirmed, but sign in by hand" (other browser or device).
+      if (!(await deps.exchangeCode(params.code))) return isSignup ? SIGNUP_FALLBACK_PATH : LINK_ERROR_PATH;
       const next = safeNext(params.next);
       if (next === RESET_PAGE_PATH) await deps.markRecovery();
       return next;
@@ -85,7 +107,7 @@ export async function resolveCallback(params: CallbackParams, deps: CallbackDeps
   } catch {
     /* fall through */
   }
-  return LINK_ERROR_PATH;
+  return isSignup ? SIGNUP_ERROR_PATH : LINK_ERROR_PATH;
 }
 
 // ---- /reset-password (the server action's logic) ------------------------------

@@ -111,10 +111,42 @@ Saat halaman `/proyek` sudah nyata: hapus `robots: { index: false }` dari
    Leave the default template if unsure: it works when the link is opened in the
    same browser (the page tells the learner this).
 
+## Sign-up confirmation emails (new learners)
+
+After registering, a learner no longer lands on a bare login form. They see a
+"Pendaftaran berhasil! Sekarang cek email kamu" page: the address the email went to,
+three steps, the usual reasons an email does not arrive (wait, spam, wrong address,
+already registered), a *Kirim ulang email* button with a 60 second pause, *Ganti email*,
+a *Masuk* link and a WhatsApp link. For that page to tell the truth, check these once
+in the Supabase dashboard (the code cannot check them):
+
+1. In **Authentication**, the **Email** provider's **Confirm email** option must be
+   **on**. If it is off, registering signs the learner in at once and the page is skipped.
+2. **Sender name and subject.** The page says "email konfirmasi dari PyMula". In
+   **Authentication -> SMTP Settings** set the sender name to `PyMula`, and in
+   **Email Templates -> Confirm signup** use a clear subject (for example
+   "Konfirmasi email PyMula-mu") and keep the confirmation link in the body.
+3. Nothing to add to *Redirect URLs*: the confirmation link returns through
+   `/auth/callback`, which is already listed above.
+
+What the link does (`lib/password-reset.ts`, `resolveCallback`):
+
+| Where it is opened | Result |
+|---|---|
+| Same browser that registered | signed in, lands on `/?confirmed=1` with a welcome notice |
+| Another browser or device (register on a laptop, read the mail on a phone) | Supabase has already confirmed the email but no sign-in is possible: `/login?confirmed=1` says "Email kamu sudah terkonfirmasi. Silakan masuk" |
+| Expired or invalid link | `/login?confirm_error=1` says so and offers to send a new email |
+
+A confirmation link never marks the browser as a password-recovery session (only the
+reset-password link does; a test guards this). Supabase deliberately does not reveal
+whether an email is already registered, so registering with an existing email looks the
+same as a new one; the page's tips mention "Pernah mendaftar dengan email ini?" for that reason.
+
 ## What's built
 
 - Landing page (logged-out) / dashboard (logged-in) at `/`, header, footer
-- Register / login / logout (Supabase auth), with redirect-back after login
+- Register / login / logout (Supabase auth), with redirect-back after login, a
+  "check your email" page after registering, and Indonesian error messages
 - `/kursus` catalog, `/kursus/python-dasar` chapter list (public, shows
   progress when logged in), chapter/lesson pages (require login)
 - Pyodide-based code runner + quiz runner, with a tested checker

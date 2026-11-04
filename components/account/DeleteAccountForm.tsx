@@ -114,7 +114,7 @@ export default function DeleteAccountForm({
           </div>
           <div>
             <label htmlFor="hapus-konfirmasi" className="text-sm font-medium text-ink">
-              Ketik {DELETE_CONFIRM_WORD} untuk mengonfirmasi
+              Ketik "{DELETE_CONFIRM_WORD}" untuk mengonfirmasi
             </label>
             <input
               id="hapus-konfirmasi"

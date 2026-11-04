@@ -6,6 +6,7 @@ import type { CodePractice } from "@/content/types";
 import { checkOutput } from "@/lib/checker";
 import { markLessonComplete } from "@/lib/progress";
 import { rememberPassedFiles } from "@/lib/passed-code";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import CodeRunner from "./CodeRunner";
 import { getEntry, getPracticeFiles } from "@/lib/lesson-files";
 import { Button } from "@/components/ui/Button";
@@ -24,6 +25,9 @@ export default function Challenge({
   const router = useRouter();
   const [hintsShown, setHintsShown] = useState(0);
   const [answerShown, setAnswerShown] = useState(false);
+  // The full answer is one tap away and cannot be hidden again, so ask first (a pop-up).
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const hintsLeft = practice.hints.length - hintsShown;
   const [feedback, setFeedback] = useState<{ passed: boolean; message: string } | null>(
     null
   );
@@ -98,7 +102,7 @@ export default function Challenge({
               type="button"
               variant="ghost"
               className="px-0 text-sm font-medium text-amber-800 underline"
-              onClick={() => setAnswerShown(true)}
+              onClick={() => setConfirmOpen(true)}
             >
               ⚠️ Lihat Jawaban Lengkap (Spoiler! Coba dulu sendiri sebelum klik ini)
             </Button>
@@ -121,6 +125,28 @@ export default function Challenge({
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Lihat jawaban lengkap?"
+        confirmLabel="Ya, tampilkan jawaban"
+        cancelLabel="Batal, coba lagi sendiri"
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          setAnswerShown(true);
+        }}
+      >
+        <p>
+          Jawaban lengkap akan langsung ditampilkan. Kamu belajar paling banyak saat mencoba sendiri dulu, termasuk
+          ketika kodemu error lalu kamu perbaiki.
+        </p>
+        {hintsLeft > 0 && (
+          <p className="font-medium text-ink">
+            Kamu masih punya {hintsLeft} hint yang belum dibuka. Coba hint dulu, ya.
+          </p>
+        )}
+      </ConfirmDialog>
     </div>
   );
 }

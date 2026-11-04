@@ -117,6 +117,43 @@ function cbDeps(over = {}) {
   check("an exception inside Supabase never escapes: error page", await P.resolveCallback({ code: "X", next: "/reset-password" }, deps), "/lupa-password?error=link");
 }
 
+// ---- /auth/callback: the confirmation link of a NEW account (sign-up) ----------------------
+const SU = "/?confirmed=1";
+check("sign-up redirect goes through the already-allowed callback and carries the welcome page", P.buildSignupRedirect("https://www.pymula.live/"), "https://www.pymula.live/auth/callback?next=%2F%3Fconfirmed%3D1");
+check("the sign-up page paths are fixed", [P.SIGNUP_DONE_PATH, P.SIGNUP_FALLBACK_PATH, P.SIGNUP_ERROR_PATH], ["/?confirmed=1", "/login?confirmed=1", "/login?confirm_error=1"]);
+{
+  const { deps, calls } = cbDeps();
+  const r = await P.resolveCallback({ code: "S1", next: SU }, deps);
+  check("sign-up link, same browser: exchanged, signed in, welcome page, and NEVER marked as a password-recovery session", [r, calls], [SU, ["exchange:S1"]]);
+}
+{
+  const { deps, calls } = cbDeps({ exchange: false });
+  const r = await P.resolveCallback({ code: "S2", next: SU }, deps);
+  check("sign-up link opened elsewhere (no code verifier): the email IS confirmed, so 'confirmed, please sign in', not the reset-password error page", [r, calls.includes("mark")], ["/login?confirmed=1", false]);
+}
+{
+  const { deps, calls } = cbDeps({ throwOn: "exchangeCode" });
+  check("sign-up link, Supabase throws: the 'confirmation link invalid' notice (never a reset-password page)", [await P.resolveCallback({ code: "S3", next: SU }, deps), calls.includes("mark")], ["/login?confirm_error=1", false]);
+}
+{
+  const { deps, calls } = cbDeps();
+  check("expired or invalid sign-up link (Supabase sends ?error=): the 'invalid link' notice, no exchange attempted", [await P.resolveCallback({ error: "access_denied", next: SU }, deps), calls], ["/login?confirm_error=1", []]);
+}
+check("sign-up callback with neither code nor error: the 'invalid link' notice", await P.resolveCallback({ next: SU }, cbDeps().deps), "/login?confirm_error=1");
+{
+  const { deps, calls } = cbDeps();
+  check("a code with ANY other next (like the login page) is not honoured: signed in, goes to /, not marked", [await P.resolveCallback({ code: "S4", next: "/login?confirmed=1" }, deps), calls.includes("mark")], ["/", false]);
+}
+{
+  const { deps } = cbDeps();
+  check("password-reset links are unchanged by an ?error= parameter: still the reset error page", await P.resolveCallback({ error: "access_denied", next: "/reset-password" }, deps), "/lupa-password?error=link");
+}
+{
+  const { deps, calls } = cbDeps();
+  const r = await P.resolveCallback({ code: "R9", next: "/reset-password" }, deps);
+  check("password-reset link still marks the recovery session (the sign-up change did not weaken or break it)", [r, calls], ["/reset-password", ["exchange:R9", "mark"]]);
+}
+
 // ---- reset-password flow -----------------------------------------------------------------
 function rDeps(over = {}) {
   const calls = [];
@@ -230,19 +267,20 @@ function walk(dir) {
 const tsx = [...walk("app"), ...walk("components")].filter((f) => f.endsWith(".tsx"));
 const rawPassword = tsx.filter((f) => /type=\"password\"/.test(read(f)) && !f.endsWith("PasswordInput.tsx"));
 check("no password field bypasses the show/hide PasswordInput", rawPassword, []);
-const usesPI = ["app/login/page.tsx", "app/register/page.tsx", "components/account/PasswordForm.tsx", "components/account/DeleteAccountForm.tsx", "components/auth/ResetPasswordForm.tsx"].map((f) => /<PasswordInput/.test(read(f)));
+const usesPI = ["components/auth/LoginForm.tsx", "components/auth/RegisterForm.tsx", "components/account/PasswordForm.tsx", "components/account/DeleteAccountForm.tsx", "components/auth/ResetPasswordForm.tsx"].map((f) => /<PasswordInput/.test(read(f)));
 check("login, register, change-password, delete and reset all use PasswordInput", usesPI, [true, true, true, true, true]);
 check("PasswordInput is hidden by default", /useState\(false\)/.test(read("components/ui/PasswordInput.tsx")), true);
 const needClient = tsx.filter((f) => /from "react"/.test(read(f)) && /\buse(State|Effect|Ref|Memo|Callback)\b/.test(read(f)) && !/^\s*["']use client["']/.test(read(f)));
 check("every file that uses React hooks starts with \"use client\"", needClient, []);
 check("Keluar is no longer in the header", !/SignOutButton/.test(read("components/site/Header.tsx")), true);
 check("Keluar is on the account page", /<SignOutButton/.test(read("app/akun/page.tsx")), true);
-check("the login page links to lupa password", /href="\/lupa-password"/.test(read("app/login/page.tsx")), true);
+check("the login and register pages only render their form component (the form logic lives in components/auth, where it is tested)", [/<LoginForm \/>/.test(read("app/login/page.tsx")), /<RegisterForm \/>/.test(read("app/register/page.tsx")), /signInWithPassword|signUp\(/.test(read("app/login/page.tsx") + read("app/register/page.tsx"))], [true, true, false]);
+check("the login page links to lupa password", /href="\/lupa-password"/.test(read("components/auth/LoginForm.tsx")), true);
 check("the account password form and delete form link to lupa password", [/href="\/lupa-password"/.test(read("components/account/PasswordForm.tsx")), /href="\/lupa-password"/.test(read("components/account/DeleteAccountForm.tsx"))], [true, true]);
 check("/reset-password and /lupa-password are NOT behind the login-only middleware", !/reset-password|lupa-password/.test(read("middleware.ts")), true);
 const mw = read("middleware.ts");
 check("middleware uses the tested guard and the tested needsSession() filter", /guardRedirect\(/.test(mw) && /needsSession\(/.test(mw), true);
-check("the login page uses the safe-path helper (no hand-rolled next check)", /safeInternalPath\(/.test(read("app/login/page.tsx")) && !/startsWith\("\/\/"\)/.test(read("app/login/page.tsx")), true);
+check("the login page uses the safe-path helper (no hand-rolled next check)", /safeInternalPath\(/.test(read("components/auth/LoginForm.tsx")) && !/startsWith\("\/\/"\)/.test(read("components/auth/LoginForm.tsx")), true);
 check("the lupa-password page tells the form whether the visitor is signed in", /signedIn=\{/.test(read("app/lupa-password/page.tsx")), true);
 const resetPage = read("app/reset-password/page.tsx");
 check("the reset page decides its view with resetPageView and renders ResetSuccess", /resetPageView\(/.test(resetPage) && /<ResetSuccess/.test(resetPage), true);
