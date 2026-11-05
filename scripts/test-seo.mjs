@@ -109,7 +109,7 @@ check("all sitemap URLs are absolute https www URLs", S.INDEXABLE_PATHS.map(S.ab
 const sitemap = read("app/sitemap.ts");
 check("the sitemap is built from INDEXABLE_PATHS, is dynamic, and shrinks to the home page after the end date", /INDEXABLE_PATHS/.test(sitemap) && /force-dynamic/.test(sitemap) && /"ended" \? \["\/"\]/.test(sitemap), true);
 
-const UTILITY = ["/login", "/register", "/lupa-password", "/reset-password", "/akun", "/admin/purchases", "/selesai", "/kursus/python-dasar/beli", "/kursus/python-dasar/[slug]", "/kursus/python-dasar/[slug]/[lessonId]", "/proyek/[project]/beli", "/proyek/[project]/[slug]", "/proyek/[project]/[slug]/[lessonId]"];
+const UTILITY = ["/login", "/register", "/lupa-password", "/reset-password", "/akun", "/admin/purchases", "/admin/statistik", "/selesai", "/kursus/python-dasar/beli", "/kursus/python-dasar/[slug]", "/kursus/python-dasar/[slug]/[lessonId]", "/proyek/[project]/beli", "/proyek/[project]/[slug]", "/proyek/[project]/[slug]/[lessonId]"];
 check("utility, login-only and placeholder pages are all marked noindex", UTILITY.filter((p) => !noindexAt(p)), []);
 
 // ---- structured data -----------------------------------------------------------------------------------------------

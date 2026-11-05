@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { approvePurchase, rejectPurchase } from "./actions";
@@ -45,7 +46,12 @@ export default async function AdminPurchasesPage() {
 
   return (
     <section className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="font-display text-2xl font-semibold text-ink">Verifikasi Pembayaran</h1>
+      <div className="flex items-baseline justify-between gap-4">
+        <h1 className="font-display text-2xl font-semibold text-ink">Verifikasi Pembayaran</h1>
+        <Link href="/admin/statistik" className="text-sm text-ink-soft underline hover:text-ink">
+          Statistik
+        </Link>
+      </div>
       <p className="mt-2 text-ink-soft">{withDetails.length} menunggu verifikasi.</p>
 
       <div className="mt-8 space-y-6">
