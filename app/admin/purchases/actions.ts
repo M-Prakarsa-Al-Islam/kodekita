@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { cleanRejectReason } from "@/lib/reject-reason";
 
 // Uses the caller's own authenticated Supabase session (cookies), not
 // a service-role key — the `purchases` RLS update policy only allows
@@ -40,10 +41,16 @@ export async function rejectPurchase(formData: FormData) {
   const supabase = await requireAdmin();
   const id = formData.get("id") as string;
 
+  // The learner reads this to know what to fix, so it is required. The form enforces the
+  // same limits in the browser; this is the check that cannot be bypassed.
+  const reason = cleanRejectReason(formData.get("reason"));
+  if (!reason) return;
+
   await supabase
     .from("purchases")
-    .update({ status: "rejected", reviewed_at: new Date().toISOString() })
-    .eq("id", id);
+    .update({ status: "rejected", reject_reason: reason, reviewed_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("status", "pending"); // a double submit must not overwrite a decision already made
 
   revalidatePath("/admin/purchases");
 }

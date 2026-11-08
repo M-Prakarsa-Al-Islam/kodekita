@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProject } from "@/content/projects";
 import { getCoursePrice } from "@/content/pricing";
-import { getLatestPurchase } from "@/lib/purchase-server";
+import { getLatestPurchase, getRejectReason } from "@/lib/purchase-server";
 import PurchaseForm from "@/components/purchase/PurchaseForm";
 import { LinkButton } from "@/components/ui/Button";
 import { projectBase } from "@/lib/project-paths";
@@ -30,6 +30,7 @@ export default async function ProjectBeliPage({ params }: { params: { project: s
   const price = getCoursePrice(project.slug);
   const paid = paidRange(project.chapters) ?? "bab berbayar";
   const purchase = await getLatestPurchase(project.slug);
+  const rejectReason = purchase?.status === "rejected" ? await getRejectReason(purchase.id) : null;
 
   if (!purchase) {
     // middleware already guards this route, but stay safe if reached directly.
@@ -115,6 +116,11 @@ export default async function ProjectBeliPage({ params }: { params: { project: s
         <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           Bukti pembayaran sebelumnya belum bisa kami verifikasi. Coba kirim ulang dengan bukti yang lebih jelas, atau
           hubungi kami di WhatsApp.
+          {rejectReason && (
+            <p className="mt-2">
+              <strong>Alasan dari admin:</strong> {rejectReason}
+            </p>
+          )}
         </div>
       )}
 

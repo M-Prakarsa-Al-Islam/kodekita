@@ -45,3 +45,19 @@ export async function hasApprovedPurchase(courseSlug: string): Promise<boolean> 
   const purchase = await getLatestPurchase(courseSlug);
   return purchase?.status === "approved";
 }
+
+// The admin's reason for a rejected payment, or null. A SEPARATE query on purpose: access to
+// paid chapters (getLatestPurchase) must never depend on this newer column, so if the
+// migration has not been run yet the only effect is that no reason is shown.
+export async function getRejectReason(purchaseId: string): Promise<string | null> {
+  if (!purchaseId) return null;
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("purchases")
+    .select("reject_reason")
+    .eq("id", purchaseId)
+    .maybeSingle();
+  if (error) return null;
+  const reason = (data as { reject_reason?: string | null } | null)?.reject_reason;
+  return reason ? reason : null;
+}

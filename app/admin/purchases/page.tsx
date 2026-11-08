@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { approvePurchase, rejectPurchase } from "./actions";
+import { REJECT_REASON_MAX, REJECT_REASON_MIN, REJECT_REASON_PRESETS } from "@/lib/reject-reason";
 
 export default async function AdminPurchasesPage() {
   const supabase = createClient();
@@ -54,6 +55,12 @@ export default async function AdminPurchasesPage() {
       </div>
       <p className="mt-2 text-ink-soft">{withDetails.length} menunggu verifikasi.</p>
 
+      <datalist id="reject-reason-presets">
+        {REJECT_REASON_PRESETS.map((r) => (
+          <option key={r} value={r} />
+        ))}
+      </datalist>
+
       <div className="mt-8 space-y-6">
         {withDetails.map((p) => (
           <div key={p.id} className="rounded-lg border border-line bg-white p-5">
@@ -79,19 +86,39 @@ export default async function AdminPurchasesPage() {
               )}
             </div>
 
-            <div className="mt-4 flex gap-3">
+            <div className="mt-4 flex flex-wrap items-start gap-3">
               <form action={approvePurchase}>
                 <input type="hidden" name="id" value={p.id} />
                 <button className="rounded-md bg-code px-4 py-2 text-sm font-medium text-white hover:bg-code/90">
                   Setujui
                 </button>
               </form>
-              <form action={rejectPurchase}>
-                <input type="hidden" name="id" value={p.id} />
-                <button className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
-                  Tolak
-                </button>
-              </form>
+              {/* Rejecting needs a reason the learner will read, so it opens a small form
+                  instead of rejecting on one tap. */}
+              <details className="w-full sm:w-auto">
+                <summary className="cursor-pointer list-none rounded-md bg-red-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-red-700">
+                  Tolak…
+                </summary>
+                <form action={rejectPurchase} className="mt-3 space-y-2">
+                  <input type="hidden" name="id" value={p.id} />
+                  <label htmlFor={`reason-${p.id}`} className="block text-xs text-ink-soft">
+                    Alasan penolakan (dibaca peserta)
+                  </label>
+                  <input
+                    id={`reason-${p.id}`}
+                    name="reason"
+                    list="reject-reason-presets"
+                    required
+                    minLength={REJECT_REASON_MIN}
+                    maxLength={REJECT_REASON_MAX}
+                    placeholder="Pilih saran atau tulis sendiri"
+                    className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink sm:w-80"
+                  />
+                  <button className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+                    Kirim penolakan
+                  </button>
+                </form>
+              </details>
             </div>
           </div>
         ))}

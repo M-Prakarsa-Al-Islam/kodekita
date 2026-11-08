@@ -128,12 +128,13 @@ function realDeleteDeps(): DeleteDeps {
     },
 
     async scrubPurchases(userId) {
-      // Only the personal parts: the free-text note and the proof path. The
+      // Only the personal parts: the free-text note, the admin's rejection reason (it may
+      // mention the person) and the proof path. The
       // row (course, amount, status, dates) stays as an anonymous record once
       // the user link is nulled by the foreign key.
       const { error } = await admin
         .from("purchases")
-        .update({ note: null, proof_path: null })
+        .update({ note: null, reject_reason: null, proof_path: null })
         .eq("user_id", userId);
       if (error) throw error;
     },
